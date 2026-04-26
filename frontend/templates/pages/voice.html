@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+{% block title %}Voice Assistant{% endblock %}
+{% block page_title %}Voice assistant{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto" x-data="voiceApp()">
+
+  <!-- Avatar card -->
+  <div class="bg-white border border-gray-100 rounded-2xl p-8 text-center mb-5 relative overflow-hidden">
+
+    <!-- Geometric background -->
+    <div style="position:absolute;inset:0;opacity:0.025;pointer-events:none;">
+      <svg width="100%" height="100%">
+        <pattern id="geo" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M20 0L40 20L20 40L0 20Z" fill="none" stroke="currentColor" stroke-width="0.5"/>
+        </pattern>
+        <rect width="100%" height="100%" fill="url(#geo)"/>
+      </svg>
+    </div>
+
+    <!-- Canvas avatar -->
+    <div class="relative inline-flex items-center justify-center mb-6">
+      <canvas id="avatar-canvas" width="200" height="200"
+              class="rounded-full border-4 border-white shadow-lg"
+              style="background:#E1F5EE;">
+      </canvas>
+    </div>
+
+    <!-- Status -->
+    <h2 class="text-base font-medium text-gray-900 mb-1">ShariahEase Assistant</h2>
+    <p id="status-text" class="text-sm text-gray-400 mb-6">
+      Tap the microphone and ask anything about Zakat or Islamic finance
+    </p>
+
+    <!-- Record button -->
+    <button @click="toggleRecording"
+            :disabled="processing"
+            class="relative inline-flex items-center justify-center w-16 h-16 rounded-full
+                   transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary-100"
+            :class="recording
+              ? 'bg-red-500 hover:bg-red-600 scale-110 shadow-lg shadow-red-200'
+              : 'bg-primary-400 hover:bg-primary-600 shadow-md hover:shadow-lg hover:scale-105'">
+
+      <svg x-show="!recording && !processing" class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 1a4 4 0 014 4v7a4 4 0 01-8 0V5a4 4 0 014-4zm6 11a6 6 0 01-12 0H4a8 8 0 0016 0h-2z"/>
+      </svg>
+      <svg x-show="recording" style="display:none" class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+        <rect x="6" y="6" width="12" height="12" rx="2"/>
+      </svg>
+      <svg x-show="processing" style="display:none"
+           class="w-6 h-6 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+      </svg>
+      <span x-show="recording" style="display:none"
+            class="absolute top-1 right-1 w-3 h-3 bg-white rounded-full animate-ping"></span>
+    </button>
+
+    <p class="text-xs text-gray-300 mt-4">
+      <span x-text="recording ? 'Recording... tap to stop'
+                  : processing ? 'Processing...'
+                  : 'English · اردو · Roman Urdu'">
+      </span>
+    </p>
+  </div>
+
+  <!-- Conversation -->
+  <div x-show="conversation.length > 0" x-transition class="space-y-4 mb-5" style="display:none">
+    <template x-for="(turn, i) in conversation" :key="i">
+      <div class="space-y-3">
+        <div class="flex justify-end gap-3">
+          <div class="max-w-sm bg-primary-400 text-white rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed"
+               x-text="turn.user"></div>
+          <div class="w-7 h-7 rounded-full bg-gray-100 flex-shrink-0 flex items-center justify-center text-xs text-gray-500 font-medium">You</div>
+        </div>
+        <div class="flex gap-3">
+          <div class="w-7 h-7 rounded-full bg-primary-50 border border-primary-100 flex-shrink-0
+                      flex items-center justify-center text-primary-600 text-xs font-medium">AI</div>
+          <div class="flex-1 space-y-2">
+            <div class="max-w-sm bg-white border border-gray-100 text-gray-700
+                        rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed"
+                 x-text="turn.answer"></div>
+            <button x-show="turn.audioB64" @click="replayAudio(turn.audioB64)"
+                    class="flex items-center gap-1.5 text-xs text-gray-400 hover:text-primary-600 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+              </svg>
+              Replay
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- Error -->
+  <div x-show="errorMsg" x-transition style="display:none"
+       class="bg-red-50 border border-red-200 rounded-xl px-5 py-3 text-sm text-red-700 mb-5"
+       x-text="errorMsg">
+  </div>
+
+  <!-- Suggestions -->
+  <div x-show="conversation.length === 0" class="bg-white border border-gray-100 rounded-xl p-5">
+    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Try asking</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <template x-for="q in suggestions" :key="q">
+        <button @click="askDirectly(q)"
+                class="text-left text-xs px-3 py-2.5 border border-gray-200 rounded-lg
+                       text-gray-600 hover:bg-primary-50 hover:border-primary-200
+                       hover:text-primary-700 transition-colors leading-relaxed"
+                x-text="q">
+        </button>
+      </template>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CANVAS AVATAR — Real-time lip-sync via Web Audio API
+   No GPU required. Runs at 60fps on any device.
+   Mouth openness driven by audio amplitude (RMS analysis).
+   ═══════════════════════════════════════════════════════════ */
+class AvatarAnimator {
+    constructor(canvasId) {
+        this.canvas     = document.getElementById(canvasId);
+        this.ctx        = this.canvas.getContext('2d');
+        this.mouthOpen  = 0;        // 0=closed, 1=fully open
+        this.blinkTimer = 0;
+        this.isBlinking = false;
+        this.eyeBrowRaise = 0;      // slight eyebrow raise when speaking
+        this.animFrame  = null;
+        this._loop();
+    }
+
+    /* Connect a decoded AudioBuffer and animate lips in sync */
+    connectBuffer(audioBuffer, audioCtx) {
+        const source   = audioCtx.createBufferSource();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        const data = new Uint8Array(analyser.frequencyBinCount);
+
+        source.buffer = audioBuffer;
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+
+        const tick = () => {
+            analyser.getByteTimeDomainData(data);
+            // RMS amplitude → mouth openness
+            let sum = 0;
+            for (let i = 0; i < data.length; i++) {
+                const v = (data[i] - 128) / 128;
+                sum += v * v;
+            }
+            const rms   = Math.sqrt(sum / data.length);
+            const target = Math.min(rms * 5, 1);
+            // Lerp for smooth animation
+            this.mouthOpen    += (target - this.mouthOpen) * 0.35;
+            this.eyeBrowRaise += (target * 0.3 - this.eyeBrowRaise) * 0.1;
+
+            if (!source._ended) requestAnimationFrame(tick);
+            else { this.mouthOpen = 0; this.eyeBrowRaise = 0; }
+        };
+
+        source.onended = () => { source._ended = true; };
+        source.start(0);
+        tick();
+        return source;
+    }
+
+    _drawFace() {
+        const ctx = this.ctx;
+        const cx  = 100, cy = 100;
+        ctx.clearRect(0, 0, 200, 200);
+
+        /* Face */
+        const grad = ctx.createRadialGradient(cx, cy-20, 10, cx, cy, 80);
+        grad.addColorStop(0, '#f0fdf8');
+        grad.addColorStop(1, '#d1f5ea');
+        ctx.beginPath();
+        ctx.arc(cx, cy, 78, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.strokeStyle = '#9FE1CB';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        /* Pulse ring — grows with mouth openness */
+        if (this.mouthOpen > 0.05) {
+            const ringR = 82 + this.mouthOpen * 14;
+            ctx.beginPath();
+            ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(29,158,117,${this.mouthOpen * 0.35})`;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        /* Eyebrows */
+        this.blinkTimer++;
+        if (this.blinkTimer > 200 && !this.isBlinking) {
+            this.isBlinking = true; this.blinkTimer = 0;
+        }
+        if (this.isBlinking && this.blinkTimer > 8) {
+            this.isBlinking = false; this.blinkTimer = 0;
+        }
+
+        const browY = cy - 35 - this.eyeBrowRaise * 4;
+        ctx.strokeStyle = '#085041';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(cx-30, browY); ctx.lineTo(cx-14, browY-2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx+14, browY-2); ctx.lineTo(cx+30, browY); ctx.stroke();
+
+        /* Eyes */
+        const eyeH = this.isBlinking ? 0.5 : 9;
+        ctx.fillStyle = '#085041';
+        ctx.beginPath(); ctx.ellipse(cx-22, cy-18, 8, eyeH, 0, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx+22, cy-18, 8, eyeH, 0, 0, Math.PI*2); ctx.fill();
+
+        /* Eye glints */
+        if (!this.isBlinking) {
+            ctx.fillStyle = 'white';
+            ctx.beginPath(); ctx.arc(cx-19, cy-22, 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx+25, cy-22, 3, 0, Math.PI*2); ctx.fill();
+        }
+
+        /* Nose */
+        ctx.strokeStyle = '#1D9E75';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(cx, cy-2); ctx.lineTo(cx-6, cy+10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, cy-2); ctx.lineTo(cx+6, cy+10); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx-4, cy+10, 3, 0, Math.PI); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx+4, cy+10, 3, 0, Math.PI); ctx.stroke();
+
+        /* Mouth */
+        const mY  = cy + 30;
+        const mW  = 28;
+        const amt = this.mouthOpen * 20;
+
+        if (amt < 1.5) {
+            // Smile (closed)
+            ctx.beginPath();
+            ctx.moveTo(cx - mW, mY);
+            ctx.quadraticCurveTo(cx, mY + 10, cx + mW, mY);
+            ctx.strokeStyle = '#085041';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        } else {
+            // Open mouth
+            ctx.beginPath();
+            ctx.moveTo(cx - mW, mY);
+            ctx.quadraticCurveTo(cx, mY - 5, cx + mW, mY);    // upper lip
+            ctx.quadraticCurveTo(cx, mY + amt + 5, cx - mW, mY); // lower lip
+            ctx.closePath();
+            ctx.fillStyle = '#4a0e0e';
+            ctx.fill();
+            ctx.strokeStyle = '#085041';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Teeth
+            if (amt > 7) {
+                const tW = mW * 2 - 10;
+                const tH = Math.min(amt * 0.35, 8);
+                ctx.fillStyle = '#f8f8f8';
+                ctx.beginPath();
+                ctx.roundRect(cx - mW + 5, mY - 1, tW, tH, 2);
+                ctx.fill();
+                // Teeth dividers
+                ctx.strokeStyle = '#e0e0e0';
+                ctx.lineWidth = 0.5;
+                for (let i = 1; i < 4; i++) {
+                    const x = cx - mW + 5 + (tW / 4) * i;
+                    ctx.beginPath(); ctx.moveTo(x, mY - 1); ctx.lineTo(x, mY - 1 + tH); ctx.stroke();
+                }
+            }
+        }
+    }
+
+    _loop() {
+        this._drawFace();
+        this.animFrame = requestAnimationFrame(() => this._loop());
+    }
+
+    destroy() {
+        if (this.animFrame) cancelAnimationFrame(this.animFrame);
+    }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   VOICE APP — Alpine.js component
+   ═══════════════════════════════════════════════════════════ */
+function voiceApp() {
+    return {
+        recording:     false,
+        processing:    false,
+        conversation:  [],
+        errorMsg:      '',
+        mediaRecorder: null,
+        audioChunks:   [],
+        audioCtx:      null,
+        avatar:        null,
+        currentSource: null,
+
+        suggestions: [
+            'What is the Nisab threshold today?',
+            'Is my Meezan Bank account halal?',
+            'زکوٰۃ کا نصاب کیا ہے؟',
+            'Kya prize bonds halal hain?',
+            'Can I give Zakat to my cousin?',
+            'What is the difference between Mudarabah and Murabaha?',
+        ],
+
+        init() {
+            // Initialize avatar after DOM is ready
+            this.$nextTick(() => {
+                this.avatar = new AvatarAnimator('avatar-canvas');
+            });
+        },
+
+        getAudioCtx() {
+            if (!this.audioCtx) {
+                this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return this.audioCtx;
+        },
+
+        async toggleRecording() {
+            this.recording ? this.stopRecording() : await this.startRecording();
+        },
+
+        async startRecording() {
+            this.errorMsg = '';
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                this.audioChunks  = [];
+                this.mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
+                });
+
+                this.mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) this.audioChunks.push(e.data);
+                };
+                this.mediaRecorder.onstop = () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    this.processAudio();
+                };
+
+                this.mediaRecorder.start(250);
+                this.recording = true;
+                document.getElementById('status-text').textContent = 'Listening... tap to stop';
+
+            } catch (e) {
+                this.errorMsg = 'Microphone access denied. Please allow microphone permissions.';
+            }
+        },
+
+        stopRecording() {
+            if (this.mediaRecorder?.state !== 'inactive') {
+                this.mediaRecorder.stop();
+                this.recording  = false;
+                this.processing = true;
+                document.getElementById('status-text').textContent = 'Processing...';
+            }
+        },
+
+        async processAudio() {
+            const mimeType = this.audioChunks[0]?.type || 'audio/webm';
+            const ext      = mimeType.includes('mp4') ? 'mp4' : 'webm';
+            const blob     = new Blob(this.audioChunks, { type: mimeType });
+            const formData = new FormData();
+            formData.append('audio', blob, `recording.${ext}`);
+
+            try {
+                const res  = await fetch('/voice/ask', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (!data.success && !data.transcribed_text) {
+                    this.errorMsg = data.error || 'Could not process audio. Please try again.';
+                    return;
+                }
+
+                this.conversation.push({
+                    user:    data.transcribed_text || '(audio)',
+                    answer:  data.answer_text,
+                    audioB64: data.audio_b64 || '',
+                });
+
+                if (data.audio_b64) {
+                    await this.playWithLipSync(data.audio_b64);
+                }
+
+                this.errorMsg = '';
+                document.getElementById('status-text').textContent = 'Tap the microphone to ask another question';
+
+            } catch (e) {
+                this.errorMsg = 'Network error. Please check your connection.';
+            } finally {
+                this.processing = false;
+            }
+        },
+
+        /* Core lip-sync function:
+           Decodes MP3 → AudioBuffer → feeds to AvatarAnimator + plays audio */
+        async playWithLipSync(base64Mp3) {
+            try {
+                // Stop any currently playing audio
+                if (this.currentSource) {
+                    try { this.currentSource.stop(); } catch(e) {}
+                }
+
+                const ctx   = this.getAudioCtx();
+                if (ctx.state === 'suspended') await ctx.resume();
+
+                const bytes  = Uint8Array.from(atob(base64Mp3), c => c.charCodeAt(0));
+                const buffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
+
+                document.getElementById('status-text').textContent = 'Speaking...';
+
+                // Avatar animates lips in sync with audio playback
+                this.currentSource = this.avatar.connectBuffer(buffer, ctx);
+
+                // Wait for audio to finish
+                await new Promise(resolve => {
+                    this.currentSource.onended = resolve;
+                    // Fallback timeout: buffer duration + 500ms buffer
+                    setTimeout(resolve, (buffer.duration * 1000) + 500);
+                });
+
+                document.getElementById('status-text').textContent = 'Tap the microphone to ask another question';
+
+            } catch (e) {
+                console.error('Audio playback error:', e);
+                document.getElementById('status-text').textContent = 'Could not play audio.';
+            }
+        },
+
+        replayAudio(b64) {
+            this.playWithLipSync(b64);
+        },
+
+        async askDirectly(question) {
+            this.processing = true;
+            this.errorMsg   = '';
+            document.getElementById('status-text').textContent = 'Getting answer...';
+
+            try {
+                const res  = await fetch('/chat/message', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({
+                        session_id: 'voice_' + Date.now(),
+                        message:    question,
+                        language:   'auto',
+                    }),
+                });
+                const data = await res.json();
+
+                const ttsRes = await fetch('/voice/tts', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ text: data.answer, language: 'en' }),
+                });
+                const ttsData = await ttsRes.json();
+
+                this.conversation.push({
+                    user:    question,
+                    answer:  data.answer,
+                    audioB64: ttsData.audio_b64 || '',
+                });
+
+                if (ttsData.audio_b64) {
+                    await this.playWithLipSync(ttsData.audio_b64);
+                }
+
+            } catch (e) {
+                this.errorMsg = 'Something went wrong. Please try again.';
+                document.getElementById('status-text').textContent = 'Error occurred.';
+            } finally {
+                this.processing = false;
+            }
+        },
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}AI Chatbot{% endblock %}
+{% block page_title %}AI chatbot{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto flex flex-col" style="height: calc(100vh - 130px);"
+     x-data="chatApp()">
+
+  <!-- Header -->
+  <div class="bg-white border border-gray-100 rounded-xl px-5 py-3 mb-4
+              flex items-center justify-between flex-shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-primary-50 border border-primary-100
+                  flex items-center justify-center text-primary-600 text-xs font-medium">
+        AI
+      </div>
+      <div>
+        <p class="text-sm font-medium text-gray-900">ShariahEase Assistant</p>
+        <p class="text-xs text-gray-400">Islamic finance · Zakat · Halal investing</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- Language note -->
+      <span class="text-xs text-gray-400 bg-gray-50 border border-gray-100
+                   px-3 py-1.5 rounded-full">
+        Replies in your language automatically
+      </span>
+      <!-- Clear button -->
+      <button @click="clearChat"
+              class="text-xs text-gray-400 hover:text-red-500 transition-colors
+                     px-2 py-1 border border-gray-200 rounded-lg hover:border-red-200">
+        Clear
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages area -->
+  <div id="messages-container" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-1">
+
+    <!-- Welcome message -->
+    <div x-show="messages.length === 0" class="flex gap-3">
+      <div class="w-7 h-7 rounded-full bg-primary-50 border border-primary-100
+                  flex-shrink-0 flex items-center justify-center
+                  text-primary-600 text-xs font-medium">AI</div>
+      <div class="flex-1 space-y-3">
+        <div class="bg-white border border-gray-100 rounded-2xl rounded-tl-sm
+                    px-4 py-3 text-sm text-gray-700 leading-relaxed max-w-lg">
+          Assalamu Alaikum! I am your Islamic finance assistant. Ask me anything about:
+          <ul class="mt-2 space-y-1 text-gray-600">
+            <li class="flex items-start gap-2"><span class="text-primary-500 mt-0.5">•</span>Zakat rules, calculation, and eligible recipients</li>
+            <li class="flex items-start gap-2"><span class="text-primary-500 mt-0.5">•</span>Halal vs haram investment questions</li>
+            <li class="flex items-start gap-2"><span class="text-primary-500 mt-0.5">•</span>Islamic finance contracts (Mudarabah, Murabaha, Ijarah)</li>
+            <li class="flex items-start gap-2"><span class="text-primary-500 mt-0.5">•</span>Islamic banking in Pakistan</li>
+          </ul>
+          <p class="mt-2 text-gray-400 text-xs">
+            Write in English, Urdu, or Roman Urdu — I will reply in the same language.
+          </p>
+        </div>
+
+        <!-- Suggested questions -->
+        <div class="flex flex-wrap gap-2">
+          <template x-for="q in suggestedQuestions" :key="q">
+            <button @click="sendSuggested(q)"
+                    class="text-xs px-3 py-1.5 border border-gray-200 rounded-full
+                           text-gray-600 hover:bg-primary-50 hover:border-primary-200
+                           hover:text-primary-700 transition-colors"
+                    x-text="q">
+            </button>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat messages -->
+    <template x-for="(msg, index) in messages" :key="index">
+      <div :class="msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'"
+           class="flex gap-3">
+
+        <div :class="msg.role === 'user'
+                       ? 'bg-gray-100 text-gray-500'
+                       : 'bg-primary-50 border border-primary-100 text-primary-600'"
+             class="w-7 h-7 rounded-full flex-shrink-0"
+             style="font-size:10px;font-weight:500;line-height:28px;text-align:center;">
+          <span x-text="msg.role === 'user' ? 'You' : 'AI'"></span>
+        </div>
+
+        <div :class="msg.role === 'user' ? 'items-end' : 'items-start'"
+             class="flex flex-col gap-1 max-w-lg">
+
+          <div :class="msg.role === 'user'
+                         ? 'bg-primary-400 text-white rounded-2xl rounded-tr-sm'
+                         : 'bg-white border border-gray-100 text-gray-700 rounded-2xl rounded-tl-sm'"
+               class="px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"
+               x-text="msg.content">
+          </div>
+
+          <!-- Sources -->
+          <div x-show="msg.role === 'assistant' && msg.sources && msg.sources.length"
+               class="flex flex-wrap gap-1 mt-1">
+            <template x-for="src in msg.sources" :key="src">
+              <span class="text-xs px-2 py-0.5 bg-gray-50 border border-gray-100
+                           rounded-full text-gray-400" x-text="src"></span>
+            </template>
+          </div>
+
+          <span class="text-xs text-gray-300 px-1" x-text="msg.time"></span>
+        </div>
+      </div>
+    </template>
+
+    <!-- Typing indicator -->
+    <div x-show="loading" class="flex gap-3">
+      <div class="w-7 h-7 rounded-full bg-primary-50 border border-primary-100
+                  flex-shrink-0"
+           style="font-size:10px;font-weight:500;line-height:28px;text-align:center;color:#0F6E56;">AI</div>
+      <div class="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3">
+        <div class="flex gap-1 items-center h-4">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Input area -->
+  <div class="bg-white border border-gray-200 rounded-xl p-3 flex gap-3
+              items-end flex-shrink-0">
+    <textarea
+      x-model="inputText"
+      @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()"
+      placeholder="Ask in English, Urdu, or Roman Urdu... (Enter to send)"
+      rows="1"
+      class="flex-1 resize-none text-sm text-gray-900 outline-none
+             bg-transparent placeholder-gray-300 leading-relaxed"
+      style="max-height:120px;"
+      @input="autoResize($event.target)"
+    ></textarea>
+
+    <button @click="sendMessage"
+            :disabled="loading || !inputText.trim()"
+            class="flex-shrink-0 w-9 h-9 rounded-lg bg-primary-400 text-white
+                   flex items-center justify-center transition-all
+                   hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor"
+           stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12
+                 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
+      </svg>
+    </button>
+  </div>
+
+  <p class="text-xs text-gray-300 text-center mt-2 flex-shrink-0">
+    For general guidance only · Always consult a qualified Islamic scholar for personal rulings
+  </p>
+
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+function chatApp() {
+  return {
+    messages:  [],
+    inputText: '',
+    loading:   false,
+    sessionId: 'session_' + Date.now(),
+
+    suggestedQuestions: [
+      'Is gold jewelry zakatable?',
+      'What is Mudarabah?',
+      'Kya prize bonds halal hain?',
+      'زکوٰۃ کا نصاب کیا ہے؟',
+    ],
+
+    async init() {
+      this.$watch('messages', () => this.$nextTick(() => this.scrollToBottom()));
+      this.$watch('loading',  () => this.$nextTick(() => this.scrollToBottom()));
+    },
+
+    scrollToBottom() {
+      const el = document.getElementById('messages-container');
+      if (el) el.scrollTop = el.scrollHeight;
+    },
+
+    autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    },
+
+    formatTime() {
+      return new Date().toLocaleTimeString('en-PK', { hour:'2-digit', minute:'2-digit' });
+    },
+
+    async sendSuggested(q) {
+      this.inputText = q;
+      await this.sendMessage();
+    },
+
+    async sendMessage() {
+      const text = this.inputText.trim();
+      if (!text || this.loading) return;
+
+      this.messages.push({
+        role: 'user', content: text,
+        time: this.formatTime(), sources: [],
+      });
+      this.inputText = '';
+      this.loading   = true;
+
+      const ta = document.querySelector('textarea');
+      if (ta) ta.style.height = 'auto';
+
+      try {
+        const res = await fetch('/chat/message', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            session_id: this.sessionId,
+            message:    text,
+            language:   'auto',   // handled server-side automatically
+          }),
+        });
+        if (!res.ok) throw new Error('Failed to get response.');
+        const data = await res.json();
+        this.messages.push({
+          role: 'assistant', content: data.answer,
+          time: this.formatTime(), sources: data.sources || [],
+        });
+      } catch(e) {
+        this.messages.push({
+          role: 'assistant',
+          content: 'Sorry, something went wrong. Please try again.',
+          time: this.formatTime(), sources: [],
+        });
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async clearChat() {
+      try {
+        await fetch(`/chat/history/${this.sessionId}`, { method: 'DELETE' });
+      } catch(e) {}
+      this.messages  = [];
+      this.sessionId = 'session_' + Date.now();
+    },
+  }
+}
+</script>
+{% endblock %}

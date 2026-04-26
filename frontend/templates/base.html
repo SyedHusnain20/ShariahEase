@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}ShariahEase{% endblock %} — Islamic Finance AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/css/main.css"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50:'#E1F5EE',100:'#9FE1CB',200:'#5DCAA5',400:'#1D9E75',600:'#0F6E56',800:'#085041',900:'#04342C' }
+          },
+          fontFamily: { urdu: ['Noto Nastaliq Urdu','serif'] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="w-52 bg-white border-r border-gray-100 flex flex-col flex-shrink-0">
+      <div class="px-4 py-5 border-b border-gray-100">
+        <div class="text-sm font-semibold text-gray-900 tracking-tight">ShariahEase</div>
+        <div class="text-xs text-gray-400 mt-0.5">Islamic Finance AI · Pakistan</div>
+      </div>
+
+      <nav class="flex-1 py-3 space-y-0.5 overflow-y-auto">
+
+        <a href="/" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
+          {% if active_page == 'zakat' %}text-primary-600 font-medium bg-primary-50 border-r-2 border-primary-400
+          {% else %}text-gray-500 hover:text-gray-900 hover:bg-gray-50{% endif %}">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Zakat calculator
+        </a>
+
+        <a href="/screener" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
+          {% if active_page == 'screener' %}text-primary-600 font-medium bg-primary-50 border-r-2 border-primary-400
+          {% else %}text-gray-500 hover:text-gray-900 hover:bg-gray-50{% endif %}">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M6 12h12M9 17h6"/>
+          </svg>
+          Halal screener
+        </a>
+
+        <a href="/mudarabah" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
+          {% if active_page == 'mudarabah' %}text-primary-600 font-medium bg-primary-50 border-r-2 border-primary-400
+          {% else %}text-gray-500 hover:text-gray-900 hover:bg-gray-50{% endif %}">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
+          </svg>
+          Mudarabah sim
+        </a>
+
+        <a href="/chatbot" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
+          {% if active_page == 'chatbot' %}text-primary-600 font-medium bg-primary-50 border-r-2 border-primary-400
+          {% else %}text-gray-500 hover:text-gray-900 hover:bg-gray-50{% endif %}">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/>
+          </svg>
+          AI chatbot
+        </a>
+
+        <!-- Voice assistant — new -->
+        <a href="/voice" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
+          {% if active_page == 'voice' %}text-primary-600 font-medium bg-primary-50 border-r-2 border-primary-400
+          {% else %}text-gray-500 hover:text-gray-900 hover:bg-gray-50{% endif %}">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/>
+          </svg>
+          Voice assistant
+          <span class="ml-auto text-xs bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded-full font-medium">New</span>
+        </a>
+
+        <a href="/charities" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
+          {% if active_page == 'charities' %}text-primary-600 font-medium bg-primary-50 border-r-2 border-primary-400
+          {% else %}text-gray-500 hover:text-gray-900 hover:bg-gray-50{% endif %}">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
+          </svg>
+          Charities
+        </a>
+
+      </nav>
+
+      <div class="px-4 py-3 border-t border-gray-100 text-center">
+        <p class="text-xs text-gray-300">v1.1 · Free & Open</p>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header class="bg-white border-b border-gray-100 px-6 py-3
+                     flex items-center justify-between flex-shrink-0">
+        <h1 class="text-sm font-medium text-gray-900">
+          {% block page_title %}ShariahEase{% endblock %}
+        </h1>
+        <div class="flex items-center gap-1.5">
+          <div class="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse"></div>
+          <span class="text-xs text-gray-400">Live</span>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+
+  </div>
+
+  <script src="/static/js/main.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

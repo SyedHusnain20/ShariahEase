@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Charities{% endblock %}
+{% block page_title %}Charity connector{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-5" x-data="charitiesApp()">
+
+  <!-- Header info -->
+  <div class="bg-white border border-gray-100 rounded-xl px-5 py-4
+              flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+      <p class="text-sm font-medium text-gray-900">Verified Zakat recipients</p>
+      <p class="text-xs text-gray-400 mt-0.5">
+        All organisations below are Zakat-eligible and verified.
+        Giving Zakat to relatives in need carries double reward.
+      </p>
+    </div>
+    <div class="flex items-center gap-2 text-xs text-primary-600 bg-primary-50
+                border border-primary-100 rounded-lg px-3 py-2 flex-shrink-0">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span x-text="charities.length + ' organisations'"></span>
+    </div>
+  </div>
+
+  <!-- Search + filter bar -->
+  <div class="bg-white border border-gray-100 rounded-xl px-5 py-4 space-y-3">
+
+    <!-- Search input -->
+    <input x-model="searchQuery"
+           type="text"
+           placeholder="Search by name or focus area..."
+           class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm
+                  text-gray-900 outline-none transition
+                  focus:ring-2 focus:ring-primary-400 focus:border-transparent"/>
+
+    <!-- Category filter buttons -->
+    <div class="flex flex-wrap gap-2">
+      <template x-for="cat in categories" :key="cat.tag">
+        <button @click="activeCategory = cat.tag; loadCharities()"
+                :class="activeCategory === cat.tag
+                  ? 'bg-primary-400 text-white border-primary-400'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-primary-200 hover:text-primary-600'"
+                class="text-xs px-3 py-1.5 border rounded-full transition-all font-medium">
+          <span x-text="cat.label"></span>
+        </button>
+      </template>
+    </div>
+
+  </div>
+
+  <!-- Results count -->
+  <div class="flex items-center justify-between px-1">
+    <p class="text-xs text-gray-400"
+       x-text="filteredCharities.length + ' organisations found'"></p>
+    <div class="flex items-center gap-1.5 text-xs text-gray-400">
+      <div class="w-2 h-2 rounded-full bg-green-400"></div>
+      All Zakat-eligible
+    </div>
+  </div>
+
+  <!-- Charity cards grid -->
+  <div class="grid grid-cols-1 gap-4">
+    <template x-for="charity in filteredCharities" :key="charity.id">
+      <div class="bg-white border border-gray-100 rounded-xl p-5
+                  hover:border-primary-200 hover:shadow-sm transition-all">
+
+        <div class="flex items-start justify-between gap-4">
+
+          <!-- Left: name + tags -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <h3 class="text-sm font-medium text-gray-900"
+                  x-text="charity.name"></h3>
+              <span class="text-xs px-2 py-0.5 bg-green-100 text-green-700
+                           rounded-full font-medium">
+                Verified ✓
+              </span>
+            </div>
+
+            <!-- Urdu name -->
+            <p class="text-xs text-gray-400 mb-2"
+               style="font-family: 'Noto Nastaliq Urdu', serif; direction: rtl;"
+               x-text="charity.urdu_name"></p>
+
+            <!-- Description -->
+            <p class="text-xs text-gray-600 leading-relaxed mb-3"
+               x-text="charity.description"></p>
+
+            <!-- Focus area pills -->
+            <div class="flex flex-wrap gap-1.5 mb-3">
+              <template x-for="area in charity.focus_areas" :key="area">
+                <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full"
+                      x-text="area"></span>
+              </template>
+            </div>
+
+            <!-- Location -->
+            <div class="flex items-center gap-1.5 text-xs text-gray-400">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                   stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/>
+              </svg>
+              <span x-text="charity.location"></span>
+            </div>
+          </div>
+
+          <!-- Right: category badge + donate button -->
+          <div class="flex flex-col items-end gap-3 flex-shrink-0">
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium"
+                  :class="{
+                    'bg-blue-50 text-blue-600':   charity.category_tag === 'health',
+                    'bg-purple-50 text-purple-600': charity.category_tag === 'education',
+                    'bg-amber-50 text-amber-600': charity.category_tag === 'food',
+                    'bg-red-50 text-red-600':     charity.category_tag === 'relief',
+                    'bg-teal-50 text-teal-600':   charity.category_tag === 'microfinance',
+                    'bg-green-50 text-green-600': charity.category_tag === 'welfare',
+                  }"
+                  x-text="charity.category">
+            </span>
+
+            <a :href="charity.website" target="_blank" rel="noopener"
+               class="text-xs px-3 py-1.5 bg-primary-400 text-white rounded-lg
+                      hover:bg-primary-600 transition font-medium">
+              Visit website →
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </template>
+
+    <!-- Empty state -->
+    <div x-show="filteredCharities.length === 0 && !loading"
+         class="bg-white border border-gray-100 rounded-xl p-10 text-center">
+      <p class="text-sm text-gray-400">No charities found matching your search.</p>
+      <button @click="searchQuery = ''; activeCategory = 'all'; loadCharities()"
+              class="mt-3 text-xs text-primary-500 hover:underline">
+        Clear filters
+      </button>
+    </div>
+
+    <!-- Loading state -->
+    <div x-show="loading"
+         class="bg-white border border-gray-100 rounded-xl p-10 text-center">
+      <p class="text-sm text-gray-400">Loading charities...</p>
+    </div>
+
+  </div>
+
+  <!-- Bottom note -->
+  <div class="bg-amber-50 border border-amber-100 rounded-xl px-5 py-3">
+    <p class="text-xs text-amber-800 leading-relaxed">
+      <span class="font-medium">Important:</span>
+      Always verify an organisation's legitimacy before donating.
+      Look for SECP registration and transparent annual reports.
+      Zakat given to a non-eligible recipient does not count as fulfilled.
+    </p>
+  </div>
+
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+function charitiesApp() {
+  return {
+    charities:       [],
+    categories:      [],
+    activeCategory:  'all',
+    searchQuery:     '',
+    loading:         true,
+
+    get filteredCharities() {
+      const q = this.searchQuery.toLowerCase();
+      if (!q) return this.charities;
+      return this.charities.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        c.focus_areas.some(f => f.toLowerCase().includes(q)) ||
+        c.location.toLowerCase().includes(q)
+      );
+    },
+
+    async init() {
+      await this.loadCategories();
+      await this.loadCharities();
+    },
+
+    async loadCategories() {
+      try {
+        const res      = await fetch('/charities/categories');
+        this.categories = await res.json();
+      } catch(e) {
+        this.categories = [{ tag: 'all', label: 'All' }];
+      }
+    },
+
+    async loadCharities() {
+      this.loading = true;
+      try {
+        const url = this.activeCategory === 'all'
+          ? '/charities/list'
+          : `/charities/list?category=${this.activeCategory}`;
+        const res      = await fetch(url);
+        this.charities = await res.json();
+      } catch(e) {
+        this.charities = [];
+      } finally {
+        this.loading = false;
+      }
+    },
+  }
+}
+</script>
+{% endblock %}

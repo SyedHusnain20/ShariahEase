@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% block title %}Halal Screener{% endblock %}
+{% block page_title %}Halal investment screener{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-5" x-data="screenerApp()">
+
+  <!-- Explainer -->
+  <div class="bg-white border border-gray-100 rounded-xl px-5 py-4">
+    <p class="text-xs text-gray-500 leading-relaxed">
+      Enter any company name, mutual fund, bank product, or investment type.
+      Our AI checks it against Shariah screening criteria — business activity,
+      debt ratios, interest income — and gives you a clear verdict with reasoning.
+    </p>
+  </div>
+
+  <!-- Search card -->
+  <div class="bg-white border border-gray-100 rounded-xl p-6 space-y-4">
+
+    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">
+      Check any investment
+    </p>
+
+    <div class="flex gap-3">
+      <input x-model="query"
+             @keydown.enter="checkInvestment"
+             type="text"
+             placeholder="e.g. Meezan Bank, Tesla stock, Prize bonds, Bitcoin..."
+             class="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm
+                    text-gray-900 outline-none transition
+                    focus:ring-2 focus:ring-primary-400 focus:border-transparent"/>
+      <button @click="checkInvestment"
+              :disabled="loading || !query.trim()"
+              class="px-5 py-2.5 rounded-lg text-sm font-medium transition-all
+                     bg-primary-400 text-white hover:bg-primary-600
+                     disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0">
+        <span x-show="!loading">Check</span>
+        <span x-show="loading" style="display:none">Checking...</span>
+      </button>
+    </div>
+
+    <!-- Example queries -->
+    <div class="flex flex-wrap gap-2">
+      <span class="text-xs text-gray-400 self-center">Try:</span>
+      <template x-for="ex in examples" :key="ex">
+        <button @click="query = ex; checkInvestment()"
+                class="text-xs px-3 py-1 border border-gray-200 rounded-full
+                       text-gray-500 hover:bg-gray-50 transition">
+          <span x-text="ex"></span>
+        </button>
+      </template>
+    </div>
+
+  </div>
+
+  <!-- RESULT card -->
+  <div x-show="result" x-transition style="display:none">
+    <div :class="{
+           'border-green-200 bg-green-50':  result && result.verdict === 'HALAL',
+           'border-red-200   bg-red-50':    result && result.verdict === 'HARAM',
+           'border-amber-200 bg-amber-50':  result && result.verdict === 'DOUBTFUL',
+         }"
+         class="rounded-xl border p-6 space-y-4">
+
+      <!-- Verdict header -->
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p class="text-xs text-gray-500 mb-1" x-text="'Query: ' + (result && result.query)"></p>
+          <div class="flex items-center gap-3">
+
+            <!-- Verdict icon -->
+            <div :class="{
+                   'bg-green-100': result && result.verdict === 'HALAL',
+                   'bg-red-100':   result && result.verdict === 'HARAM',
+                   'bg-amber-100': result && result.verdict === 'DOUBTFUL',
+                 }"
+                 class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
+              <span x-show="result && result.verdict === 'HALAL'" class="text-green-600 text-lg">✓</span>
+              <span x-show="result && result.verdict === 'HARAM'"   class="text-red-600 text-lg"   style="display:none">✗</span>
+              <span x-show="result && result.verdict === 'DOUBTFUL'" class="text-amber-600 text-lg" style="display:none">?</span>
+            </div>
+
+            <!-- Verdict text -->
+            <div>
+              <p :class="{
+                   'text-green-700': result && result.verdict === 'HALAL',
+                   'text-red-700':   result && result.verdict === 'HARAM',
+                   'text-amber-700': result && result.verdict === 'DOUBTFUL',
+                 }"
+                 class="text-xl font-semibold"
+                 x-text="result && result.verdict">
+              </p>
+              <p class="text-xs text-gray-400"
+                 x-text="'Confidence: ' + (result && result.confidence)">
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ask chatbot button -->
+        <a :href="'/chatbot'"
+           class="text-xs px-3 py-2 border border-gray-200 rounded-lg
+                  text-gray-500 hover:bg-white transition flex-shrink-0">
+          Ask chatbot for more detail →
+        </a>
+      </div>
+
+      <!-- Explanation -->
+      <div class="bg-white bg-opacity-60 rounded-lg px-4 py-3">
+        <p class="text-xs font-medium text-gray-500 mb-1">Shariah analysis</p>
+        <p class="text-sm text-gray-700 leading-relaxed"
+           x-text="result && result.explanation">
+        </p>
+      </div>
+
+      <!-- Disclaimer -->
+      <p class="text-xs text-gray-400">
+        This is AI-generated guidance based on general Shariah principles.
+        Always verify with your bank's Shariah Supervisory Board or a qualified scholar
+        before making investment decisions.
+      </p>
+
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div x-show="errorMsg" x-transition style="display:none"
+       class="bg-red-50 border border-red-200 rounded-xl px-5 py-3 text-sm text-red-700"
+       x-text="errorMsg">
+  </div>
+
+  <!-- Pre-screened Pakistani funds -->
+  <div class="space-y-3">
+    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider px-1">
+      Pre-screened Pakistani investments
+    </p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <template x-for="fund in preloaded" :key="fund.name">
+        <div :class="{
+               'border-green-100 hover:border-green-200': fund.verdict === 'HALAL',
+               'border-red-100   hover:border-red-200':   fund.verdict === 'HARAM',
+               'border-amber-100 hover:border-amber-200': fund.verdict === 'DOUBTFUL',
+             }"
+             class="bg-white border rounded-xl p-4 space-y-2 cursor-pointer transition"
+             @click="query = fund.name; checkInvestment()">
+
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p class="text-sm font-medium text-gray-900" x-text="fund.name"></p>
+              <p class="text-xs text-gray-400" x-text="fund.type"></p>
+            </div>
+            <span :class="{
+                    'bg-green-100 text-green-700': fund.verdict === 'HALAL',
+                    'bg-red-100   text-red-700':   fund.verdict === 'HARAM',
+                    'bg-amber-100 text-amber-700': fund.verdict === 'DOUBTFUL',
+                  }"
+                  class="text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0"
+                  x-text="fund.verdict">
+            </span>
+          </div>
+
+          <p class="text-xs text-gray-500 leading-relaxed" x-text="fund.reason"></p>
+
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- Recent screening history -->
+  <div class="bg-white border border-gray-100 rounded-xl p-5">
+    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">
+      Recent screenings
+    </p>
+    <div id="history-list" class="space-y-2 text-sm text-gray-400 italic">
+      Loading...
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+function screenerApp() {
+  return {
+    query:     '',
+    loading:   false,
+    result:    null,
+    errorMsg:  '',
+    preloaded: [],
+
+    examples: [
+      'Meezan Bank savings account',
+      'Tesla stock',
+      'Prize bonds',
+      'Bitcoin',
+      'PSX KMI-30 Index Fund',
+      'Conventional life insurance',
+    ],
+
+    async init() {
+      await this.loadPreloaded();
+      await this.loadHistory();
+    },
+
+    async loadPreloaded() {
+      try {
+        const res      = await fetch('/screener/preloaded');
+        this.preloaded = await res.json();
+      } catch(e) {
+        this.preloaded = [];
+      }
+    },
+
+    async loadHistory() {
+      try {
+        const res     = await fetch('/screener/history');
+        const records = await res.json();
+        const el      = document.getElementById('history-list');
+
+        if (!records.length) {
+          el.innerHTML = '<p class="text-gray-400 italic">No screenings yet.</p>';
+          return;
+        }
+
+        el.innerHTML = records.map(r => `
+          <div class="flex items-center justify-between py-2
+                      border-b border-gray-50 last:border-0">
+            <div>
+              <span class="font-medium text-gray-700 not-italic">${r.query}</span>
+              <span class="text-gray-400 ml-2 text-xs">${r.screened_at}</span>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded-full font-medium
+              ${r.verdict === 'HALAL'    ? 'bg-green-100 text-green-700' :
+                r.verdict === 'HARAM'    ? 'bg-red-100 text-red-700'     :
+                                           'bg-amber-100 text-amber-700'}">
+              ${r.verdict}
+            </span>
+          </div>
+        `).join('');
+      } catch(e) {
+        document.getElementById('history-list').innerHTML =
+          '<p class="text-gray-400 italic">Could not load history.</p>';
+      }
+    },
+
+    async checkInvestment() {
+      const q = this.query.trim();
+      if (!q || this.loading) return;
+
+      this.loading  = true;
+      this.result   = null;
+      this.errorMsg = '';
+
+      try {
+        const res = await fetch('/screener/check', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ query: q }),
+        });
+
+        if (!res.ok) throw new Error('Screening failed. Please try again.');
+        this.result = await res.json();
+        await this.loadHistory();
+
+      } catch(e) {
+        this.errorMsg = e.message || 'Something went wrong. Please try again.';
+      } finally {
+        this.loading = false;
+      }
+    },
+  }
+}
+</script>
+{% endblock %}

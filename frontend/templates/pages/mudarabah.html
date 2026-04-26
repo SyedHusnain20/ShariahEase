@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+{% block title %}Mudarabah Simulator{% endblock %}
+{% block page_title %}Mudarabah profit simulator{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-5" x-data="mudarabahApp()">
+
+  <!-- Explainer banner -->
+  <div class="bg-amber-50 border border-amber-100 rounded-xl px-5 py-3">
+    <p class="text-xs text-amber-800 leading-relaxed">
+      <span class="font-medium">What is Mudarabah?</span>
+      A profit-sharing contract where you (investor) provide capital and the bank provides management.
+      Profit is shared by an agreed ratio — but only you bear the loss of capital.
+      No interest is involved, making it fully Shariah-compliant.
+    </p>
+  </div>
+
+  <!-- Input card -->
+  <div class="bg-white border border-gray-100 rounded-xl p-6 space-y-6">
+
+    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">
+      Investment details
+    </p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+      <!-- Principal -->
+      <div class="space-y-1">
+        <label class="text-xs text-gray-500">Principal amount (PKR)</label>
+        <input x-model.number="form.principal" type="number" min="1" placeholder="500000"
+               class="field-input"/>
+        <p class="text-xs text-gray-400">The capital you are investing</p>
+      </div>
+
+      <!-- Expected profit rate -->
+      <div class="space-y-1">
+        <label class="text-xs text-gray-500">Expected annual profit rate (%)</label>
+        <input x-model.number="form.profit_rate" type="number" min="0.1" max="100"
+               step="0.1" placeholder="12" class="field-input"/>
+        <p class="text-xs text-gray-400">Typical Islamic bank rates: 10–18% per year</p>
+      </div>
+
+      <!-- Investor share -->
+      <div class="space-y-1">
+        <label class="text-xs text-gray-500">Your profit share (%)</label>
+        <input x-model.number="form.investor_share" type="number" min="1" max="99"
+               step="1" placeholder="60" class="field-input" @input="updateBankShare"/>
+        <p class="text-xs text-gray-400">
+          Bank gets <span class="font-medium text-gray-600" x-text="bankShare + '%'"></span>
+          — negotiate this before signing
+        </p>
+      </div>
+
+      <!-- Period -->
+      <div class="space-y-1">
+        <label class="text-xs text-gray-500">Investment period (months)</label>
+        <input x-model.number="form.period_months" type="number" min="1" max="360"
+               step="1" placeholder="12" class="field-input"/>
+        <p class="text-xs text-gray-400">e.g. 12 = one year, 36 = three years</p>
+      </div>
+
+    </div>
+
+    <!-- Quick presets -->
+    <div class="flex flex-wrap gap-2">
+      <span class="text-xs text-gray-400 mr-1 self-center">Quick presets:</span>
+      <button @click="setPreset(500000, 12, 60, 12)"
+              class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg
+                     hover:bg-gray-50 text-gray-600 transition">
+        PKR 5L · 1 yr · 60/40
+      </button>
+      <button @click="setPreset(1000000, 14, 65, 24)"
+              class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg
+                     hover:bg-gray-50 text-gray-600 transition">
+        PKR 10L · 2 yr · 65/35
+      </button>
+      <button @click="setPreset(2500000, 16, 70, 36)"
+              class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg
+                     hover:bg-gray-50 text-gray-600 transition">
+        PKR 25L · 3 yr · 70/30
+      </button>
+    </div>
+
+    <!-- Simulate button -->
+    <button @click="simulate"
+            :disabled="loading || !form.principal || !form.profit_rate || !form.investor_share || !form.period_months"
+            class="w-full py-3 rounded-xl text-sm font-medium transition-all
+                   bg-amber-500 text-white hover:bg-amber-600
+                   disabled:opacity-40 disabled:cursor-not-allowed">
+      <span x-show="!loading">Run simulation</span>
+      <span x-show="loading" style="display:none">Simulating...</span>
+    </button>
+
+  </div>
+
+  <!-- RESULTS section — hidden until simulation runs -->
+  <div x-show="result" x-transition style="display:none" class="space-y-5">
+
+    <!-- Summary strip -->
+    <div class="grid grid-cols-3 gap-3">
+      <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
+        <p class="text-xs text-gray-400 mb-1">Principal invested</p>
+        <p class="text-base font-semibold text-gray-900"
+           x-text="formatPKR(result && result.principal)"></p>
+      </div>
+      <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
+        <p class="text-xs text-gray-400 mb-1">Your share</p>
+        <p class="text-base font-semibold text-amber-600"
+           x-text="(result && result.investor_share) + '%'"></p>
+      </div>
+      <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
+        <p class="text-xs text-gray-400 mb-1">Bank share</p>
+        <p class="text-base font-semibold text-gray-500"
+           x-text="(result && result.bank_share) + '%'"></p>
+      </div>
+    </div>
+
+    <!-- Scenario cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <template x-for="s in (result ? result.scenarios : [])" :key="s.label">
+        <div :class="{
+               'border-green-200 bg-green-50':  s.label === 'Optimistic',
+               'border-amber-200 bg-amber-50':  s.label === 'Moderate',
+               'border-red-200   bg-red-50':    s.label === 'Pessimistic',
+             }"
+             class="rounded-xl border p-4 space-y-3">
+
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium"
+                  :class="{
+                    'text-green-700': s.label === 'Optimistic',
+                    'text-amber-700': s.label === 'Moderate',
+                    'text-red-700':   s.label === 'Pessimistic',
+                  }"
+                  x-text="s.label">
+            </span>
+            <span class="text-xs px-2 py-0.5 rounded-full"
+                  :class="{
+                    'bg-green-100 text-green-700': s.label === 'Optimistic',
+                    'bg-amber-100 text-amber-700': s.label === 'Moderate',
+                    'bg-red-100   text-red-700':   s.label === 'Pessimistic',
+                  }">
+              <span x-show="s.label === 'Optimistic'">+30% rate</span>
+              <span x-show="s.label === 'Moderate'"   style="display:none">Base rate</span>
+              <span x-show="s.label === 'Pessimistic'" style="display:none">−45% rate</span>
+            </span>
+          </div>
+
+          <div class="space-y-1.5 text-xs">
+            <div class="flex justify-between">
+              <span class="text-gray-500">Gross profit</span>
+              <span class="font-medium text-gray-800" x-text="formatPKR(s.gross_profit)"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Your profit</span>
+              <span class="font-medium text-gray-800" x-text="formatPKR(s.investor_profit)"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Bank profit</span>
+              <span class="font-medium text-gray-500" x-text="formatPKR(s.bank_profit)"></span>
+            </div>
+            <div class="flex justify-between border-t border-current border-opacity-20 pt-1.5 mt-1">
+              <span class="font-medium text-gray-700">Total return</span>
+              <span class="font-semibold text-gray-900" x-text="formatPKR(s.total_return)"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Monthly avg</span>
+              <span class="font-medium text-gray-700" x-text="formatPKR(s.monthly_return)"></span>
+            </div>
+          </div>
+
+        </div>
+      </template>
+    </div>
+
+    <!-- Bar chart — scenario comparison -->
+    <div class="bg-white border border-gray-100 rounded-xl p-5">
+      <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">
+        Investor profit — scenario comparison
+      </p>
+      <div style="position:relative; height:220px;">
+        <canvas id="barChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Line chart — monthly growth (moderate scenario) -->
+    <div class="bg-white border border-gray-100 rounded-xl p-5">
+      <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">
+        Cumulative profit growth — moderate scenario
+      </p>
+      <div style="position:relative; height:220px;">
+        <canvas id="lineChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Fairness note -->
+    <div class="bg-white border border-gray-100 rounded-xl px-5 py-4">
+      <p class="text-xs font-medium text-gray-500 mb-2">Shariah fairness check</p>
+      <ul class="text-xs text-gray-500 space-y-1 list-none">
+        <li class="flex items-start gap-2">
+          <span class="text-green-500 mt-0.5">✓</span>
+          No interest (Riba) — profit is from real business activity, not a fixed rate
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-green-500 mt-0.5">✓</span>
+          Loss is borne by investor only — bank loses its time and effort, not capital
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-green-500 mt-0.5">✓</span>
+          Profit ratio agreed upfront — no hidden charges or surprise deductions
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-amber-500 mt-0.5">⚠</span>
+          Always verify the actual contract with your bank's Shariah board certificate
+        </li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- Error -->
+  <div x-show="errorMsg" x-transition style="display:none"
+       class="bg-red-50 border border-red-200 rounded-xl px-5 py-3 text-sm text-red-700"
+       x-text="errorMsg">
+  </div>
+
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<style>
+  .field-input {
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #111827;
+    outline: none;
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .field-input:focus {
+    box-shadow: 0 0 0 2px #f59e0b;
+    border-color: #f59e0b;
+  }
+</style>
+
+<script>
+let barChartInstance  = null;
+let lineChartInstance = null;
+
+function mudarabahApp() {
+  return {
+    loading:   false,
+    result:    null,
+    errorMsg:  '',
+    bankShare: 40,
+
+    form: {
+      principal:      500000,
+      profit_rate:    12,
+      investor_share: 60,
+      period_months:  12,
+    },
+
+    updateBankShare() {
+      this.bankShare = 100 - (this.form.investor_share || 0);
+    },
+
+    setPreset(principal, rate, investorShare, months) {
+      this.form.principal      = principal;
+      this.form.profit_rate    = rate;
+      this.form.investor_share = investorShare;
+      this.form.period_months  = months;
+      this.bankShare           = 100 - investorShare;
+    },
+
+    async simulate() {
+      this.loading  = true;
+      this.result   = null;
+      this.errorMsg = '';
+
+      try {
+        // Run scenario simulation
+        const res = await fetch('/mudarabah/simulate', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(this.form),
+        });
+        if (!res.ok) throw new Error('Simulation failed. Please check your inputs.');
+        this.result    = await res.json();
+        this.bankShare = this.result.bank_share;
+
+        // Wait for DOM to render result section, then draw charts
+        await this.$nextTick();
+        this.drawBarChart();
+        await this.drawLineChart();
+
+      } catch(e) {
+        this.errorMsg = e.message || 'Something went wrong. Please try again.';
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    drawBarChart() {
+      if (barChartInstance) barChartInstance.destroy();
+      const ctx      = document.getElementById('barChart').getContext('2d');
+      const labels   = this.result.scenarios.map(s => s.label);
+      const profits  = this.result.scenarios.map(s => Math.round(s.investor_profit));
+      const colors   = ['#16a34a', '#f59e0b', '#ef4444'];
+
+      barChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label:           'Your profit (PKR)',
+            data:            profits,
+            backgroundColor: colors,
+            borderRadius:    6,
+            borderSkipped:   false,
+          }]
+        },
+        options: {
+          responsive:          true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => 'PKR ' + ctx.parsed.y.toLocaleString('en-PK'),
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: v => 'PKR ' + Math.round(v).toLocaleString('en-PK'),
+                font:     { size: 11 },
+              },
+              grid: { color: '#f3f4f6' },
+            },
+            x: {
+              ticks: { font: { size: 12 } },
+              grid:  { display: false },
+            }
+          }
+        }
+      });
+    },
+
+    async drawLineChart() {
+      if (lineChartInstance) lineChartInstance.destroy();
+
+      const res = await fetch('/mudarabah/growth-chart', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(this.form),
+      });
+      const chartData = await res.json();
+      const ctx       = document.getElementById('lineChart').getContext('2d');
+
+      lineChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels:   chartData.labels,
+          datasets: [{
+            label:           'Cumulative profit (PKR)',
+            data:            chartData.data,
+            borderColor:     '#f59e0b',
+            backgroundColor: 'rgba(245,158,11,0.08)',
+            borderWidth:     2,
+            pointRadius:     chartData.months <= 24 ? 3 : 0,
+            fill:            true,
+            tension:         0.4,
+          }]
+        },
+        options: {
+          responsive:          true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => 'PKR ' + Math.round(ctx.parsed.y).toLocaleString('en-PK'),
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: v => 'PKR ' + Math.round(v).toLocaleString('en-PK'),
+                font:     { size: 11 },
+              },
+              grid: { color: '#f3f4f6' },
+            },
+            x: {
+              ticks: {
+                maxTicksLimit: 12,
+                font:          { size: 10 },
+              },
+              grid: { display: false },
+            }
+          }
+        }
+      });
+    },
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,24 @@
+# Virtual environment
+venv/
+
+# Environment variables (never push API keys)
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# FAISS index (large binary files, rebuilt on deployment)
+knowledge_base/index/
+UI_components/
+UI_components/ShariahEase-logo/
+# Database file
+*.db
+
+# Generated certificates
+certificates/*.pdf
+
+# OS files
+.DS_Store
+Thumbs.db
