@@ -5,7 +5,7 @@ from app.database.db import get_db
 from app.database.crud import save_message, get_chat_history
 from app.models.schemas import ChatRequest, ChatResponse
 from app.services.rag_service import rag_service
-from app.services.groq_client import ask_groq
+from app.services.llm_client import get_chat_response
 from app.services.metal_price import get_nisab_values
 
 router = APIRouter(prefix="/chat", tags=["Chatbot"])
@@ -92,7 +92,7 @@ async def chat_message(request: ChatRequest, db: Session = Depends(get_db)):
         answer = "Knowledge base not loaded. Please run: python knowledge_base/build_index.py"
     else:
         try:
-            answer = ask_groq(
+            answer = get_chat_response(
                 user_message     = request.message,
                 context          = full_context,
                 chat_history     = chat_history,
@@ -103,7 +103,7 @@ async def chat_message(request: ChatRequest, db: Session = Depends(get_db)):
             if "connection" in err or "network" in err:
                 answer = "⚠️ Could not reach the AI server. Please check your internet connection."
             elif "401" in err or "authentication" in err:
-                answer = "⚠️ Groq API key is invalid. Please check your .env file."
+                answer = "⚠️ API key is invalid. Please check your .env file."
             elif "429" in err or "rate_limit" in err:
                 answer = "⚠️ Too many requests. Please wait 30 seconds and try again."
             else:
@@ -134,6 +134,6 @@ async def clear_history(session_id: str, db: Session = Depends(get_db)):
     from app.database.models import ChatMessage
     db.query(ChatMessage).filter(
         ChatMessage.session_id == session_id
-    ).delete()
+        ).delete()
     db.commit()
     return {"cleared": True}

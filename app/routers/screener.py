@@ -5,7 +5,7 @@ from app.database.db import get_db
 from app.database.crud import save_screener_result, get_screener_history
 from app.models.schemas import ScreenerRequest, ScreenerResponse
 from app.services.rag_service import rag_service
-from app.services.groq_client import screen_investment
+from app.services.llm_client import screen_investment
 
 router = APIRouter(prefix="/screener", tags=["Screener"])
 

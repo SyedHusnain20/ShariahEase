@@ -1,6 +1,6 @@
 """
-ShariahEase — Groq API Client
-Production-ready rewrite with strict prompt engineering.
+ShariahEase — OpenRouter API Client (gpt-oss-120b)
+Migrated from Groq (llama-3.3-70b-versatile) → OpenRouter (openai/gpt-oss-120b)
 
 Enforces:
   1. Exact language matching (no mixing, no switching)
@@ -13,7 +13,7 @@ Enforces:
 import os
 import time
 import logging
-from groq import Groq, APIConnectionError, RateLimitError, APIStatusError
+from openai import OpenAI, APIConnectionError, RateLimitError, APIStatusError
 from dotenv import load_dotenv
 from app.services.urdu_filter import filter_response
 
@@ -24,13 +24,16 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # ── API Configuration ──────────────────────────────────────
-_api_key = os.getenv("GROQ_API_KEY", "").strip()
+_api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
 if not _api_key:
-    logger.warning("GROQ_API_KEY is not set. Chatbot will not function.")
+    logger.warning("OPENROUTER_API_KEY is not set. Chatbot will not function.")
 
-client = Groq(api_key=_api_key)
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=_api_key,
+)
 
-MODEL       = "llama-3.3-70b-versatile"
+MODEL       = "openai/gpt-oss-120b"
 TEMPERATURE = 0.2
 MAX_TOKENS  = 350
 TOP_P       = 0.9
@@ -204,55 +207,64 @@ def _build_language_instruction(lang: str, nisab: bool) -> str:
     "(۲) سونے کا نصاب: 7.5 تولہ (87.48 گرام) = آج کی قیمت میں PKR [رقم]، "
     "(۳) چاندی کا نصاب: 52.5 تولہ (612.36 گرام) = آج کی قیمت میں PKR [رقم]، "
     "(۴) زکوٰۃ کی شرح: 2.5 فیصد، "
-    "(۵) ایک جملہ کہ یہ اقدار آج کی مارکیٹ قیمتوں پر مبنی ہیں اور روزانہ تبدیل ہو سکتی ہیں۔ "
-    "گرامر ہدایات: 'وہ' کا تکرار ہرگز نہ کریں، مفعول کو فعل کے قریب رکھیں، 'یہ/اس' کا مرجع ہمیشہ واضح رکھیں۔ "
-    "'وزارت' یا 'ویب سائٹ' کا ذکر ہرگز نہ کریں۔ "
-),
+    "(۵) اگر صارف کا مال نصاب سے زیادہ ہو تو زکوٰۃ واجب ہے۔ "
+    "کوئی ادھورا جملہ نہ ہو؛ ہر نکتہ مکمل ہو۔"
+        ),
         "roman": (
-            " LIVE NISAB DATA se exact PKR figures lo. Roman Urdu prose mein:"
-            " nisab ki definition, sone ka nisab (7.5 tola = PKR [amount] aaj),"
-            " chandi ka nisab (52.5 tola = PKR [amount] aaj), 2.5% rate,"
-            " ek line ke prices change hoti hain. Kisi website ka zikar mat karo."
+            "Use the LIVE NISAB DATA provided. Write in complete Roman Urdu sentences: "
+            "(1) Nisab ki short definition, "
+            "(2) Sone ka nisab: 7.5 tola (87.48g) = PKR [amount] aaj ki qeemat mein, "
+            "(3) Chandi ka nisab: 52.5 tola (612.36g) = PKR [amount] aaj ki qeemat mein, "
+            "(4) Zakat ki shar: 2.5 percent, "
+            "(5) Agar maal nisab se zyada ho to zakat wajib hai. "
+            "Har point mukammal sentence mein ho."
         ),
         "en": (
-            " Use exact PKR figures from LIVE NISAB DATA. Natural prose:"
-            " define Nisab, then Gold Nisab (7.5 tola = PKR today),"
-            " Silver Nisab (52.5 tola = PKR today), Zakat rate 2.5%,"
-            " one sentence that prices change daily. Do not mention any website."
+            "Use the LIVE NISAB DATA provided. Write in complete English sentences: "
+            "(1) Brief definition of Nisab, "
+            "(2) Gold nisab: 7.5 tola (87.48g) = PKR [amount] at today's price, "
+            "(3) Silver nisab: 52.5 tola (612.36g) = PKR [amount] at today's price, "
+            "(4) Zakat rate: 2.5%, "
+            "(5) Zakat is obligatory if wealth exceeds nisab for one lunar year. "
+            "Every point must be a complete sentence."
         ),
     }
 
     instruction = base.get(lang, base["en"])
     if nisab:
-        instruction += nisab_addon.get(lang, nisab_addon["en"])
+        instruction += " " + nisab_addon.get(lang, nisab_addon["en"])
     return instruction
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# NISAB KEYWORD DETECTION
+# NISAB DETECTION
 # ═══════════════════════════════════════════════════════════════════════════
 
 _NISAB_KEYWORDS = {
-    "nisab", "نصاب", "nisaab", "sona", "chandi", "سونا", "چاندی",
-    "gold nisab", "silver nisab", "تولہ", "گرام", "tola", "gram",
-    "how much zakat", "zakat amount", "زکوٰۃ کتنی", "کتنا نصاب",
-    "zakat rate", "2.5",
+    # English
+    "nisab", "zakat", "zakah", "zakaat", "gold", "silver",
+    "threshold", "tola", "gram", "wealth", "eligible",
+    # Roman Urdu
+    "nisaab", "sona", "chandi", "tola", "maal", "hisaab",
+    # Urdu script
+    "نصاب", "زکوٰۃ", "زکات", "سونا", "چاندی", "تولہ",
 }
 
 
 def _is_nisab_question(text: str) -> bool:
-    t = text.lower()
-    return any(kw in t for kw in _NISAB_KEYWORDS)
+    """Return True if text is likely asking about Nisab / Zakat thresholds."""
+    lower = text.lower()
+    return any(kw in lower for kw in _NISAB_KEYWORDS)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # MAIN CHAT FUNCTION
 # ═══════════════════════════════════════════════════════════════════════════
 
-def ask_groq(
-    user_message:     str,
-    context:          str,
-    chat_history:     list = None,
+def get_chat_response(
+    user_message: str,
+    context: str = "",
+    chat_history: list = None,
     is_nisab_related: bool = False,
 ) -> str:
     """
@@ -261,7 +273,7 @@ def ask_groq(
     1. Validates input
     2. Detects language
     3. Builds instruction
-    4. Calls Groq with retry logic
+    4. Calls OpenRouter (gpt-oss-120b) with retry logic
     5. Post-processes response through urdu_filter
     6. Returns clean string
 
@@ -278,7 +290,7 @@ def ask_groq(
     if not user_message or not user_message.strip():
         return "Please enter a question."
     if not _api_key:
-        return "⚠️ API key not configured. Please set GROQ_API_KEY in .env."
+        return "⚠️ API key not configured. Please set OPENROUTER_API_KEY in .env."
     if chat_history is None:
         chat_history = []
 
@@ -310,7 +322,7 @@ def ask_groq(
 
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            logger.info(f"Groq call attempt {attempt}/{MAX_RETRIES} | lang={lang}")
+            logger.info(f"OpenRouter call attempt {attempt}/{MAX_RETRIES} | lang={lang} | model={MODEL}")
 
             response = client.chat.completions.create(
                 model       = MODEL,
@@ -323,31 +335,31 @@ def ask_groq(
             raw     = response.choices[0].message.content.strip()
             cleaned = filter_response(raw, lang)
 
-            logger.info(f"Groq succeeded on attempt {attempt}")
+            logger.info(f"OpenRouter succeeded on attempt {attempt}")
             return cleaned
 
         except RateLimitError as e:
             last_error = e
             wait = RETRY_DELAY * attempt
-            logger.warning(f"Rate limit. Retrying in {wait}s...")
+            logger.warning(f"Rate limit hit. Retrying in {wait}s...")
             time.sleep(wait)
 
         except APIConnectionError as e:
             last_error = e
-            logger.error(f"Connection error attempt {attempt}: {e}")
+            logger.error(f"Connection error on attempt {attempt}: {e}")
             if attempt < MAX_RETRIES:
                 time.sleep(RETRY_DELAY)
 
         except APIStatusError as e:
             last_error = e
-            logger.error(f"API {e.status_code}: {e.message}")
+            logger.error(f"API status {e.status_code}: {e.message}")
             if e.status_code in {400, 401, 403}:
                 break   # non-retriable
             time.sleep(RETRY_DELAY)
 
         except Exception as e:
             last_error = e
-            logger.error(f"Unexpected error attempt {attempt}: {e}")
+            logger.error(f"Unexpected error on attempt {attempt}: {e}")
             if attempt < MAX_RETRIES:
                 time.sleep(RETRY_DELAY)
 

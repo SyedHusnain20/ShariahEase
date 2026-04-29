@@ -18,7 +18,7 @@ from fastapi.templating import Jinja2Templates
 from app.services.whisper_service import transcribe_audio
 from app.services.tts_service import text_to_speech_sync
 from app.services.rag_service import rag_service
-from app.services.groq_client import ask_groq, detect_language
+from app.services.llm_client import get_chat_response, detect_language
 from app.services.metal_price import get_nisab_values
 
 router    = APIRouter(prefix="/voice", tags=["Voice"])
