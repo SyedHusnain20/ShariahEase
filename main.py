@@ -1,10 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query, Request
+from fastapi.responses import PlainTextResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
+
+VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "shariahease123")
 
 app = FastAPI(
     title=os.getenv("APP_NAME", "ShariahEase"),
@@ -38,6 +41,33 @@ app.include_router(screener.router)
 app.include_router(certificate.router)
 app.include_router(charities.router)
 app.include_router(voice.router)
+
+# ✅ WhatsApp Webhook Verification (Meta calls this once to verify)
+@app.get("/webhook")
+async def verify(
+    hub_mode: str = Query(alias="hub.mode"),
+    hub_challenge: str = Query(alias="hub.challenge"),
+    hub_verify_token: str = Query(alias="hub.verify_token")
+):
+    if hub_verify_token == VERIFY_TOKEN:
+        return PlainTextResponse(hub_challenge)
+    return PlainTextResponse("Forbidden", status_code=403)
+
+# ✅ WhatsApp Webhook - Receive incoming messages
+@app.post("/webhook")
+async def receive(request: Request):
+    data = await request.json()
+    print("📩 RECEIVED:", data)  # add this line
+    try:
+        msg = data["entry"][0]["changes"][0]["value"]["messages"][0]
+        sender = msg["from"]
+        text = msg["text"]["body"]
+        print(f"📩 MESSAGE FROM {sender}: {text}")  # add this line
+        from app.services.whatsapp_service import handle_message
+        await handle_message(sender, text)
+    except (KeyError, IndexError):
+        pass
+    return JSONResponse({"status": "ok"})
 
 @app.get("/health")
 def health():

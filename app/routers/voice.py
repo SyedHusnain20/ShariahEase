@@ -133,16 +133,16 @@ async def voice_ask(audio: UploadFile = File(...)):
         rag_context   = rag_service.build_context(user_text, top_k=5)
         full_context  = f"{nisab_context}\n\n{rag_context}"
 
-        # ── 5. Generate answer via Groq ────────────────────
+        # ── 5. Generate answer ─────────────────────────────
         try:
-            answer_text = ask_groq(
+            answer_text = get_chat_response(
                 user_message     = user_text,
                 context          = full_context,
                 chat_history     = [],
                 is_nisab_related = _is_nisab_question(user_text),
             )
         except Exception as e:
-            logger.error(f"Groq error: {e}")
+            logger.error(f"LLM error: {e}")
             answer_text = "I am having trouble connecting to the AI service. Please check your internet connection."
 
         logger.info(f"Answer: {answer_text[:100]}")
