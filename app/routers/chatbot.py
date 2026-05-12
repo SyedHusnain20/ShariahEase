@@ -1,19 +1,28 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+import base64
 
 from app.database.db import get_db
 from app.database.crud import save_message, get_chat_history
 from app.models.schemas import ChatRequest, ChatResponse
 from app.services.rag_service import rag_service
-from app.services.llm_client import get_chat_response
+from app.services.llm_client import get_chat_response, detect_language
+from app.services.tts_service import text_to_speech_bytes
 from app.services.metal_price import get_nisab_values
 
 router = APIRouter(prefix="/chat", tags=["Chatbot"])
 
+# ── Nisab detection ────────────────────────────────────────────────────────
+# Only queries specifically about thresholds/prices trigger live Nisab injection.
+# General "zakat" questions must NOT be in this list — they get answered from RAG.
 NISAB_KEYWORDS = [
-    "نصاب", "nisab", "سونا", "چاندی", "gold", "silver",
-    "زکوٰۃ کی حد", "zakat limit", "sona", "chandi",
-    "تولہ", "گرام", "tola", "gram",
+    "نصاب", "nisab", "nisaab",
+    "سونے کا نصاب", "چاندی کا نصاب",
+    "gold nisab", "silver nisab",
+    "sone ka nisab", "chandi ka nisab",
+    "زکوٰۃ کی حد", "zakat limit", "zakat threshold",
+    "how much gold", "how much silver",
+    "تولہ", "tola",
 ]
 
 
@@ -42,12 +51,12 @@ Silver Nisab (52.5 tola = 612.36 grams): PKR {silver_nisab:,}
 Zakat rate  : 2.5% of all zakatable wealth above Nisab
 Data source : {data.get("source", "fallback")}
 
-INSTRUCTION: When answering about Nisab, structure your answer as:
+INSTRUCTION: Structure your answer as:
 1. Brief definition of Nisab (1-2 sentences)
 2. Gold Nisab: 7.5 tola = 87.48 grams = PKR {gold_nisab:,} TODAY
 3. Silver Nisab: 52.5 tola = 612.36 grams = PKR {silver_nisab:,} TODAY
 4. Zakat rate: 2.5%
-5. One-line disclaimer about prices changing daily
+5. One-line disclaimer that prices change daily
 DO NOT say "check another website" — all data is provided above.
 === END LIVE NISAB DATA ===
 """.strip()
@@ -70,17 +79,22 @@ async def chat_message(request: ChatRequest, db: Session = Depends(get_db)):
 
     save_message(db, request.session_id, "user", request.message)
 
-    history_records = get_chat_history(db, request.session_id, limit=6)
-    chat_history = [
+    # Fetch history after saving, exclude the just-saved user message
+    all_records     = get_chat_history(db, request.session_id, limit=13)
+    history_records = all_records[:-1]
+    chat_history    = [
         {"role": r.role, "content": r.content}
-        for r in history_records[:-1]
+        for r in history_records
     ]
 
     rag_context = rag_service.build_context(request.message, top_k=5)
 
-    # Always inject live Nisab — but emphasise it when question is about Nisab/gold
-    nisab_block, _ = await get_live_nisab_block()
-    full_context   = f"{nisab_block}\n\n{rag_context}"
+    # Only inject live Nisab when the question is specifically about thresholds
+    if is_nisab_question(request.message):
+        nisab_block, _ = await get_live_nisab_block()
+        full_context   = f"{nisab_block}\n\n{rag_context}"
+    else:
+        full_context   = rag_context
 
     sources = rag_service.search(request.message, top_k=3)
     source_names = list({
@@ -111,11 +125,25 @@ async def chat_message(request: ChatRequest, db: Session = Depends(get_db)):
 
     save_message(db, request.session_id, "assistant", answer)
 
+    # ── TTS — generate audio for every assistant response ─────────────────
+    # Detect language from the answer (more reliable than request language)
+    # so Urdu answers get the Urdu voice and English answers get English voice.
+    audio_b64 = ""
+    if not answer.startswith("⚠️"):   # skip TTS for error messages
+        try:
+            lang        = detect_language(answer)
+            audio_bytes = await text_to_speech_bytes(answer, lang)
+            if audio_bytes:
+                audio_b64 = base64.b64encode(audio_bytes).decode()
+        except Exception:
+            pass   # TTS failure is non-fatal — text response still returned
+
     return ChatResponse(
         session_id = request.session_id,
         answer     = answer,
         language   = "auto",
         sources    = source_names,
+        audio_b64  = audio_b64,
     )
 
 
@@ -134,6 +162,6 @@ async def clear_history(session_id: str, db: Session = Depends(get_db)):
     from app.database.models import ChatMessage
     db.query(ChatMessage).filter(
         ChatMessage.session_id == session_id
-        ).delete()
+    ).delete()
     db.commit()
     return {"cleared": True}

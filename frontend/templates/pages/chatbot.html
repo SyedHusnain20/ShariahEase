@@ -3,6 +3,92 @@
 {% block page_title %}AI chatbot{% endblock %}
 
 {% block content %}
+<style>
+  /* ── WhatsApp-style audio player ─────────────────────── */
+  .audio-bubble {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 18px;
+    min-width: 220px;
+    max-width: 280px;
+  }
+  .audio-bubble.user-audio {
+    background: #3d9b80;   /* primary-400 */
+  }
+  .audio-bubble.ai-audio {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+  }
+
+  /* Play/Pause button */
+  .play-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: opacity .15s;
+  }
+  .user-audio .play-btn { background: rgba(255,255,255,0.25); color: #fff; }
+  .ai-audio   .play-btn { background: #f0faf6; color: #0F6E56; }
+  .play-btn:hover { opacity: .8; }
+
+  /* Progress bar */
+  .audio-progress-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .audio-bar {
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    cursor: pointer;
+    appearance: none;
+    outline: none;
+  }
+  .user-audio .audio-bar {
+    accent-color: #fff;
+    background: rgba(255,255,255,0.3);
+  }
+  .ai-audio .audio-bar {
+    accent-color: #0F6E56;
+    background: #e5e7eb;
+  }
+  .audio-time {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .3px;
+  }
+  .user-audio .audio-time { color: rgba(255,255,255,0.8); }
+  .ai-audio   .audio-time { color: #9ca3af; }
+
+  /* Mic recording pulse */
+  @keyframes mic-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.4); }
+    50%      { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+  }
+  .mic-recording { animation: mic-pulse 1.2s ease infinite; }
+
+  /* Typing dots */
+  .typing-dot {
+    width: 6px; height: 6px;
+    background: #d1d5db;
+    border-radius: 50%;
+    animation: bounce .9s ease infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: .15s; }
+  .typing-dot:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce {
+    0%,60%,100% { transform: translateY(0); }
+    30%         { transform: translateY(-5px); }
+  }
+</style>
+
 <div class="max-w-3xl mx-auto flex flex-col" style="height: calc(100vh - 130px);"
      x-data="chatApp()">
 
@@ -11,21 +97,16 @@
               flex items-center justify-between flex-shrink-0">
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-full bg-primary-50 border border-primary-100
-                  flex items-center justify-center text-primary-600 text-xs font-medium">
-        AI
-      </div>
+                  flex items-center justify-center text-primary-600 text-xs font-medium">AI</div>
       <div>
         <p class="text-sm font-medium text-gray-900">ShariahEase Assistant</p>
         <p class="text-xs text-gray-400">Islamic finance · Zakat · Halal investing</p>
       </div>
     </div>
     <div class="flex items-center gap-3">
-      <!-- Language note -->
-      <span class="text-xs text-gray-400 bg-gray-50 border border-gray-100
-                   px-3 py-1.5 rounded-full">
+      <span class="text-xs text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full">
         Replies in your language automatically
       </span>
-      <!-- Clear button -->
       <button @click="clearChat"
               class="text-xs text-gray-400 hover:text-red-500 transition-colors
                      px-2 py-1 border border-gray-200 rounded-lg hover:border-red-200">
@@ -37,11 +118,10 @@
   <!-- Messages area -->
   <div id="messages-container" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-1">
 
-    <!-- Welcome message -->
+    <!-- Welcome -->
     <div x-show="messages.length === 0" class="flex gap-3">
       <div class="w-7 h-7 rounded-full bg-primary-50 border border-primary-100
-                  flex-shrink-0 flex items-center justify-center
-                  text-primary-600 text-xs font-medium">AI</div>
+                  flex-shrink-0 flex items-center justify-center text-primary-600 text-xs font-medium">AI</div>
       <div class="flex-1 space-y-3">
         <div class="bg-white border border-gray-100 rounded-2xl rounded-tl-sm
                     px-4 py-3 text-sm text-gray-700 leading-relaxed max-w-lg">
@@ -53,29 +133,26 @@
             <li class="flex items-start gap-2"><span class="text-primary-500 mt-0.5">•</span>Islamic banking in Pakistan</li>
           </ul>
           <p class="mt-2 text-gray-400 text-xs">
-            Write in English, Urdu, or Roman Urdu — I will reply in the same language.
+            🎤 Voice message → voice reply &nbsp;|&nbsp; ⌨️ Text message → text reply
           </p>
         </div>
-
-        <!-- Suggested questions -->
         <div class="flex flex-wrap gap-2">
           <template x-for="q in suggestedQuestions" :key="q">
             <button @click="sendSuggested(q)"
                     class="text-xs px-3 py-1.5 border border-gray-200 rounded-full
                            text-gray-600 hover:bg-primary-50 hover:border-primary-200
                            hover:text-primary-700 transition-colors"
-                    x-text="q">
-            </button>
+                    x-text="q"></button>
           </template>
         </div>
       </div>
     </div>
 
-    <!-- Chat messages -->
+    <!-- ── Chat messages ───────────────────────────────── -->
     <template x-for="(msg, index) in messages" :key="index">
-      <div :class="msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'"
-           class="flex gap-3">
+      <div :class="msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'" class="flex gap-3">
 
+        <!-- Avatar -->
         <div :class="msg.role === 'user'
                        ? 'bg-gray-100 text-gray-500'
                        : 'bg-primary-50 border border-primary-100 text-primary-600'"
@@ -84,18 +161,60 @@
           <span x-text="msg.role === 'user' ? 'You' : 'AI'"></span>
         </div>
 
+        <!-- Bubble -->
         <div :class="msg.role === 'user' ? 'items-end' : 'items-start'"
              class="flex flex-col gap-1 max-w-lg">
 
-          <div :class="msg.role === 'user'
-                         ? 'bg-primary-400 text-white rounded-2xl rounded-tr-sm'
-                         : 'bg-white border border-gray-100 text-gray-700 rounded-2xl rounded-tl-sm'"
-               class="px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"
-               x-text="msg.content">
-          </div>
+          <!-- ── AUDIO BUBBLE (voice messages only) ─────── -->
+          <template x-if="msg.type === 'audio' && msg.audio_b64">
+            <div :class="msg.role === 'user' ? 'user-audio' : 'ai-audio'"
+                 class="audio-bubble">
 
-          <!-- Sources -->
-          <div x-show="msg.role === 'assistant' && msg.sources && msg.sources.length"
+              <!-- Play / Pause -->
+              <button class="play-btn" @click="togglePlay(msg, index)">
+                <!-- Play icon -->
+                <svg x-show="!msg.playing" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+                <!-- Pause icon -->
+                <svg x-show="msg.playing" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                </svg>
+              </button>
+
+              <!-- Progress + time -->
+              <div class="audio-progress-wrap">
+                <input type="range" class="audio-bar"
+                       :value="msg.progress || 0" min="0" max="100" step="0.1"
+                       @input="seekAudio(msg, index, $event.target.value)">
+                <span class="audio-time"
+                      x-text="msg.playing ? (msg.currentTime || '0:00') : (msg.duration || '0:00')">
+                </span>
+              </div>
+
+              <!-- Mic icon (shows this is a voice message) -->
+              <svg class="w-4 h-4 flex-shrink-0 opacity-60" fill="none" stroke="currentColor"
+                   stroke-width="1.75" viewBox="0 0 24 24"
+                   :style="msg.role === 'user' ? 'color:#fff' : 'color:#0F6E56'">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75
+                         m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/>
+              </svg>
+            </div>
+          </template>
+
+          <!-- ── TEXT BUBBLE (text messages only) ────────── -->
+          <template x-if="msg.type !== 'audio'">
+            <div :class="msg.role === 'user'
+                           ? 'bg-primary-400 text-white rounded-2xl rounded-tr-sm'
+                           : 'bg-white border border-gray-100 text-gray-700 rounded-2xl rounded-tl-sm'"
+                 class="px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"
+                 x-text="msg.content">
+            </div>
+          </template>
+
+          <!-- Sources (text messages only) -->
+          <div x-show="msg.type !== 'audio' && msg.role === 'assistant' && msg.sources && msg.sources.length"
                class="flex flex-wrap gap-1 mt-1">
             <template x-for="src in msg.sources" :key="src">
               <span class="text-xs px-2 py-0.5 bg-gray-50 border border-gray-100
@@ -110,8 +229,7 @@
 
     <!-- Typing indicator -->
     <div x-show="loading" class="flex gap-3">
-      <div class="w-7 h-7 rounded-full bg-primary-50 border border-primary-100
-                  flex-shrink-0"
+      <div class="w-7 h-7 rounded-full bg-primary-50 border border-primary-100 flex-shrink-0"
            style="font-size:10px;font-weight:500;line-height:28px;text-align:center;color:#0F6E56;">AI</div>
       <div class="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3">
         <div class="flex gap-1 items-center h-4">
@@ -124,21 +242,19 @@
 
   </div>
 
-  <!-- Input area -->
+  <!-- ── Input bar ─────────────────────────────────────── -->
   <div class="bg-white border border-gray-200 rounded-xl p-3 flex-shrink-0"
        :class="recording ? 'border-red-300 ring-2 ring-red-100' : ''">
 
     <!-- Recording banner -->
-    <div x-show="recording"
-         class="flex items-center gap-2 mb-2 px-1">
+    <div x-show="recording" class="flex items-center gap-2 mb-2 px-1">
       <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-      <span class="text-xs text-red-500 font-medium">Listening… speak now</span>
+      <span class="text-xs text-red-500 font-medium">Listening… tap stop when done</span>
     </div>
 
     <!-- Transcribing banner -->
-    <div x-show="transcribing && !recording"
-         class="flex items-center gap-2 mb-2 px-1">
-      <span class="text-xs text-gray-400 italic">Transcribing audio…</span>
+    <div x-show="transcribing && !recording" class="flex items-center gap-2 mb-2 px-1">
+      <span class="text-xs text-gray-400 italic">Processing audio…</span>
     </div>
 
     <div class="flex gap-3 items-end">
@@ -154,23 +270,20 @@
       ></textarea>
 
       <!-- Mic button -->
-      <button
-        @click="toggleRecording"
-        :disabled="loading || transcribing"
-        :title="recording ? 'Stop recording' : 'Speak your question'"
-        :class="recording
-          ? 'bg-red-500 hover:bg-red-600 text-white'
-          : 'bg-gray-100 hover:bg-gray-200 text-gray-500'"
-        class="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center
-               transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-        <!-- Mic icon -->
+      <button @click="toggleRecording"
+              :disabled="loading || transcribing"
+              :class="recording
+                ? 'bg-red-500 hover:bg-red-600 text-white mic-recording'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-500'"
+              class="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center
+                     transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Hold to speak">
         <svg x-show="!recording" class="w-4 h-4" fill="none" stroke="currentColor"
              stroke-width="1.75" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round"
                 d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75
                    m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/>
         </svg>
-        <!-- Stop icon -->
         <svg x-show="recording" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
           <rect x="6" y="6" width="12" height="12" rx="2"/>
         </svg>
@@ -182,8 +295,7 @@
               class="flex-shrink-0 w-9 h-9 rounded-lg bg-primary-400 text-white
                      flex items-center justify-center transition-all
                      hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor"
-             stroke-width="2" viewBox="0 0 24 24">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round"
                 d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12
                    59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
@@ -202,18 +314,26 @@
 
 {% block scripts %}
 <script>
+// ─────────────────────────────────────────────────────────────────────────────
+// chatApp — strict format rule:
+//   Text input  → text bubble reply only (no audio)
+//   Voice input → WhatsApp-style audio bubble reply only (no text shown)
+// ─────────────────────────────────────────────────────────────────────────────
 function chatApp() {
   return {
-    messages:    [],
-    inputText:   '',
-    loading:     false,
-    sessionId:   'session_' + Date.now(),
+    messages:      [],
+    inputText:     '',
+    loading:       false,
+    sessionId:     'session_' + Date.now(),
 
-    // ── Voice state ──────────────────────────────────────
-    recording:   false,
-    transcribing:false,
+    // voice state
+    recording:     false,
+    transcribing:  false,
     mediaRecorder: null,
-    audioChunks: [],
+    audioChunks:   [],
+
+    // audio player state — one Audio object per message (keyed by index)
+    _players: {},
 
     suggestedQuestions: [
       'Is gold jewelry zakatable?',
@@ -241,17 +361,26 @@ function chatApp() {
       return new Date().toLocaleTimeString('en-PK', { hour:'2-digit', minute:'2-digit' });
     },
 
+    _fmtDuration(secs) {
+      if (!secs || isNaN(secs)) return '0:00';
+      const m = Math.floor(secs / 60);
+      const s = Math.floor(secs % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    },
+
     async sendSuggested(q) {
       this.inputText = q;
       await this.sendMessage();
     },
 
+    // ── TEXT MESSAGE → TEXT REPLY ONLY ───────────────────
     async sendMessage() {
       const text = this.inputText.trim();
       if (!text || this.loading) return;
 
       this.messages.push({
-        role: 'user', content: text,
+        role: 'user', type: 'text',
+        content: text,
         time: this.formatTime(), sources: [],
       });
       this.inputText = '';
@@ -264,27 +393,26 @@ function chatApp() {
         const res = await fetch('/chat/message', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
+          body: JSON.stringify({
             session_id: this.sessionId,
             message:    text,
             language:   'auto',
           }),
         });
-        if (!res.ok) throw new Error('Failed to get response.');
+        if (!res.ok) throw new Error('Request failed');
         const data = await res.json();
-        this.messages.push({
-          role: 'assistant', content: data.answer,
-          time: this.formatTime(), sources: data.sources || [],
-        });
 
-        // Speak the reply if voice was used for input
-        if (data.audio_b64) {
-          this._playAudio(data.audio_b64);
-        }
+        // TEXT reply only — no audio, no autoplay
+        this.messages.push({
+          role: 'assistant', type: 'text',
+          content: data.answer,
+          time: this.formatTime(),
+          sources: data.sources || [],
+        });
 
       } catch(e) {
         this.messages.push({
-          role: 'assistant',
+          role: 'assistant', type: 'text',
           content: 'Sorry, something went wrong. Please try again.',
           time: this.formatTime(), sources: [],
         });
@@ -293,7 +421,7 @@ function chatApp() {
       }
     },
 
-    // ── Voice: toggle mic on/off ─────────────────────────
+    // ── VOICE: toggle mic ────────────────────────────────
     async toggleRecording() {
       if (this.recording) {
         this.stopRecording();
@@ -311,17 +439,16 @@ function chatApp() {
         this.mediaRecorder.ondataavailable = e => {
           if (e.data.size > 0) this.audioChunks.push(e.data);
         };
-
         this.mediaRecorder.onstop = async () => {
           stream.getTracks().forEach(t => t.stop());
-          await this.submitAudio();
+          await this.submitVoice();
         };
 
         this.mediaRecorder.start();
         this.recording = true;
-      } catch (err) {
+      } catch(err) {
         this.messages.push({
-          role: 'assistant',
+          role: 'assistant', type: 'text',
           content: '⚠️ Microphone access denied. Please allow microphone permission in your browser.',
           time: this.formatTime(), sources: [],
         });
@@ -335,62 +462,146 @@ function chatApp() {
       }
     },
 
-    async submitAudio() {
+    // ── VOICE MESSAGE → AUDIO REPLY ONLY ─────────────────
+    async submitVoice() {
       if (!this.audioChunks.length) return;
       this.transcribing = true;
 
-      try {
-        const blob    = new Blob(this.audioChunks, { type: 'audio/webm' });
-        const formData = new FormData();
-        formData.append('audio', blob, 'recording.webm');
+      // Show user voice bubble (their recording)
+      const userBlob   = new Blob(this.audioChunks, { type: 'audio/webm' });
+      const userB64    = await this._blobToBase64(userBlob);
+      this.messages.push({
+        role: 'user', type: 'audio',
+        audio_b64: userB64,
+        playing: false, progress: 0,
+        currentTime: '0:00', duration: '0:00',
+        time: this.formatTime(), sources: [],
+      });
 
-        const res = await fetch('/voice/ask', { method: 'POST', body: formData });
+      this.loading = true;
+
+      try {
+        const formData = new FormData();
+        formData.append('audio', userBlob, 'recording.webm');
+
+        const res  = await fetch('/voice/ask', { method: 'POST', body: formData });
         const data = await res.json();
 
-        if (!data.success || !data.transcribed_text) {
+        if (!data.success || !data.audio_b64) {
+          // Fallback: show error as text bubble
           this.messages.push({
-            role: 'assistant',
-            content: '⚠️ Could not understand the audio. Please try again.',
+            role: 'assistant', type: 'text',
+            content: data.answer_text || '⚠️ Could not process audio. Please try again.',
             time: this.formatTime(), sources: [],
           });
           return;
         }
 
-        // Show what was heard as a user message
+        // AUDIO reply only — no text bubble shown
         this.messages.push({
-          role: 'user', content: '🎙️ ' + data.transcribed_text,
+          role: 'assistant', type: 'audio',
+          audio_b64: data.audio_b64,
+          playing: false, progress: 0,
+          currentTime: '0:00', duration: '0:00',
           time: this.formatTime(), sources: [],
         });
-
-        // Show AI answer
-        this.messages.push({
-          role: 'assistant', content: data.answer_text,
-          time: this.formatTime(), sources: [],
-        });
-
-        // Play audio reply if available
-        if (data.audio_b64) this._playAudio(data.audio_b64);
 
       } catch(e) {
         this.messages.push({
-          role: 'assistant',
+          role: 'assistant', type: 'text',
           content: '⚠️ Voice processing failed. Please try again.',
           time: this.formatTime(), sources: [],
         });
       } finally {
         this.transcribing = false;
         this.audioChunks  = [];
+        this.loading      = false;
       }
     },
 
-    _playAudio(b64) {
-      try {
-        const audio = new Audio('data:audio/mp3;base64,' + b64);
-        audio.play();
-      } catch(e) { /* silent fail — text answer still shown */ }
+    // ── Audio player controls ────────────────────────────
+    togglePlay(msg, index) {
+      // Stop any other playing message first
+      this.messages.forEach((m, i) => {
+        if (i !== index && m.playing) {
+          this._stopPlayer(i);
+        }
+      });
+
+      if (msg.playing) {
+        this._pausePlayer(index);
+      } else {
+        this._startPlayer(msg, index);
+      }
+    },
+
+    _startPlayer(msg, index) {
+      // Reuse existing Audio object or create new one
+      if (!this._players[index]) {
+        const audio = new Audio('data:audio/mp3;base64,' + msg.audio_b64);
+
+        audio.addEventListener('loadedmetadata', () => {
+          this.messages[index].duration = this._fmtDuration(audio.duration);
+        });
+
+        audio.addEventListener('timeupdate', () => {
+          if (!audio.duration) return;
+          this.messages[index].progress    = (audio.currentTime / audio.duration) * 100;
+          this.messages[index].currentTime = this._fmtDuration(audio.currentTime);
+        });
+
+        audio.addEventListener('ended', () => {
+          this.messages[index].playing  = false;
+          this.messages[index].progress = 0;
+          this.messages[index].currentTime = '0:00';
+        });
+
+        this._players[index] = audio;
+      }
+
+      this._players[index].play();
+      this.messages[index].playing = true;
+    },
+
+    _pausePlayer(index) {
+      if (this._players[index]) {
+        this._players[index].pause();
+        this.messages[index].playing = false;
+      }
+    },
+
+    _stopPlayer(index) {
+      if (this._players[index]) {
+        this._players[index].pause();
+        this._players[index].currentTime = 0;
+      }
+      this.messages[index].playing     = false;
+      this.messages[index].progress    = 0;
+      this.messages[index].currentTime = '0:00';
+    },
+
+    seekAudio(msg, index, value) {
+      if (this._players[index] && this._players[index].duration) {
+        this._players[index].currentTime =
+          (value / 100) * this._players[index].duration;
+      }
+    },
+
+    // ── Utility ──────────────────────────────────────────
+    _blobToBase64(blob) {
+      return new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload  = () => res(reader.result.split(',')[1]);
+        reader.onerror = rej;
+        reader.readAsDataURL(blob);
+      });
     },
 
     async clearChat() {
+      // Stop all playing audio
+      Object.values(this._players).forEach(a => { a.pause(); });
+      this._players = {};
+
       try {
         await fetch(`/chat/history/${this.sessionId}`, { method: 'DELETE' });
       } catch(e) {}

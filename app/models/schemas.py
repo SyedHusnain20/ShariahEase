@@ -91,6 +91,7 @@ class ChatResponse(BaseModel):
     answer: str
     language: str
     sources: list = []
+    audio_b64: str = ""   # base64 MP3 — empty string when TTS is skipped
 
     class Config:
         from_attributes = True

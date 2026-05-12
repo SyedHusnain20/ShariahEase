@@ -16,7 +16,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, Request
 from fastapi.templating import Jinja2Templates
 
 from app.services.whisper_service import transcribe_audio
-from app.services.tts_service import text_to_speech_sync
+from app.services.tts_service import text_to_speech_bytes
 from app.services.rag_service import rag_service
 from app.services.llm_client import get_chat_response, detect_language
 from app.services.metal_price import get_nisab_values
@@ -128,12 +128,15 @@ async def voice_ask(audio: UploadFile = File(...)):
         # Our own detector is more reliable for Urdu/Roman/English classification
         lang = detect_language(user_text)
 
-        # ── 4. Build context: live Nisab + RAG ────────────
-        nisab_context = await _build_nisab_context()
-        rag_context   = rag_service.build_context(user_text, top_k=5)
-        full_context  = f"{nisab_context}\n\n{rag_context}"
+        # ── 4. Build context: RAG + conditional Nisab ────
+        rag_context  = rag_service.build_context(user_text, top_k=5)
+        if _is_nisab_question(user_text):
+            nisab_context = await _build_nisab_context()
+            full_context  = f"{nisab_context}\n\n{rag_context}"
+        else:
+            full_context  = rag_context
 
-        # ── 5. Generate answer ─────────────────────────────
+        # ── 5. Generate answer via Groq ────────────────────
         try:
             answer_text = get_chat_response(
                 user_message     = user_text,
@@ -148,7 +151,7 @@ async def voice_ask(audio: UploadFile = File(...)):
         logger.info(f"Answer: {answer_text[:100]}")
 
         # ── 6. Convert answer to speech ────────────────────
-        audio_bytes_out = text_to_speech_sync(answer_text, lang)
+        audio_bytes_out = await text_to_speech_bytes(answer_text, lang)
         audio_b64       = base64.b64encode(audio_bytes_out).decode() if audio_bytes_out else ""
 
         return {
@@ -189,5 +192,5 @@ async def tts_only(body: dict):
     if not text:
         return {"audio_b64": ""}
 
-    audio_bytes = text_to_speech_sync(text, language)
+    audio_bytes = await text_to_speech_bytes(text, language)
     return {"audio_b64": base64.b64encode(audio_bytes).decode() if audio_bytes else ""}

@@ -1,6 +1,6 @@
 """
 ShariahEase — OpenRouter API Client (gpt-oss-120b)
-Migrated from Groq (llama-3.3-70b-versatile) → OpenRouter (openai/gpt-oss-120b)
+Provider: Groq LPU | Model: openai/gpt-oss-120b
 
 Enforces:
   1. Exact language matching (no mixing, no switching)
@@ -13,7 +13,7 @@ Enforces:
 import os
 import time
 import logging
-from openai import OpenAI, APIConnectionError, RateLimitError, APIStatusError
+from groq import Groq, APIConnectionError, RateLimitError, APIStatusError
 from dotenv import load_dotenv
 from app.services.urdu_filter import filter_response
 
@@ -24,18 +24,15 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # ── API Configuration ──────────────────────────────────────
-_api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+_api_key = os.getenv("GROQ_API_KEY", "").strip()
 if not _api_key:
-    logger.warning("OPENROUTER_API_KEY is not set. Chatbot will not function.")
+    logger.warning("GROQ_API_KEY is not set. Chatbot will not function.")
 
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=_api_key,
-)
+client = Groq(api_key=_api_key)
 
 MODEL       = "openai/gpt-oss-120b"
 TEMPERATURE = 0.2
-MAX_TOKENS  = 350
+MAX_TOKENS  = 4000   # reasoning models need headroom for thinking tokens
 TOP_P       = 0.9
 MAX_RETRIES = 3
 RETRY_DELAY = 2   # seconds between retries
@@ -200,33 +197,30 @@ def _build_language_instruction(lang: str, nisab: bool) -> str:
     }
 
     nisab_addon = {
-       "ur ": (
-    "LIVE NISAB DATA سے مستند اعداد استعمال کریں۔ "
-    "مکمل، رواں جملوں میں لکھیں: "
-    "(۱) نصاب کی مختصر تعریف، "
-    "(۲) سونے کا نصاب: 7.5 تولہ (87.48 گرام) = آج کی قیمت میں PKR [رقم]، "
-    "(۳) چاندی کا نصاب: 52.5 تولہ (612.36 گرام) = آج کی قیمت میں PKR [رقم]، "
-    "(۴) زکوٰۃ کی شرح: 2.5 فیصد، "
-    "(۵) اگر صارف کا مال نصاب سے زیادہ ہو تو زکوٰۃ واجب ہے۔ "
-    "کوئی ادھورا جملہ نہ ہو؛ ہر نکتہ مکمل ہو۔"
+        "ur": (
+            "LIVE NISAB DATA سے مستند اعداد استعمال کریں۔ "
+            "صرف نصاب کے بارے میں پوچھا گیا ہے — صرف یہ بتائیں: "
+            "(۱) نصاب کی مختصر تعریف، "
+            "(۲) سونے کا نصاب: 7.5 تولہ (87.48 گرام) = آج PKR جتنا context میں دیا گیا ہے، "
+            "(۳) چاندی کا نصاب: 52.5 تولہ (612.36 گرام) = آج PKR جتنا context میں دیا گیا ہے، "
+            "(۴) زکوٰۃ کی شرح: 2.5 فیصد۔ "
+            "اگر context میں PKR رقم نہ ہو تو PKR نہ لکھیں — صرف گرام اور تولہ لکھیں۔"
         ),
         "roman": (
-            "Use the LIVE NISAB DATA provided. Write in complete Roman Urdu sentences: "
+            "Use the LIVE NISAB DATA from context. Answer ONLY what was asked about nisab: "
             "(1) Nisab ki short definition, "
-            "(2) Sone ka nisab: 7.5 tola (87.48g) = PKR [amount] aaj ki qeemat mein, "
-            "(3) Chandi ka nisab: 52.5 tola (612.36g) = PKR [amount] aaj ki qeemat mein, "
-            "(4) Zakat ki shar: 2.5 percent, "
-            "(5) Agar maal nisab se zyada ho to zakat wajib hai. "
-            "Har point mukammal sentence mein ho."
+            "(2) Sone ka nisab: 7.5 tola (87.48g) = PKR [use exact figure from context], "
+            "(3) Chandi ka nisab: 52.5 tola (612.36g) = PKR [use exact figure from context], "
+            "(4) Zakat ki shar: 2.5 percent. "
+            "Agar context mein PKR figure nahi hai to PKR mat likho."
         ),
         "en": (
-            "Use the LIVE NISAB DATA provided. Write in complete English sentences: "
+            "Use the LIVE NISAB DATA from context. Answer ONLY what was asked about nisab: "
             "(1) Brief definition of Nisab, "
-            "(2) Gold nisab: 7.5 tola (87.48g) = PKR [amount] at today's price, "
-            "(3) Silver nisab: 52.5 tola (612.36g) = PKR [amount] at today's price, "
-            "(4) Zakat rate: 2.5%, "
-            "(5) Zakat is obligatory if wealth exceeds nisab for one lunar year. "
-            "Every point must be a complete sentence."
+            "(2) Gold nisab: 7.5 tola (87.48g) = PKR [use exact figure from context], "
+            "(3) Silver nisab: 52.5 tola (612.36g) = PKR [use exact figure from context], "
+            "(4) Zakat rate: 2.5%. "
+            "If no PKR figure is in context, omit it — do not write PKR [amount]."
         ),
     }
 
@@ -241,13 +235,15 @@ def _build_language_instruction(lang: str, nisab: bool) -> str:
 # ═══════════════════════════════════════════════════════════════════════════
 
 _NISAB_KEYWORDS = {
-    # English
-    "nisab", "zakat", "zakah", "zakaat", "gold", "silver",
-    "threshold", "tola", "gram", "wealth", "eligible",
+    # English — only questions specifically about the threshold/price
+    "nisab", "nisaab", "threshold", "tola", "gold price", "silver price",
+    "gold nisab", "silver nisab", "how much gold", "how much silver",
+    "minimum wealth", "zakat limit", "zakat threshold", "eligible for zakat",
     # Roman Urdu
-    "nisaab", "sona", "chandi", "tola", "maal", "hisaab",
-    # Urdu script
-    "نصاب", "زکوٰۃ", "زکات", "سونا", "چاندی", "تولہ",
+    "nisaab", "sone ka nisab", "chandi ka nisab", "kitna sona", "kitni chandi",
+    "zakat ki had", "zakat limit",
+    # Urdu script — only nisab-specific terms, NOT the word zakat alone
+    "نصاب", "سونے کا نصاب", "چاندی کا نصاب", "زکوٰۃ کی حد", "تولہ",
 }
 
 
@@ -290,7 +286,7 @@ def get_chat_response(
     if not user_message or not user_message.strip():
         return "Please enter a question."
     if not _api_key:
-        return "⚠️ API key not configured. Please set OPENROUTER_API_KEY in .env."
+        return "⚠️ API key not configured. Please set GROQ_API_KEY in .env."
     if chat_history is None:
         chat_history = []
 
@@ -332,7 +328,14 @@ def get_chat_response(
                 top_p       = TOP_P,
             )
 
-            raw     = response.choices[0].message.content.strip()
+            content = response.choices[0].message.content
+            # gpt-oss-120b on OpenRouter free tier sometimes returns content=None
+            # when reasoning tokens are emitted — treat it as a retriable error
+            if content is None:
+                finish = response.choices[0].finish_reason
+                logger.warning(f"content=None from API (finish_reason={finish}), retrying...")
+                raise ValueError(f"Empty content from model (finish_reason={finish})")
+            raw     = content.strip()
             cleaned = filter_response(raw, lang)
 
             logger.info(f"OpenRouter succeeded on attempt {attempt}")
@@ -431,12 +434,13 @@ def screen_investment(query: str, context: str) -> dict:
             model       = MODEL,
             messages    = [{"role": "user", "content": prompt}],
             temperature = 0.1,
-            max_tokens  = 250,
+            max_tokens  = 2000,   # reasoning model headroom
             top_p       = TOP_P,
         )
-        return _parse_screening_response(
-            response.choices[0].message.content.strip()
-        )
+        raw_content = response.choices[0].message.content
+        if raw_content is None:
+            raise ValueError("Screener: model returned content=None")
+        return _parse_screening_response(raw_content.strip())
     except Exception as e:
         logger.error(f"Screener error: {e}")
         return {
