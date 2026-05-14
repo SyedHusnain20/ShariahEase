@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — ShariahEase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50:'#E1F5EE',100:'#9FE1CB',200:'#5DCAA5',400:'#1D9E75',600:'#0F6E56',800:'#085041',900:'#04342C' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+
+  <div class="w-full max-w-sm">
+
+    <!-- Logo / Brand -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary-600 mb-4">
+        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/>
+        </svg>
+      </div>
+      <h1 class="text-xl font-semibold text-gray-900">ShariahEase</h1>
+      <p class="text-sm text-gray-400 mt-1">Islamic Finance AI · Pakistan</p>
+    </div>
+
+    <!-- Card -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+      <h2 class="text-base font-semibold text-gray-900 mb-1">Welcome back</h2>
+      <p class="text-sm text-gray-400 mb-6">Sign in to access your personal history</p>
+
+      <!-- Error banner -->
+      <div id="error-banner" class="hidden mb-4 px-4 py-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600"></div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1.5">Email</label>
+          <input id="email" type="email" placeholder="you@example.com"
+            class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition"/>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1.5">Password</label>
+          <input id="password" type="password" placeholder="••••••••"
+            class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition"/>
+        </div>
+
+        <button id="login-btn" onclick="login()"
+          class="w-full py-2.5 px-4 bg-primary-600 hover:bg-primary-800 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
+          <span id="btn-text">Sign in</span>
+          <svg id="btn-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+        </button>
+      </div>
+
+      <p class="mt-6 text-center text-sm text-gray-400">
+        Don't have an account?
+        <a href="/auth/signup" class="text-primary-600 hover:text-primary-800 font-medium">Create one</a>
+      </p>
+    </div>
+
+  </div>
+
+  <script>
+    // If already logged in, redirect home
+    if (localStorage.getItem('se_token')) {
+      window.location.href = '/';
+    }
+
+    // Allow Enter key
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') login();
+    });
+
+    async function login() {
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const banner   = document.getElementById('error-banner');
+      const btn      = document.getElementById('login-btn');
+      const spinner  = document.getElementById('btn-spinner');
+      const btnText  = document.getElementById('btn-text');
+
+      banner.classList.add('hidden');
+
+      if (!email || !password) {
+        showError('Please fill in both fields.');
+        return;
+      }
+
+      // Loading state
+      btn.disabled = true;
+      spinner.classList.remove('hidden');
+      btnText.textContent = 'Signing in…';
+
+      try {
+        const res = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.detail || 'Login failed. Check your credentials.');
+          return;
+        }
+
+        // Store token + user info
+        localStorage.setItem('se_token', data.access_token);
+        localStorage.setItem('se_user',  JSON.stringify({ id: data.user_id, name: data.name, email: data.email }));
+
+        window.location.href = '/';
+      } catch (err) {
+        showError('Network error. Please try again.');
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        btnText.textContent = 'Sign in';
+      }
+    }
+
+    function showError(msg) {
+      const banner = document.getElementById('error-banner');
+      banner.textContent = msg;
+      banner.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>

@@ -4,11 +4,13 @@ import base64
 
 from app.database.db import get_db
 from app.database.crud import save_message, get_chat_history
+from app.database import models
 from app.models.schemas import ChatRequest, ChatResponse
 from app.services.rag_service import rag_service
 from app.services.llm_client import get_chat_response, detect_language
 from app.services.tts_service import text_to_speech_bytes
 from app.services.metal_price import get_nisab_values
+from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/chat", tags=["Chatbot"])
 
@@ -75,9 +77,13 @@ Note: Live prices temporarily unavailable. Figures are approximate.
 
 
 @router.post("/message", response_model=ChatResponse)
-async def chat_message(request: ChatRequest, db: Session = Depends(get_db)):
+async def chat_message(
+    request: ChatRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
 
-    save_message(db, request.session_id, "user", request.message)
+    save_message(db, request.session_id, "user", request.message, user_id=current_user.id)
 
     # Fetch history after saving, exclude the just-saved user message
     all_records     = get_chat_history(db, request.session_id, limit=13)
@@ -123,7 +129,7 @@ async def chat_message(request: ChatRequest, db: Session = Depends(get_db)):
             else:
                 answer = "⚠️ AI service error. Please try again in a moment."
 
-    save_message(db, request.session_id, "assistant", answer)
+    save_message(db, request.session_id, "assistant", answer, user_id=current_user.id)
 
     # ── TTS — generate audio for every assistant response ─────────────────
     # Detect language from the answer (more reliable than request language)

@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 {% block title %}AI Chatbot{% endblock %}
+<script>
+  // Auth guard
+  if (!localStorage.getItem("se_token")) {
+    window.location.href = "/auth/login";
+  }
+</script>
 {% block page_title %}AI chatbot{% endblock %}
+<script>
+  // Auth guard
+  if (!localStorage.getItem("se_token")) {
+    window.location.href = "/auth/login";
+  }
+</script>
 
 {% block content %}
 <style>
@@ -310,6 +322,12 @@
 
 </div>
 {% endblock %}
+<script>
+  // Auth guard
+  if (!localStorage.getItem("se_token")) {
+    window.location.href = "/auth/login";
+  }
+</script>
 
 
 {% block scripts %}
@@ -392,7 +410,7 @@ function chatApp() {
       try {
         const res = await fetch('/chat/message', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify({
             session_id: this.sessionId,
             message:    text,
@@ -612,3 +630,9 @@ function chatApp() {
 }
 </script>
 {% endblock %}
+<script>
+  // Auth guard
+  if (!localStorage.getItem("se_token")) {
+    window.location.href = "/auth/login";
+  }
+</script>

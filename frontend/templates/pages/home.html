@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Zakat Calculator{% endblock %}
+<script>
+  // Auth guard
+  if (!localStorage.getItem("se_token")) {
+    window.location.href = "/auth/login";
+  }
+</script>
 {% block page_title %}Zakat calculator{% endblock %}
+<script>
+  // Auth guard
+  if (!localStorage.getItem("se_token")) {
+    window.location.href = "/auth/login";
+  }
+</script>
 
 {% block content %}
 <div class="max-w-3xl mx-auto space-y-5" x-data="zakatApp()">
@@ -219,6 +231,12 @@
 
 </div>
 {% endblock %}
+<script>
+  // Auth guard
+  if (!localStorage.getItem("se_token")) {
+    window.location.href = "/auth/login";
+  }
+</script>
 
 
 {% block scripts %}
@@ -278,7 +296,7 @@ function zakatApp() {
 
     async loadHistory() {
       try {
-        const res = await fetch('/zakat/history');
+        const res = await fetch('/zakat/history', { headers: authHeaders() });
         const records = await res.json();
         const el = document.getElementById('history-list');
         if (!records.length) {
@@ -318,11 +336,14 @@ function zakatApp() {
         const payload = { ...this.form, nisab_rate_used: this.nisabRate };
         const res  = await fetch('/zakat/calculate', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify(payload),
         });
 
-        if (!res.ok) throw new Error('Calculation failed. Please check your inputs.');
+        if (!res.ok) {
+          if (handleAuthError(res)) return;
+          throw new Error('Calculation failed. Please check your inputs.');
+        }
         this.result = await res.json();
         await this.loadHistory();
 
@@ -354,3 +375,9 @@ function zakatApp() {
 }
 </script>
 {% endblock %}
+<script>
+  // Auth guard
+  if (!localStorage.getItem("se_token")) {
+    window.location.href = "/auth/login";
+  }
+</script>

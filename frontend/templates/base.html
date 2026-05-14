@@ -82,7 +82,11 @@
 
       </nav>
 
-      <div class="px-4 py-3 border-t border-gray-100 text-center">
+      <div class="px-4 py-3 border-t border-gray-100 space-y-1">
+        <div id="sidebar-auth-links" class="hidden">
+          <a href="/auth/login" class="block text-xs text-primary-600 font-medium hover:text-primary-800 py-1">Sign in</a>
+          <a href="/auth/signup" class="block text-xs text-gray-400 hover:text-gray-600 py-1">Create account</a>
+        </div>
         <p class="text-xs text-gray-300">v1.1 · Free & Open</p>
       </div>
     </aside>
@@ -94,9 +98,23 @@
         <h1 class="text-sm font-medium text-gray-900">
           {% block page_title %}ShariahEase{% endblock %}
         </h1>
-        <div class="flex items-center gap-1.5">
-          <div class="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse"></div>
-          <span class="text-xs text-gray-400">Live</span>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1.5">
+            <div class="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse"></div>
+            <span class="text-xs text-gray-400">Live</span>
+          </div>
+          <!-- User menu — populated by JS -->
+          <div id="user-menu" class="hidden flex items-center gap-2">
+            <span id="user-name-display" class="text-xs text-gray-500 font-medium"></span>
+            <button onclick="logout()"
+              class="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1 rounded-md hover:bg-red-50">
+              Sign out
+            </button>
+          </div>
+          <a id="login-link" href="/auth/login"
+            class="hidden text-xs text-primary-600 hover:text-primary-800 font-medium px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 transition-colors">
+            Sign in
+          </a>
         </div>
       </header>
 
@@ -108,6 +126,48 @@
   </div>
 
   <script src="/static/js/main.js"></script>
+  <script>
+    // ── Auth UI ──────────────────────────────────────────────────────────────
+    (function () {
+      const token = localStorage.getItem('se_token');
+      const user  = JSON.parse(localStorage.getItem('se_user') || 'null');
+
+      if (token && user) {
+        document.getElementById('user-menu').classList.remove('hidden');
+        document.getElementById('user-menu').classList.add('flex');
+        document.getElementById('user-name-display').textContent = user.name;
+      } else {
+        document.getElementById('login-link').classList.remove('hidden');
+        document.getElementById('sidebar-auth-links').classList.remove('hidden');
+      }
+    })();
+
+    async function logout() {
+      await fetch('/auth/logout', { method: 'POST' });
+      localStorage.removeItem('se_token');
+      localStorage.removeItem('se_user');
+      window.location.href = '/auth/login';
+    }
+
+    // Helper all pages can use: get auth header for fetch calls
+    function authHeaders() {
+      const token = localStorage.getItem('se_token');
+      return token
+        ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+        : { 'Content-Type': 'application/json' };
+    }
+
+    // Redirect to login if 401 received
+    function handleAuthError(res) {
+      if (res.status === 401) {
+        localStorage.removeItem('se_token');
+        localStorage.removeItem('se_user');
+        window.location.href = '/auth/login';
+        return true;
+      }
+      return false;
+    }
+  </script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

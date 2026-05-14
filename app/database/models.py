@@ -1,20 +1,22 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean
+from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.database.db import Base
 
 
 class User(Base):
-    """
-    Optional user tracking — stores name for PDF certificate.
-    No login system needed for a competition project.
-    """
     __tablename__ = "users"
 
-    id         = Column(Integer, primary_key=True, index=True)
-    name       = Column(String(100), nullable=False)
-    email      = Column(String(150), nullable=True)
-    language   = Column(String(10), default="en")       # 'en' or 'ur'
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id               = Column(Integer, primary_key=True, index=True)
+    name             = Column(String(100), nullable=False)
+    email            = Column(String(150), unique=True, nullable=False, index=True)
+    hashed_password  = Column(String(255), nullable=False)
+    language         = Column(String(10), default="en")
+    created_at       = Column(DateTime(timezone=True), server_default=func.now())
+
+    zakat_records    = relationship("ZakatRecord",     back_populates="user", cascade="all, delete-orphan")
+    screener_history = relationship("ScreenerHistory", back_populates="user", cascade="all, delete-orphan")
+    chat_messages    = relationship("ChatMessage",     back_populates="user", cascade="all, delete-orphan")
 
 
 class ZakatRecord(Base):
@@ -24,6 +26,7 @@ class ZakatRecord(Base):
     __tablename__ = "zakat_records"
 
     id              = Column(Integer, primary_key=True, index=True)
+    user_id         = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     user_name       = Column(String(100), nullable=False)
 
     # Assets
@@ -49,6 +52,8 @@ class ZakatRecord(Base):
     nisab_rate_used = Column(String(20), default="gold")  # 'gold' or 'silver'
     calculated_at   = Column(DateTime(timezone=True), server_default=func.now())
 
+    user = relationship("User", back_populates="zakat_records")
+
 
 class ScreenerHistory(Base):
     """
@@ -56,11 +61,14 @@ class ScreenerHistory(Base):
     """
     __tablename__ = "screener_history"
 
-    id           = Column(Integer, primary_key=True, index=True)
-    query        = Column(String(300), nullable=False)   # company/fund name entered
-    verdict      = Column(String(20), nullable=False)    # 'halal', 'haram', 'doubtful'
-    explanation  = Column(Text, nullable=True)           # Groq's full explanation
-    screened_at  = Column(DateTime(timezone=True), server_default=func.now())
+    id          = Column(Integer, primary_key=True, index=True)
+    user_id     = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    query       = Column(String(300), nullable=False)
+    verdict     = Column(String(20), nullable=False)
+    explanation = Column(Text, nullable=True)
+    screened_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="screener_history")
 
 
 class ChatMessage(Base):
@@ -70,8 +78,11 @@ class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
     id         = Column(Integer, primary_key=True, index=True)
+    user_id    = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     session_id = Column(String(100), nullable=False, index=True)
-    role       = Column(String(20), nullable=False)   # 'user' or 'assistant'
+    role       = Column(String(20), nullable=False)
     content    = Column(Text, nullable=False)
     language   = Column(String(10), default="en")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="chat_messages")

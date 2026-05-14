@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Halal Screener{% endblock %}
+<script>
+  // Auth guard
+  if (!localStorage.getItem("se_token")) {
+    window.location.href = "/auth/login";
+  }
+</script>
 {% block page_title %}Halal investment screener{% endblock %}
+<script>
+  // Auth guard
+  if (!localStorage.getItem("se_token")) {
+    window.location.href = "/auth/login";
+  }
+</script>
 
 {% block content %}
 <div class="max-w-3xl mx-auto space-y-5" x-data="screenerApp()">
@@ -179,6 +191,12 @@
 
 </div>
 {% endblock %}
+<script>
+  // Auth guard
+  if (!localStorage.getItem("se_token")) {
+    window.location.href = "/auth/login";
+  }
+</script>
 
 
 {% block scripts %}
@@ -257,7 +275,7 @@ function screenerApp() {
       try {
         const res = await fetch('/screener/check', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body:    JSON.stringify({ query: q }),
         });
 
@@ -275,3 +293,9 @@ function screenerApp() {
 }
 </script>
 {% endblock %}
+<script>
+  // Auth guard
+  if (!localStorage.getItem("se_token")) {
+    window.location.href = "/auth/login";
+  }
+</script>

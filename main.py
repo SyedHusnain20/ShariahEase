@@ -32,7 +32,8 @@ async def startup_event():
     from app.services.whisper_service import preload_model
     preload_model()
 
-from app.routers import pages, zakat, mudarabah, chatbot, screener, certificate, charities, voice
+from app.routers import pages, zakat, mudarabah, chatbot, screener, certificate, charities, voice, auth
+app.include_router(auth.router)
 app.include_router(pages.router)
 app.include_router(zakat.router)
 app.include_router(mudarabah.router)

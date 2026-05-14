@@ -5,9 +5,10 @@ from app.models import schemas
 
 # ── ZAKAT RECORDS ─────────────────────────────────────────
 
-def save_zakat_record(db: Session, request: schemas.ZakatRequest, result: schemas.ZakatResult):
+def save_zakat_record(db: Session, request: schemas.ZakatRequest, result: schemas.ZakatResult, user_id: int = None):
     """Save a completed Zakat calculation to the database."""
     record = models.ZakatRecord(
+        user_id             = user_id,
         user_name           = request.user_name,
         cash                = request.cash,
         gold_value          = request.gold_value,
@@ -30,10 +31,11 @@ def save_zakat_record(db: Session, request: schemas.ZakatRequest, result: schema
     return record
 
 
-def get_zakat_history(db: Session, limit: int = 10):
-    """Get the most recent Zakat calculations."""
+def get_zakat_history(db: Session, user_id: int, limit: int = 10):
+    """Get the most recent Zakat calculations for a specific user."""
     return (
         db.query(models.ZakatRecord)
+        .filter(models.ZakatRecord.user_id == user_id)
         .order_by(models.ZakatRecord.calculated_at.desc())
         .limit(limit)
         .all()
@@ -42,9 +44,10 @@ def get_zakat_history(db: Session, limit: int = 10):
 
 # ── SCREENER HISTORY ──────────────────────────────────────
 
-def save_screener_result(db: Session, query: str, verdict: str, explanation: str):
+def save_screener_result(db: Session, query: str, verdict: str, explanation: str, user_id: int = None):
     """Save a halal screening result."""
     record = models.ScreenerHistory(
+        user_id     = user_id,
         query       = query,
         verdict     = verdict,
         explanation = explanation,
@@ -55,10 +58,11 @@ def save_screener_result(db: Session, query: str, verdict: str, explanation: str
     return record
 
 
-def get_screener_history(db: Session, limit: int = 10):
-    """Get the most recent screening queries."""
+def get_screener_history(db: Session, user_id: int, limit: int = 10):
+    """Get the most recent screening queries for a specific user."""
     return (
         db.query(models.ScreenerHistory)
+        .filter(models.ScreenerHistory.user_id == user_id)
         .order_by(models.ScreenerHistory.screened_at.desc())
         .limit(limit)
         .all()
@@ -67,9 +71,10 @@ def get_screener_history(db: Session, limit: int = 10):
 
 # ── CHAT MESSAGES ─────────────────────────────────────────
 
-def save_message(db: Session, session_id: str, role: str, content: str, language: str = "en"):
+def save_message(db: Session, session_id: str, role: str, content: str, language: str = "en", user_id: int = None):
     """Save a single chat message."""
     msg = models.ChatMessage(
+        user_id    = user_id,
         session_id = session_id,
         role       = role,
         content    = content,

@@ -4,23 +4,29 @@ from sqlalchemy.orm import Session
 
 from app.database.db import get_db
 from app.database.crud import save_zakat_record, get_zakat_history
+from app.database import models
 from app.models.schemas import ZakatRequest, ZakatResult
 from app.services.zakat_engine import calculate_zakat
 from app.services.metal_price import get_nisab_values
+from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/zakat", tags=["Zakat"])
 templates = Jinja2Templates(directory="frontend/templates")
 
 
 @router.post("/calculate", response_model=ZakatResult)
-async def zakat_calculate(request: ZakatRequest, db: Session = Depends(get_db)):
+async def zakat_calculate(
+    request: ZakatRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
     nisab_data = await get_nisab_values()
     result = calculate_zakat(
         request,
         gold_price_per_gram   = nisab_data["gold_per_gram_pkr"],
         silver_price_per_gram = nisab_data["silver_per_gram_pkr"],
     )
-    save_zakat_record(db, request, result)
+    save_zakat_record(db, request, result, user_id=current_user.id)
     return result
 
 
@@ -40,8 +46,11 @@ async def nisab_info():
 
 
 @router.get("/history")
-async def zakat_history(db: Session = Depends(get_db)):
-    records = get_zakat_history(db, limit=10)
+async def zakat_history(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    records = get_zakat_history(db, user_id=current_user.id, limit=10)
     return [
         {
             "id":               r.id,
