@@ -24,31 +24,31 @@ main {
 /* ── SCROLLBAR ─────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+::-webkit-scrollbar-thumb { background: #262626; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #3c4a42; }
 
 /* ── FOCUS RINGS ───────────────────────────────────────── */
 input:focus, select:focus, textarea:focus {
   outline: none;
-  box-shadow: 0 0 0 2px #1C484D;
-  border-color: #1C484D !important;
+  box-shadow: 0 0 0 1px #10b981;
+  border-color: #10b981 !important;
 }
 
 /* ── FIELD INPUT UTILITY ───────────────────────────────── */
 .field-input {
   width: 100%;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #33343c;
   border-radius: 0.5rem;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  color: #111827;
-  background: #fff;
+  color: #e2e1eb;
+  background: #0c0e14;
   outline: none;
-  transition: box-shadow 0.15s, border-color 0.15s;
+  transition: all 0.2s ease;
 }
 .field-input:focus {
-  box-shadow: 0 0 0 2px #1C484D;
-  border-color: #1C484D;
+  box-shadow: 0 0 0 1px #10b981;
+  border-color: #10b981;
 }
 
 /* ── NUMBER INPUTS always LTR ──────────────────────────── */

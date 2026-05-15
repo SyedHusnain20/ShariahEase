@@ -1,383 +1,334 @@
 {% extends "base.html" %}
-{% block title %}Zakat Calculator{% endblock %}
-<script>
-  // Auth guard
-  if (!localStorage.getItem("se_token")) {
-    window.location.href = "/auth/login";
-  }
-</script>
-{% block page_title %}Zakat calculator{% endblock %}
-<script>
-  // Auth guard
-  if (!localStorage.getItem("se_token")) {
-    window.location.href = "/auth/login";
-  }
-</script>
+{% block title %}Zakat Calculator - ShariahEase{% endblock %}
+{% block page_title %}Zakat Calculator{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto space-y-5" x-data="zakatApp()">
-
-  <!-- Nisab info bar -->
-  <div class="bg-white border border-gray-100 rounded-xl px-5 py-3 flex items-center justify-between flex-wrap gap-3">
-    <div class="flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full bg-primary-400"></div>
-      <span class="text-xs text-gray-500">Current Nisab (gold · 7.5 tola)</span>
-      <span class="text-xs font-medium text-gray-900" id="nisab-gold">Loading...</span>
+<div class="max-w-6xl mx-auto" x-data="zakatApp()">
+  
+  <!-- Nisab Bar -->
+  <section class="mb-stack-lg bg-[#141414] border border-[#262626] rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+    <div class="flex items-center gap-4">
+      <span class="material-symbols-outlined text-primary" data-icon="info">info</span>
+      <p class="text-body-md text-on-surface-variant">Current Nisab Values (Pakistan PKR)</p>
     </div>
-    <div class="flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full bg-blue-400"></div>
-      <span class="text-xs text-gray-500">Nisab (silver · 52.5 tola)</span>
-      <span class="text-xs font-medium text-gray-900" id="nisab-silver">Loading...</span>
-    </div>
-    <div class="flex items-center gap-2 text-xs text-gray-400">
-      <span>Standard:</span>
-      <select x-model="nisabRate"
-              class="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-700 bg-white">
-        <option value="gold">Gold (recommended)</option>
-        <option value="silver">Silver (conservative)</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Main card -->
-  <div class="bg-white border border-gray-100 rounded-xl p-6 space-y-6">
-
-    <!-- Name field -->
-    <div>
-      <label class="block text-xs font-medium text-gray-500 mb-1.5">
-        Your name (for certificate)
-      </label>
-      <input x-model="form.user_name" type="text" placeholder="e.g. Aisha Khan"
-             class="w-full sm:w-72 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-primary-400 focus:border-transparent outline-none transition"/>
-    </div>
-
-    <hr class="border-gray-100"/>
-
-    <!-- ASSETS section -->
-    <div>
-      <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">
-        Zakatable assets
-      </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-        <div class="space-y-1">
-          <label class="text-xs text-gray-500">Cash, savings &amp; bank balance (PKR)</label>
-          <input x-model.number="form.cash" type="number" min="0" placeholder="0"
-                 class="field-input" @input="liveCalc"/>
-        </div>
-
-        <div class="space-y-1">
-          <label class="text-xs text-gray-500">Gold value (PKR)</label>
-          <input x-model.number="form.gold_value" type="number" min="0" placeholder="0"
-                 class="field-input" @input="liveCalc"/>
-          <p class="text-xs text-gray-400">Personal jewellery used daily may be exempt — ask the chatbot</p>
-        </div>
-
-        <div class="space-y-1">
-          <label class="text-xs text-gray-500">Silver value (PKR)</label>
-          <input x-model.number="form.silver_value" type="number" min="0" placeholder="0"
-                 class="field-input" @input="liveCalc"/>
-        </div>
-
-        <div class="space-y-1">
-          <label class="text-xs text-gray-500">Business inventory (PKR)</label>
-          <input x-model.number="form.business_inventory" type="number" min="0" placeholder="0"
-                 class="field-input" @input="liveCalc"/>
-        </div>
-
-        <div class="space-y-1">
-          <label class="text-xs text-gray-500">Money others owe you — receivables (PKR)</label>
-          <input x-model.number="form.receivables" type="number" min="0" placeholder="0"
-                 class="field-input" @input="liveCalc"/>
-        </div>
-
+    <div class="flex flex-wrap gap-4 sm:gap-8 justify-center md:justify-end w-full md:w-auto">
+      <div class="text-right">
+        <p class="text-label-md text-on-surface-variant uppercase tracking-wider">Gold (7.5 Tola)</p>
+        <p class="font-headline-md text-on-surface" id="nisab-gold">Loading...</p>
+      </div>
+      <div class="text-right">
+        <p class="text-label-md text-on-surface-variant uppercase tracking-wider">Silver (52.5 Tola)</p>
+        <p class="font-headline-md text-primary" id="nisab-silver">Loading...</p>
+      </div>
+      <div class="text-right flex flex-col justify-center">
+        <select x-model="nisabRate" class="text-xs border border-[#33343c] rounded-lg px-2 py-1 text-on-surface bg-[#0c0e14] focus:ring-1 focus:ring-primary outline-none transition-colors">
+          <option value="gold">Gold (Recommended)</option>
+          <option value="silver">Silver (Conservative)</option>
+        </select>
       </div>
     </div>
+  </section>
 
-    <hr class="border-gray-100"/>
-
-    <!-- DEDUCTIONS section -->
-    <div>
-      <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">
-        Deductions
-      </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-        <div class="space-y-1">
-          <label class="text-xs text-gray-500">Debts you owe (PKR)</label>
-          <input x-model.number="form.debts" type="number" min="0" placeholder="0"
-                 class="field-input" @input="liveCalc"/>
-          <p class="text-xs text-gray-400">Only immediate debts due within the year</p>
+  <div class="grid grid-cols-12 gap-gutter">
+    
+    <!-- Main Form Card -->
+    <div class="col-span-12 lg:col-span-7 space-y-gutter">
+      <div class="bg-[#141414] border border-[#262626] rounded-xl p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="font-headline-md text-on-surface">Asset Breakdown</h3>
+          <span class="text-label-md text-on-surface-variant italic">Values in PKR</span>
         </div>
+        
+        <form class="space-y-4">
+          <!-- Name field for Certificate -->
+          <div class="space-y-2 mb-4 pb-4 border-b border-[#262626]">
+            <label class="text-label-md text-on-surface-variant">Your name (for certificate)</label>
+            <input class="w-full sm:w-1/2 h-11 px-4 rounded-lg field-input font-body-md" placeholder="e.g. Aisha Khan" type="text" x-model="form.user_name"/>
+          </div>
 
-        <div class="space-y-1">
-          <label class="text-xs text-gray-500">Immediate expenses due (PKR)</label>
-          <input x-model.number="form.immediate_expenses" type="number" min="0" placeholder="0"
-                 class="field-input" @input="liveCalc"/>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Hawl confirmation -->
-    <div class="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-lg px-4 py-3">
-      <input type="checkbox" x-model="hawlConfirmed" id="hawl"
-             class="mt-0.5 accent-primary-400"/>
-      <label for="hawl" class="text-xs text-amber-800 leading-relaxed cursor-pointer">
-        I confirm that I have owned these assets for one complete Islamic lunar year (Hawl).
-        Zakat is only due after one full Hawl has passed.
-      </label>
-    </div>
-
-    <!-- Calculate button -->
-    <button @click="submitCalculation"
-            :disabled="!hawlConfirmed || !form.user_name || loading"
-            class="w-full py-3 rounded-xl text-sm font-medium transition-all
-                   bg-primary-400 text-white hover:bg-primary-600
-                   disabled:opacity-40 disabled:cursor-not-allowed">
-      <span x-show="!loading">Calculate my Zakat</span>
-      <span x-show="loading" style="display:none">Calculating...</span>
-    </button>
-
-  </div>
-
-  <!-- RESULTS card — hidden until calculation done -->
-  <div x-show="result" x-transition style="display:none">
-    <div :class="result && result.is_zakat_due
-                   ? 'border-primary-200 bg-primary-50'
-                   : 'border-gray-200 bg-gray-50'"
-         class="rounded-xl border p-6 space-y-4">
-
-      <!-- Verdict badge -->
-      <div class="flex items-center gap-2">
-        <span :class="result && result.is_zakat_due
-                        ? 'bg-primary-100 text-primary-800'
-                        : 'bg-gray-200 text-gray-600'"
-              class="text-xs font-medium px-3 py-1 rounded-full">
-          <span x-show="result && result.is_zakat_due">Zakat is due</span>
-          <span x-show="result && !result.is_zakat_due" style="display:none">
-            Below Nisab — no Zakat due this year
-          </span>
-        </span>
-      </div>
-
-      <!-- Breakdown table -->
-      <div class="space-y-2 text-sm">
-        <div class="flex justify-between py-1.5 border-b border-gray-200">
-          <span class="text-gray-500">Total assets</span>
-          <span class="font-medium text-gray-900" x-text="formatPKR(result && result.total_assets)"></span>
-        </div>
-        <div class="flex justify-between py-1.5 border-b border-gray-200">
-          <span class="text-gray-500">Total deductions</span>
-          <span class="font-medium text-gray-900" x-text="'– ' + formatPKR(result && result.total_deductions)"></span>
-        </div>
-        <div class="flex justify-between py-1.5 border-b border-gray-200">
-          <span class="text-gray-500">Zakatable wealth</span>
-          <span class="font-medium text-gray-900" x-text="formatPKR(result && result.zakatable_wealth)"></span>
-        </div>
-        <div class="flex justify-between py-1.5 border-b border-gray-200">
-          <span class="text-gray-500">Nisab threshold</span>
-          <span class="font-medium text-gray-900" x-text="formatPKR(result && result.nisab_threshold)"></span>
-        </div>
-        <div class="flex justify-between py-1.5 border-b border-gray-200">
-          <span class="text-gray-500">Zakat rate</span>
-          <span class="font-medium text-gray-900">2.5%</span>
-        </div>
-        <div class="flex justify-between py-2 mt-1">
-          <span class="text-base font-medium"
-                :class="result && result.is_zakat_due ? 'text-primary-700' : 'text-gray-500'">
-            Zakat due
-          </span>
-          <span class="text-xl font-semibold"
-                :class="result && result.is_zakat_due ? 'text-primary-700' : 'text-gray-500'"
-                x-text="formatPKR(result && result.zakat_due)">
-          </span>
-        </div>
-      </div>
-
-      <!-- Action buttons -->
-      <div class="flex flex-col sm:flex-row gap-3 pt-2">
-        <a href="/charities"
-           class="flex-1 text-center py-2.5 rounded-lg text-sm font-medium
-                  bg-primary-400 text-white hover:bg-primary-600 transition">
-          Find charities to donate to
-        </a>
-        <button @click="downloadCertificate"
-                x-show="result && result.is_zakat_due"
-                class="flex-1 py-2.5 rounded-lg text-sm font-medium border
-                       border-primary-300 text-primary-700 hover:bg-primary-50 transition">
-          Download Zakat certificate (PDF)
-        </button>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Error message -->
-  <div x-show="errorMsg" x-transition style="display:none"
-       class="bg-red-50 border border-red-200 rounded-xl px-5 py-3 text-sm text-red-700"
-       x-text="errorMsg">
-  </div>
-
-  <!-- Recent calculations history -->
-  <div class="bg-white border border-gray-100 rounded-xl p-5">
-    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">
-      Recent calculations
-    </p>
-    <div id="history-list" class="space-y-2 text-sm text-gray-400 italic">
-      Loading history...
-    </div>
-  </div>
-
-</div>
-{% endblock %}
-<script>
-  // Auth guard
-  if (!localStorage.getItem("se_token")) {
-    window.location.href = "/auth/login";
-  }
-</script>
-
-
-{% block scripts %}
-<style>
-  .field-input {
-    width: 100%;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    color: #111827;
-    outline: none;
-    transition: box-shadow 0.15s, border-color 0.15s;
-  }
-  .field-input:focus {
-    box-shadow: 0 0 0 2px #1C484D;
-    border-color: #1C484D;
-  }
-</style>
-
-<script>
-function zakatApp() {
-  return {
-    nisabRate: 'gold',
-    hawlConfirmed: false,
-    loading: false,
-    result: null,
-    errorMsg: '',
-
-    form: {
-      user_name: '',
-      cash: 0,
-      gold_value: 0,
-      silver_value: 0,
-      business_inventory: 0,
-      receivables: 0,
-      debts: 0,
-      immediate_expenses: 0,
-    },
-
-    async init() {
-      await this.loadNisab();
-      await this.loadHistory();
-    },
-
-    async loadNisab() {
-      try {
-        const res = await fetch('/zakat/nisab');
-        const data = await res.json();
-        document.getElementById('nisab-gold').textContent   = formatPKR(data.gold_nisab_pkr);
-        document.getElementById('nisab-silver').textContent = formatPKR(data.silver_nisab_pkr);
-      } catch(e) {
-        document.getElementById('nisab-gold').textContent   = 'PKR 1,837,080';
-        document.getElementById('nisab-silver').textContent = 'PKR 153,090';
-      }
-    },
-
-    async loadHistory() {
-      try {
-        const res = await fetch('/zakat/history', { headers: authHeaders() });
-        const records = await res.json();
-        const el = document.getElementById('history-list');
-        if (!records.length) {
-          el.innerHTML = '<p class="text-gray-400 italic">No calculations yet.</p>';
-          return;
-        }
-        el.innerHTML = records.map(r => `
-          <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-            <div>
-              <span class="font-medium text-gray-700">${r.user_name}</span>
-              <span class="text-gray-400 ml-2 text-xs">${r.calculated_at}</span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="text-label-md text-on-surface-variant">Cash in Hand & Bank</label>
+              <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.cash"/>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="font-medium ${r.is_zakat_due ? 'text-primary-600' : 'text-gray-400'}">
-                ${formatPKR(r.zakat_due)}
-              </span>
-              <span class="text-xs px-2 py-0.5 rounded-full
-                ${r.is_zakat_due ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-500'}">
-                ${r.is_zakat_due ? 'Due' : 'Exempt'}
-              </span>
+            <div class="space-y-2">
+              <label class="text-label-md text-on-surface-variant">Gold Value</label>
+              <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.gold_value"/>
             </div>
           </div>
-        `).join('');
-      } catch(e) {
-        document.getElementById('history-list').innerHTML =
-          '<p class="text-gray-400 italic">Could not load history.</p>';
-      }
-    },
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="text-label-md text-on-surface-variant">Silver Value</label>
+              <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.silver_value"/>
+            </div>
+            <div class="space-y-2">
+              <label class="text-label-md text-on-surface-variant">Business Assets/Inventory</label>
+              <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.business_inventory"/>
+            </div>
+          </div>
+          
+          <div class="space-y-2">
+            <label class="text-label-md text-on-surface-variant">Receivables (Money owed to you)</label>
+            <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.receivables"/>
+          </div>
+          
+          <div class="pt-4 border-t border-[#262626]">
+            <h4 class="text-label-md text-on-surface-variant uppercase tracking-widest mb-4">Deductions</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <label class="text-label-md text-on-surface-variant">Debts Payable</label>
+                <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.debts"/>
+              </div>
+              <div class="space-y-2">
+                <label class="text-label-md text-on-surface-variant">Immediate Expenses</label>
+                <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.immediate_expenses"/>
+              </div>
+            </div>
+          </div>
 
-    async submitCalculation() {
-      if (!this.hawlConfirmed || !this.form.user_name) return;
-      this.loading  = true;
-      this.result   = null;
-      this.errorMsg = '';
+          <div class="pt-4 border-t border-[#262626] flex items-start gap-3">
+            <input type="checkbox" x-model="hawlConfirmed" id="hawl" class="mt-1 accent-primary h-4 w-4 rounded bg-[#0c0e14] border-[#33343c]"/>
+            <label for="hawl" class="text-xs text-on-surface-variant cursor-pointer leading-relaxed">
+              I confirm that I have owned these assets for one complete Islamic lunar year (Hawl).
+            </label>
+          </div>
 
-      try {
-        const payload = { ...this.form, nisab_rate_used: this.nisabRate };
-        const res  = await fetch('/zakat/calculate', {
-          method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify(payload),
-        });
+          <!-- Error message -->
+          <div x-show="errorMsg" style="display:none" class="bg-[#2d0a0a] border border-error/20 rounded-lg px-4 py-3 text-sm text-error">
+            <span x-text="errorMsg"></span>
+          </div>
 
-        if (!res.ok) {
-          if (handleAuthError(res)) return;
-          throw new Error('Calculation failed. Please check your inputs.');
-        }
-        this.result = await res.json();
-        await this.loadHistory();
+          <button @click="submitCalculation" :disabled="!hawlConfirmed || !form.user_name || loading" 
+            class="w-full py-3 bg-primary-container text-on-primary-container font-headline-md rounded-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" type="button">
+            <span class="material-symbols-outlined" data-icon="calculate" x-show="!loading">calculate</span>
+            <span x-show="!loading">Calculate Total Zakat</span>
+            <svg x-show="loading" class="w-5 h-5 animate-spin text-on-primary-container" fill="none" viewBox="0 0 24 24" style="display:none;">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span x-show="loading" style="display:none;">Calculating...</span>
+          </button>
+        </form>
+      </div>
 
-      } catch(e) {
-        this.errorMsg = e.message || 'Something went wrong. Please try again.';
-      } finally {
-        this.loading = false;
-      }
-    },
+      <!-- History Card -->
+      <div class="bg-[#141414] border border-[#262626] rounded-xl overflow-hidden">
+        <div class="p-6 border-b border-[#262626] flex justify-between items-center">
+          <h3 class="font-headline-md text-on-surface">Recent Calculations</h3>
+        </div>
+        <ul id="history-list" class="divide-y divide-[#262626]">
+          <li class="p-4 text-on-surface-variant italic text-sm text-center">Loading history...</li>
+        </ul>
+      </div>
 
-    async downloadCertificate() {
-      if (!this.result) return;
-      const params = new URLSearchParams({
-        user_name:        this.result.user_name,
-        zakat_due:        this.result.zakat_due,
-        zakatable_wealth: this.result.zakatable_wealth,
-        nisab_threshold:  this.result.nisab_threshold,
-        total_assets:     this.result.total_assets,
-        total_deductions: this.result.total_deductions,
-        nisab_rate:       this.nisabRate,
-      });
-      window.location.href = `/zakat/certificate?${params.toString()}`;
-    },
+    </div>
 
-    liveCalc() {
-      // optional: trigger recalc while typing (no-op until submitted)
-    },
+    <!-- Results Sidebar -->
+    <div class="col-span-12 lg:col-span-5 space-y-gutter">
+      
+      <!-- Verdict Badge & Main Result (Visible only after calculation) -->
+      <div x-show="result" style="display:none" x-transition 
+           :class="result && result.is_zakat_due ? 'border-[#262626] bg-[#141414]' : 'border-[#262626] bg-[#141414] opacity-80'"
+           class="border rounded-xl p-6 md:p-8 text-center relative overflow-hidden shadow-2xl">
+        
+        <div class="absolute top-4 right-4">
+          <span :class="result && result.is_zakat_due ? 'bg-primary/10 text-primary border-primary/20' : 'bg-surface-variant text-on-surface-variant border-outline-variant'"
+                class="px-3 py-1 rounded-full text-[11px] font-bold uppercase border">
+            <span x-text="result && result.is_zakat_due ? 'Zakat Eligible' : 'Below Nisab'"></span>
+          </span>
+        </div>
+        
+        <p class="text-label-md text-on-surface-variant uppercase tracking-widest mb-2">Estimated Payable Zakat</p>
+        <h2 class="text-[48px] font-bold leading-none mb-4" :class="result && result.is_zakat_due ? 'text-primary' : 'text-on-surface'">
+          <span x-text="formatPKR(result && result.zakat_due)">0</span>
+        </h2>
+        
+        <div class="space-y-4 text-left mt-8">
+          <div class="flex justify-between items-center py-3 border-b border-[#262626]">
+            <span class="text-body-md text-on-surface-variant">Total Assets</span>
+            <span class="font-body-md text-on-surface" x-text="formatPKR(result && result.total_assets)"></span>
+          </div>
+          <div class="flex justify-between items-center py-3 border-b border-[#262626]">
+            <span class="text-body-md text-on-surface-variant">Total Deductions</span>
+            <span class="font-body-md text-on-surface" x-text="'- ' + formatPKR(result && result.total_deductions)"></span>
+          </div>
+          <div class="flex justify-between items-center py-3 border-b border-[#262626]">
+            <span class="text-body-md text-on-surface-variant font-semibold">Zakatable Wealth</span>
+            <span class="font-body-md text-on-surface font-semibold" x-text="formatPKR(result && result.zakatable_wealth)"></span>
+          </div>
+          <div class="flex justify-between items-center py-3 border-b border-[#262626]">
+            <span class="text-body-md text-on-surface-variant">Nisab Threshold</span>
+            <span class="font-body-md text-on-surface" x-text="formatPKR(result && result.nisab_threshold)"></span>
+          </div>
+          <div class="flex justify-between items-center py-3">
+            <span class="text-body-md text-on-surface-variant">Zakat Rate</span>
+            <span class="font-body-md text-primary">2.5%</span>
+          </div>
+        </div>
+        
+        <div class="flex flex-col gap-3 mt-8">
+          <a href="/charities" class="w-full py-3.5 bg-primary-container text-on-primary-container font-headline-md text-body-md rounded-lg hover:brightness-110 transition-all flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined" data-icon="volunteer_activism">volunteer_activism</span>
+            Find Verified Charities
+          </a>
+          <button @click="downloadCertificate" x-show="result && result.is_zakat_due" class="w-full py-3 border border-primary/30 text-primary font-headline-md text-body-md rounded-lg hover:bg-primary/10 transition-all flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined" data-icon="download">download</span>
+            Download Certificate
+          </button>
+        </div>
+      </div>
+
+      <!-- Initial Religious Context Card -->
+      <div x-show="!result" class="bg-[#141414] border border-[#262626] rounded-xl p-6 relative h-64 flex flex-col justify-center">
+        <div class="absolute inset-0 opacity-10 pointer-events-none rounded-xl overflow-hidden">
+          <img class="w-full h-full object-cover grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4i_QuPpk-vwqaen11jA2GnzMxG0uilauS0DT_D-4Oz9L3P9rxrg4SfHdwcnrJ1kNyBnz4QEL2skC6qTI3gtl94zHTtRRd_EW6_JHrclQ6j5ByS_ylErI0l-ok-ng-MNn8KkGFhKCg5YNvOYO2twvRt1xRptVoCgXpY3y-dZGqXyCglRgTjN8Hauhpsg7A1SZmieQl_rpAQYdyHAzJT-1bSQ9MV7nbhKju34I4bd-CPzDzPNIeQclTXm-rvDXR8x26hWypz1upvLE" alt="Islamic pattern"/>
+        </div>
+        <div class="relative z-10 text-center">
+          <h4 class="font-urdu-body text-urdu-body text-primary mb-4 text-xl">زکوٰۃ ایک فریضہ ہے</h4>
+          <p class="text-body-md text-on-surface mb-4">"And establish prayer and give Zakat and bow with those who bow."</p>
+          <p class="text-label-md text-on-surface-variant">— Al-Baqarah 2:43</p>
+        </div>
+      </div>
+
+      <!-- AI Insight Card -->
+      <div class="bg-[#1c1c1c] border border-primary/20 rounded-xl p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="material-symbols-outlined text-primary" data-icon="smart_toy">smart_toy</span>
+          <h4 class="font-headline-md text-on-surface">AI Assistant</h4>
+        </div>
+        <p class="text-body-md text-on-surface-variant mb-4">
+          Unsure if your gold is zakatable? Or how to value your business inventory? Ask our Shariah AI for guidance.
+        </p>
+        <a href="/chatbot" class="text-primary text-label-md font-bold flex items-center gap-1 hover:gap-2 transition-all">
+          Ask Chatbot <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function formatPKR(val) {
+    if (val === undefined || val === null) return 'PKR 0';
+    return 'PKR ' + parseFloat(val).toLocaleString('en-US', { maximumFractionDigits: 0 });
   }
-}
+
+  function zakatApp() {
+    return {
+      nisabRate: 'gold',
+      hawlConfirmed: false,
+      loading: false,
+      result: null,
+      errorMsg: '',
+
+      form: {
+        user_name: '',
+        cash: 0,
+        gold_value: 0,
+        silver_value: 0,
+        business_inventory: 0,
+        receivables: 0,
+        debts: 0,
+        immediate_expenses: 0,
+      },
+
+      async init() {
+        await this.loadNisab();
+        await this.loadHistory();
+      },
+
+      async loadNisab() {
+        try {
+          const res = await fetch('/zakat/nisab');
+          const data = await res.json();
+          document.getElementById('nisab-gold').textContent   = formatPKR(data.gold_nisab_pkr);
+          document.getElementById('nisab-silver').textContent = formatPKR(data.silver_nisab_pkr);
+        } catch(e) {
+          document.getElementById('nisab-gold').textContent   = 'PKR 1,837,080';
+          document.getElementById('nisab-silver').textContent = 'PKR 153,090';
+        }
+      },
+
+      async loadHistory() {
+        try {
+          const res = await fetch('/zakat/history', { headers: authHeaders() });
+          const records = await res.json();
+          const el = document.getElementById('history-list');
+          if (!records.length) {
+            el.innerHTML = '<li class="p-4 text-on-surface-variant italic text-sm text-center">No calculations yet.</li>';
+            return;
+          }
+          el.innerHTML = records.map(r => `
+            <li class="p-4 hover:bg-[#1c1c1c] transition-colors flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded ${r.is_zakat_due ? 'bg-primary/10' : 'bg-surface-variant'} flex items-center justify-center">
+                  <span class="material-symbols-outlined ${r.is_zakat_due ? 'text-primary' : 'text-on-surface-variant'}" data-icon="history">history</span>
+                </div>
+                <div>
+                  <p class="font-body-md text-on-surface">${r.user_name}</p>
+                  <p class="text-[10px] text-on-surface-variant">${r.calculated_at}</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="font-body-md text-on-surface">${formatPKR(r.zakat_due)}</p>
+                <span class="px-2 py-0.5 rounded-full text-[10px] ${r.is_zakat_due ? 'bg-primary/20 text-primary' : 'bg-on-surface-variant/10 text-on-surface-variant'} font-bold uppercase tracking-tighter">
+                  ${r.is_zakat_due ? 'Eligible' : 'Exempt'}
+                </span>
+              </div>
+            </li>
+          `).join('');
+        } catch(e) {
+          document.getElementById('history-list').innerHTML =
+            '<li class="p-4 text-error italic text-sm text-center">Could not load history.</li>';
+        }
+      },
+
+      async submitCalculation() {
+        if (!this.hawlConfirmed || !this.form.user_name) return;
+        this.loading  = true;
+        this.result   = null;
+        this.errorMsg = '';
+
+        try {
+          const payload = { ...this.form, nisab_rate_used: this.nisabRate };
+          const res  = await fetch('/zakat/calculate', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify(payload),
+          });
+
+          if (!res.ok) {
+            if (handleAuthError(res)) return;
+            throw new Error('Calculation failed. Please check your inputs.');
+          }
+          this.result = await res.json();
+          await this.loadHistory();
+
+        } catch(e) {
+          this.errorMsg = e.message || 'Something went wrong. Please try again.';
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      async downloadCertificate() {
+        if (!this.result) return;
+        const params = new URLSearchParams({
+          user_name:        this.result.user_name,
+          zakat_due:        this.result.zakat_due,
+          zakatable_wealth: this.result.zakatable_wealth,
+          nisab_threshold:  this.result.nisab_threshold,
+          total_assets:     this.result.total_assets,
+          total_deductions: this.result.total_deductions,
+          nisab_rate:       this.nisabRate,
+        });
+        window.location.href = `/zakat/certificate?${params.toString()}`;
+      }
+    }
+  }
 </script>
 {% endblock %}
-<script>
-  // Auth guard
-  if (!localStorage.getItem("se_token")) {
-    window.location.href = "/auth/login";
-  }
-</script>

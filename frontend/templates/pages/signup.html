@@ -1,155 +1,142 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sign Up — ShariahEase</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: { 50:'#E1F5EE',100:'#9FE1CB',200:'#5DCAA5',400:'#1D9E75',600:'#0F6E56',800:'#085041',900:'#04342C' }
-          }
-        }
-      }
-    }
-  </script>
-  <style>body { font-family: 'Inter', sans-serif; }</style>
-</head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
-
-  <div class="w-full max-w-sm">
-
-    <!-- Logo / Brand -->
-    <div class="text-center mb-8">
-      <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary-600 mb-4">
-        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/>
-        </svg>
-      </div>
-      <h1 class="text-xl font-semibold text-gray-900">ShariahEase</h1>
-      <p class="text-sm text-gray-400 mt-1">Islamic Finance AI · Pakistan</p>
+{% extends "auth_base.html" %}
+{% block content %}
+<div class="w-full max-w-sm">
+  <!-- Signup Card -->
+  <div class="bg-[#141414] border border-[#262626] rounded-xl overflow-hidden flex flex-col shadow-2xl" id="signup-card">
+    
+    <!-- Error / Success banners -->
+    <div id="error-banner" class="hidden bg-[#2d0a0a] border-b border-error/20 px-stack-lg py-3 flex items-center gap-3">
+      <span class="material-symbols-outlined text-error text-[20px]" data-icon="error">error</span>
+      <span class="text-error font-label-md text-label-md"></span>
+    </div>
+    <div id="success-banner" class="hidden bg-[#00422b] border-b border-primary/20 px-stack-lg py-3 flex items-center gap-3">
+      <span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span>
+      <span class="text-primary font-label-md text-label-md"></span>
     </div>
 
-    <!-- Card -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-      <h2 class="text-base font-semibold text-gray-900 mb-1">Create account</h2>
-      <p class="text-sm text-gray-400 mb-6">Your history stays private — only you can see it</p>
-
-      <!-- Error / success banners -->
-      <div id="error-banner"   class="hidden mb-4 px-4 py-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-600"></div>
-      <div id="success-banner" class="hidden mb-4 px-4 py-3 bg-primary-50 border border-primary-100 rounded-lg text-sm text-primary-600"></div>
-
-      <div class="space-y-4">
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1.5">Full name</label>
-          <input id="name" type="text" placeholder="e.g. Ahmed Khan"
-            class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition"/>
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1.5">Email</label>
-          <input id="email" type="email" placeholder="you@example.com"
-            class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition"/>
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1.5">Password <span class="text-gray-300">(min 6 characters)</span></label>
-          <input id="password" type="password" placeholder="••••••••"
-            class="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition"/>
-        </div>
-
-        <button id="signup-btn" onclick="signup()"
-          class="w-full py-2.5 px-4 bg-primary-600 hover:bg-primary-800 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
-          <span id="btn-text">Create account</span>
-          <svg id="btn-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-          </svg>
-        </button>
+    <div class="px-stack-lg pt-stack-lg pb-stack-md flex flex-col items-center text-center">
+      <div class="w-12 h-12 bg-primary-container rounded-lg flex items-center justify-center mb-stack-lg">
+        <span class="material-symbols-outlined text-on-primary-container text-[28px]" data-icon="person_add">person_add</span>
+      </div>
+      <h1 class="font-headline-lg text-headline-lg text-on-surface mb-stack-sm">Create Account</h1>
+      <p class="font-body-md text-body-md text-on-surface-variant">Your history stays private & secure</p>
+    </div>
+    
+    <div class="p-stack-lg space-y-stack-lg">
+      <div class="space-y-stack-sm">
+        <label class="font-label-md text-label-md text-on-surface-variant px-1">Full Name</label>
+        <input id="name" class="field-input w-full px-4 py-3 rounded-lg font-body-md text-body-md" placeholder="e.g. Ahmed Khan" required type="text"/>
       </div>
 
-      <p class="mt-6 text-center text-sm text-gray-400">
-        Already have an account?
-        <a href="/auth/login" class="text-primary-600 hover:text-primary-800 font-medium">Sign in</a>
+      <div class="space-y-stack-sm">
+        <label class="font-label-md text-label-md text-on-surface-variant px-1">Email Address</label>
+        <input id="email" class="field-input w-full px-4 py-3 rounded-lg font-body-md text-body-md" placeholder="investor@shariahease.com" required type="email"/>
+      </div>
+      
+      <div class="space-y-stack-sm">
+        <label class="font-label-md text-label-md text-on-surface-variant px-1">Password <span class="text-surface-variant ml-1 font-normal">(min 6 char)</span></label>
+        <input id="password" class="field-input w-full px-4 py-3 rounded-lg font-body-md text-body-md" placeholder="••••••••" required type="password"/>
+      </div>
+      
+      <button id="signup-btn" onclick="signup()" class="w-full bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-headline-md text-body-md py-3.5 rounded-lg transition-all active:scale-95 font-semibold flex items-center justify-center gap-2" type="button">
+        <span id="btn-text">Create Account</span>
+        <svg id="btn-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        </svg>
+      </button>
+      
+    </div>
+    
+    <div class="bg-surface-container-low p-stack-lg border-t border-[#262626] text-center">
+      <p class="font-body-md text-body-md text-on-surface-variant">
+        Already have an account? 
+        <a class="text-primary font-semibold hover:underline" href="/auth/login">Sign in</a>
       </p>
     </div>
-
   </div>
+  
+  <!-- Footer Links -->
+  <div class="mt-stack-lg flex justify-center gap-6">
+    <a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy</a>
+    <a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Support</a>
+    <a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Compliance</a>
+  </div>
+</div>
+{% endblock %}
 
-  <script>
-    if (localStorage.getItem('se_token')) {
-      window.location.href = '/';
+{% block scripts %}
+<script>
+  if (localStorage.getItem('se_token')) {
+    window.location.href = '/';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') signup();
+  });
+
+  async function signup() {
+    const name     = document.getElementById('name').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const errBanner = document.getElementById('error-banner');
+    const okBanner  = document.getElementById('success-banner');
+    const btn       = document.getElementById('signup-btn');
+    const spinner   = document.getElementById('btn-spinner');
+    const btnText   = document.getElementById('btn-text');
+
+    errBanner.classList.add('hidden');
+    okBanner.classList.add('hidden');
+
+    if (!name || !email || !password) {
+      showError('Please fill in all fields.');
+      return;
+    }
+    if (password.length < 6) {
+      showError('Password must be at least 6 characters.');
+      return;
     }
 
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Enter') signup();
-    });
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    btnText.textContent = 'Creating…';
 
-    async function signup() {
-      const name     = document.getElementById('name').value.trim();
-      const email    = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      const errBanner = document.getElementById('error-banner');
-      const okBanner  = document.getElementById('success-banner');
-      const btn       = document.getElementById('signup-btn');
-      const spinner   = document.getElementById('btn-spinner');
-      const btnText   = document.getElementById('btn-text');
+    try {
+      const res = await fetch('/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-      errBanner.classList.add('hidden');
-      okBanner.classList.add('hidden');
+      const data = await res.json();
 
-      if (!name || !email || !password) {
-        showError('Please fill in all fields.');
+      if (!res.ok) {
+        showError(data.detail || 'Signup failed.');
         return;
       }
-      if (password.length < 6) {
-        showError('Password must be at least 6 characters.');
-        return;
-      }
 
-      btn.disabled = true;
-      spinner.classList.remove('hidden');
-      btnText.textContent = 'Creating…';
+      localStorage.setItem('se_token', data.access_token);
+      localStorage.setItem('se_user',  JSON.stringify({ id: data.user_id, name: data.name, email: data.email }));
 
-      try {
-        const res = await fetch('/auth/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password }),
-        });
+      const okText = okBanner.querySelector('.text-primary.font-label-md');
+      okText.textContent = `Welcome, ${data.name}! Redirecting…`;
+      okBanner.classList.remove('hidden');
 
-        const data = await res.json();
-
-        if (!res.ok) {
-          showError(data.detail || 'Signup failed.');
-          return;
-        }
-
-        localStorage.setItem('se_token', data.access_token);
-        localStorage.setItem('se_user',  JSON.stringify({ id: data.user_id, name: data.name, email: data.email }));
-
-        okBanner.textContent = `Welcome, ${data.name}! Redirecting…`;
-        okBanner.classList.remove('hidden');
-
-        setTimeout(() => window.location.href = '/', 1200);
-      } catch (err) {
-        showError('Network error. Please try again.');
-      } finally {
-        btn.disabled = false;
-        spinner.classList.add('hidden');
-        btnText.textContent = 'Create account';
-      }
+      setTimeout(() => window.location.href = '/', 1200);
+    } catch (err) {
+      showError('Network error. Please try again.');
+    } finally {
+      btn.disabled = false;
+      spinner.classList.add('hidden');
+      btnText.textContent = 'Create Account';
     }
+  }
 
-    function showError(msg) {
-      const banner = document.getElementById('error-banner');
-      banner.textContent = msg;
-      banner.classList.remove('hidden');
-    }
-  </script>
-</body>
-</html>
+  function showError(msg) {
+    const banner = document.getElementById('error-banner');
+    const bannerText = banner.querySelector('.text-error.font-label-md');
+    bannerText.textContent = msg;
+    banner.classList.remove('hidden');
+  }
+</script>
+{% endblock %}

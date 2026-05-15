@@ -1,203 +1,170 @@
 {% extends "base.html" %}
-{% block title %}Halal Screener{% endblock %}
-<script>
-  // Auth guard
-  if (!localStorage.getItem("se_token")) {
-    window.location.href = "/auth/login";
-  }
-</script>
-{% block page_title %}Halal investment screener{% endblock %}
-<script>
-  // Auth guard
-  if (!localStorage.getItem("se_token")) {
-    window.location.href = "/auth/login";
-  }
-</script>
+{% block title %}Halal Screener - ShariahEase{% endblock %}
+{% block page_title %}Halal Screener{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto space-y-5" x-data="screenerApp()">
+<div class="max-w-[1400px] mx-auto space-y-gutter" x-data="screenerApp()">
 
-  <!-- Explainer -->
-  <div class="bg-white border border-gray-100 rounded-xl px-5 py-4">
-    <p class="text-xs text-gray-500 leading-relaxed">
-      Enter any company name, mutual fund, bank product, or investment type.
-      Our AI checks it against Shariah screening criteria — business activity,
-      debt ratios, interest income — and gives you a clear verdict with reasoning.
-    </p>
-  </div>
+  <!-- Explainer Card -->
+  <section class="mb-8">
+    <div class="bg-[#141414] border border-[#262626] p-8 rounded-xl flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+      <div class="flex-1 z-10">
+        <span class="text-primary font-label-md tracking-widest uppercase">Methodology</span>
+        <h3 class="font-headline-lg text-headline-lg text-on-surface mt-2 mb-4">Precision Shariah Screening</h3>
+        <p class="text-on-surface-variant max-w-2xl">
+          Our screener evaluates assets based on Islamic finance standards. We analyze business activities, debt-to-asset ratios, and interest income to ensure your portfolio remains purely halal.
+        </p>
+      </div>
+      <div class="hidden lg:block absolute right-[-50px] top-[-50px] opacity-10">
+        <span class="material-symbols-outlined !text-[240px] text-primary" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+      </div>
+    </div>
+  </section>
 
-  <!-- Search card -->
-  <div class="bg-white border border-gray-100 rounded-xl p-6 space-y-4">
-
-    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">
-      Check any investment
-    </p>
-
-    <div class="flex gap-3">
-      <input x-model="query"
-             @keydown.enter="checkInvestment"
-             type="text"
-             placeholder="e.g. Meezan Bank, Tesla stock, Prize bonds, Bitcoin..."
-             class="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm
-                    text-gray-900 outline-none transition
-                    focus:ring-2 focus:ring-primary-400 focus:border-transparent"/>
-      <button @click="checkInvestment"
-              :disabled="loading || !query.trim()"
-              class="px-5 py-2.5 rounded-lg text-sm font-medium transition-all
-                     bg-primary-400 text-white hover:bg-primary-600
-                     disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0">
-        <span x-show="!loading">Check</span>
-        <span x-show="loading" style="display:none">Checking...</span>
+  <!-- Search Area -->
+  <section class="mb-10">
+    <div class="flex flex-col md:flex-row gap-4">
+      <div class="relative flex-1 group">
+        <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
+        <input x-model="query" @keydown.enter="checkInvestment" 
+          class="w-full bg-[#0a0a0a] border border-[#262626] rounded-lg py-4 pl-12 pr-4 focus:ring-1 focus:ring-primary focus:border-primary outline-none text-on-surface transition-all placeholder:text-on-surface-variant/50" 
+          placeholder="Enter Ticker, Fund, or Asset Name (e.g. ENGRO, Bitcoin...)" type="text"/>
+      </div>
+      <button @click="checkInvestment" :disabled="loading || !query.trim()" 
+        class="bg-primary-container text-on-primary-container px-8 py-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100">
+        <span x-show="!loading">Check Verdict</span>
+        <span class="material-symbols-outlined" x-show="!loading">analytics</span>
+        <svg x-show="loading" class="w-5 h-5 animate-spin text-on-primary-container" fill="none" viewBox="0 0 24 24" style="display:none;">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
       </button>
     </div>
 
-    <!-- Example queries -->
-    <div class="flex flex-wrap gap-2">
-      <span class="text-xs text-gray-400 self-center">Try:</span>
-      <template x-for="ex in examples" :key="ex">
-        <button @click="query = ex; checkInvestment()"
-                class="text-xs px-3 py-1 border border-gray-200 rounded-full
-                       text-gray-500 hover:bg-gray-50 transition">
-          <span x-text="ex"></span>
-        </button>
-      </template>
+    <!-- Error Message -->
+    <div x-show="errorMsg" style="display:none" class="mt-4 bg-[#2d0a0a] border border-error/20 rounded-lg px-4 py-3 text-sm text-error">
+      <span x-text="errorMsg"></span>
     </div>
+  </section>
 
-  </div>
-
-  <!-- RESULT card -->
-  <div x-show="result" x-transition style="display:none">
-    <div :class="{
-           'border-green-200 bg-green-50':  result && result.verdict === 'HALAL',
-           'border-red-200   bg-red-50':    result && result.verdict === 'HARAM',
-           'border-amber-200 bg-amber-50':  result && result.verdict === 'DOUBTFUL',
-         }"
-         class="rounded-xl border p-6 space-y-4">
-
-      <!-- Verdict header -->
-      <div class="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <p class="text-xs text-gray-500 mb-1" x-text="'Query: ' + (result && result.query)"></p>
-          <div class="flex items-center gap-3">
-
-            <!-- Verdict icon -->
-            <div :class="{
-                   'bg-green-100': result && result.verdict === 'HALAL',
-                   'bg-red-100':   result && result.verdict === 'HARAM',
-                   'bg-amber-100': result && result.verdict === 'DOUBTFUL',
-                 }"
-                 class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
-              <span x-show="result && result.verdict === 'HALAL'" class="text-green-600 text-lg">✓</span>
-              <span x-show="result && result.verdict === 'HARAM'"   class="text-red-600 text-lg"   style="display:none">✗</span>
-              <span x-show="result && result.verdict === 'DOUBTFUL'" class="text-amber-600 text-lg" style="display:none">?</span>
-            </div>
-
-            <!-- Verdict text -->
-            <div>
-              <p :class="{
-                   'text-green-700': result && result.verdict === 'HALAL',
-                   'text-red-700':   result && result.verdict === 'HARAM',
-                   'text-amber-700': result && result.verdict === 'DOUBTFUL',
-                 }"
-                 class="text-xl font-semibold"
-                 x-text="result && result.verdict">
-              </p>
-              <p class="text-xs text-gray-400"
-                 x-text="'Confidence: ' + (result && result.confidence)">
-              </p>
-            </div>
+  <!-- Result Card -->
+  <section class="mb-12" x-show="result" style="display:none" x-transition>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Current Analysis Display -->
+      <div class="lg:col-span-2 border rounded-xl p-8 flex flex-col md:flex-row gap-8 items-center transition-colors"
+           :class="result && result.verdict === 'HALAL' ? 'bg-emerald-950/30 border-emerald-800/50' : (result && result.verdict === 'HARAM' ? 'bg-red-950/30 border-red-800/50' : 'bg-amber-950/30 border-amber-800/50')">
+        
+        <div class="w-32 h-32 rounded-full border-4 flex items-center justify-center"
+             :class="result && result.verdict === 'HALAL' ? 'border-primary bg-emerald-900/40' : (result && result.verdict === 'HARAM' ? 'border-red-500 bg-red-900/40' : 'border-amber-500 bg-amber-900/40')">
+          <span class="material-symbols-outlined !text-6xl" style="font-variation-settings: 'FILL' 1;"
+                :class="result && result.verdict === 'HALAL' ? 'text-primary' : (result && result.verdict === 'HARAM' ? 'text-red-500' : 'text-amber-500')"
+                x-text="result && result.verdict === 'HALAL' ? 'check_circle' : (result && result.verdict === 'HARAM' ? 'cancel' : 'warning')"></span>
+        </div>
+        
+        <div class="flex-1 text-center md:text-left">
+          <div class="flex items-center justify-center md:justify-start gap-3 mb-2">
+            <h4 class="font-headline-lg text-headline-lg text-white" x-text="result && result.query"></h4>
+            <span class="px-3 py-1 rounded-full text-label-md border uppercase font-bold"
+                  :class="result && result.verdict === 'HALAL' ? 'bg-primary/20 text-primary border-primary/30' : (result && result.verdict === 'HARAM' ? 'bg-red-500/20 text-red-500 border-red-500/30' : 'bg-amber-500/20 text-amber-500 border-amber-500/30')"
+                  x-text="result && result.verdict"></span>
+          </div>
+          <p class="text-on-surface-variant mb-6" x-text="'Confidence: ' + (result && result.confidence)"></p>
+          
+          <div class="bg-black/40 p-4 rounded-lg border border-[#262626]">
+            <p class="text-sm text-on-surface leading-relaxed" x-text="result && result.explanation"></p>
           </div>
         </div>
-
-        <!-- Ask chatbot button -->
-        <a :href="'/chatbot'"
-           class="text-xs px-3 py-2 border border-gray-200 rounded-lg
-                  text-gray-500 hover:bg-white transition flex-shrink-0">
-          Ask chatbot for more detail →
+      </div>
+      
+      <!-- AI Assistant Context -->
+      <div class="bg-surface-container-high border border-outline-variant rounded-xl p-6 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary">auto_awesome</span>
+            <h5 class="font-headline-md text-on-surface">AI Shariah Note</h5>
+          </div>
+          <p class="text-body-md text-on-surface-variant italic">
+            "This AI-generated guidance is based on general Shariah principles. Always verify with a qualified scholar before making final decisions."
+          </p>
+        </div>
+        <a href="/chatbot" class="mt-6 w-full text-center py-3 border border-outline text-on-surface rounded-lg hover:bg-surface transition-colors font-medium">
+          Ask Chatbot for Details
         </a>
       </div>
-
-      <!-- Explanation -->
-      <div class="bg-white bg-opacity-60 rounded-lg px-4 py-3">
-        <p class="text-xs font-medium text-gray-500 mb-1">Shariah analysis</p>
-        <p class="text-sm text-gray-700 leading-relaxed"
-           x-text="result && result.explanation">
-        </p>
-      </div>
-
-      <!-- Disclaimer -->
-      <p class="text-xs text-gray-400">
-        This is AI-generated guidance based on general Shariah principles.
-        Always verify with your bank's Shariah Supervisory Board or a qualified scholar
-        before making investment decisions.
-      </p>
-
     </div>
-  </div>
+  </section>
 
-  <!-- Error -->
-  <div x-show="errorMsg" x-transition style="display:none"
-       class="bg-red-50 border border-red-200 rounded-xl px-5 py-3 text-sm text-red-700"
-       x-text="errorMsg">
-  </div>
-
-  <!-- Pre-screened Pakistani funds -->
-  <div class="space-y-3">
-    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider px-1">
-      Pre-screened Pakistani investments
-    </p>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+  <!-- Preloaded Grid: Pre-screened Funds -->
+  <section class="mb-12">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="font-headline-lg text-headline-lg text-on-surface">Pre-screened Investments</h3>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <template x-for="fund in preloaded" :key="fund.name">
-        <div :class="{
-               'border-green-100 hover:border-green-200': fund.verdict === 'HALAL',
-               'border-red-100   hover:border-red-200':   fund.verdict === 'HARAM',
-               'border-amber-100 hover:border-amber-200': fund.verdict === 'DOUBTFUL',
-             }"
-             class="bg-white border rounded-xl p-4 space-y-2 cursor-pointer transition"
-             @click="query = fund.name; checkInvestment()">
-
-          <div class="flex items-start justify-between gap-2">
+        <div @click="query = fund.name; checkInvestment()"
+             class="bg-surface border rounded-xl p-6 transition-all group cursor-pointer"
+             :class="fund.verdict === 'HALAL' ? 'border-outline-variant hover:border-primary' : (fund.verdict === 'HARAM' ? 'border-red-900/30 hover:border-red-700 bg-red-950/10' : 'border-amber-900/30 hover:border-amber-700 bg-amber-950/10')">
+          
+          <div class="flex justify-between items-start mb-4">
             <div>
-              <p class="text-sm font-medium text-gray-900" x-text="fund.name"></p>
-              <p class="text-xs text-gray-400" x-text="fund.type"></p>
+              <h4 class="font-headline-md text-on-surface" x-text="fund.name"></h4>
+              <p class="text-label-md text-on-surface-variant" x-text="fund.type"></p>
             </div>
-            <span :class="{
-                    'bg-green-100 text-green-700': fund.verdict === 'HALAL',
-                    'bg-red-100   text-red-700':   fund.verdict === 'HARAM',
-                    'bg-amber-100 text-amber-700': fund.verdict === 'DOUBTFUL',
-                  }"
-                  class="text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0"
-                  x-text="fund.verdict">
-            </span>
+            <span class="px-3 py-1 rounded-full text-[10px] border font-bold uppercase tracking-tighter"
+                  :class="fund.verdict === 'HALAL' ? 'bg-emerald-950/50 text-primary border-emerald-800' : (fund.verdict === 'HARAM' ? 'bg-red-900/30 text-red-500 border-red-800' : 'bg-amber-900/30 text-amber-500 border-amber-800')"
+                  x-text="fund.verdict"></span>
           </div>
-
-          <p class="text-xs text-gray-500 leading-relaxed" x-text="fund.reason"></p>
-
+          
+          <div class="h-12 w-full mb-4 flex items-center justify-center opacity-80"
+               :class="fund.verdict === 'HARAM' ? 'text-red-900' : ''">
+             <span x-show="fund.verdict === 'HARAM'" class="material-symbols-outlined !text-4xl">block</span>
+             <div x-show="fund.verdict !== 'HARAM'" class="w-full h-full">
+               <svg class="w-full h-full" viewBox="0 0 100 40">
+                  <path d="M0 25 L 20 15 L 40 20 L 60 5 L 80 12 L 100 0" fill="none" :stroke="fund.verdict === 'HALAL' ? '#4edea3' : '#f59e0b'" stroke-width="2"></path>
+               </svg>
+             </div>
+          </div>
+          
+          <div class="flex justify-between items-end border-t border-[#262626] pt-3">
+            <div class="w-full pr-2">
+               <p class="text-[11px] text-on-surface-variant leading-tight" x-text="fund.reason"></p>
+            </div>
+            <button class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center transition-colors flex-shrink-0"
+                    :class="fund.verdict === 'HALAL' ? 'group-hover:bg-primary group-hover:text-on-primary' : (fund.verdict === 'HARAM' ? 'group-hover:bg-red-500 group-hover:text-white' : 'group-hover:bg-amber-500 group-hover:text-black')">
+              <span class="material-symbols-outlined text-sm" x-text="fund.verdict === 'HALAL' ? 'chevron_right' : (fund.verdict === 'HARAM' ? 'warning' : 'info')"></span>
+            </button>
+          </div>
         </div>
       </template>
     </div>
-  </div>
+  </section>
 
-  <!-- Recent screening history -->
-  <div class="bg-white border border-gray-100 rounded-xl p-5">
-    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">
-      Recent screenings
-    </p>
-    <div id="history-list" class="space-y-2 text-sm text-gray-400 italic">
-      Loading...
+  <!-- History List -->
+  <section class="mt-16">
+    <div class="flex items-center gap-3 mb-6">
+      <span class="material-symbols-outlined text-on-surface-variant">history</span>
+      <h3 class="font-headline-md text-on-surface">Recent Screening History</h3>
     </div>
-  </div>
+    <div class="bg-[#141414] border border-[#262626] rounded-xl overflow-x-auto">
+      <table class="w-full text-left whitespace-nowrap">
+        <thead class="bg-[#1a1b22] text-label-md text-on-surface-variant uppercase tracking-wider">
+          <tr>
+            <th class="px-6 py-4 font-semibold">Asset/Query</th>
+            <th class="px-6 py-4 font-semibold">Verdict</th>
+            <th class="px-6 py-4 font-semibold">Date</th>
+            <th class="px-6 py-4 font-semibold text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="history-list" class="divide-y divide-[#262626]">
+          <tr><td colspan="4" class="px-6 py-4 text-center text-on-surface-variant italic text-sm">Loading history...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
 </div>
 {% endblock %}
-<script>
-  // Auth guard
-  if (!localStorage.getItem("se_token")) {
-    window.location.href = "/auth/login";
-  }
-</script>
-
 
 {% block scripts %}
 <script>
@@ -208,15 +175,6 @@ function screenerApp() {
     result:    null,
     errorMsg:  '',
     preloaded: [],
-
-    examples: [
-      'Meezan Bank savings account',
-      'Tesla stock',
-      'Prize bonds',
-      'Bitcoin',
-      'PSX KMI-30 Index Fund',
-      'Conventional life insurance',
-    ],
 
     async init() {
       await this.loadPreloaded();
@@ -239,28 +197,37 @@ function screenerApp() {
         const el      = document.getElementById('history-list');
 
         if (!records.length) {
-          el.innerHTML = '<p class="text-gray-400 italic">No screenings yet.</p>';
+          el.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-on-surface-variant italic text-sm">No screenings yet.</td></tr>';
           return;
         }
 
         el.innerHTML = records.map(r => `
-          <div class="flex items-center justify-between py-2
-                      border-b border-gray-50 last:border-0">
-            <div>
-              <span class="font-medium text-gray-700 not-italic">${r.query}</span>
-              <span class="text-gray-400 ml-2 text-xs">${r.screened_at}</span>
-            </div>
-            <span class="text-xs px-2.5 py-1 rounded-full font-medium
-              ${r.verdict === 'HALAL'    ? 'bg-green-100 text-green-700' :
-                r.verdict === 'HARAM'    ? 'bg-red-100 text-red-700'     :
-                                           'bg-amber-100 text-amber-700'}">
-              ${r.verdict}
-            </span>
-          </div>
+          <tr class="hover:bg-[#1c1c1c] transition-colors">
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center text-xs font-bold text-on-surface-variant">
+                  \${r.query.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p class="font-medium text-on-surface">\${r.query}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <span class="flex items-center gap-1.5 text-sm font-bold \${r.verdict === 'HALAL' ? 'text-primary' : (r.verdict === 'HARAM' ? 'text-red-500' : 'text-amber-500')}">
+                <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">\${r.verdict === 'HALAL' ? 'check_circle' : (r.verdict === 'HARAM' ? 'cancel' : 'warning')}</span>
+                \${r.verdict}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-sm text-on-surface-variant">\${r.screened_at}</td>
+            <td class="px-6 py-4 text-right">
+              <button onclick="document.querySelector('[x-data]').__x.$data.query = '\${r.query.replace(/'/g, "\\'")}'; document.querySelector('[x-data]').__x.$data.checkInvestment(); window.scrollTo(0,0);" class="text-primary hover:underline text-sm font-medium">Re-check</button>
+            </td>
+          </tr>
         `).join('');
       } catch(e) {
         document.getElementById('history-list').innerHTML =
-          '<p class="text-gray-400 italic">Could not load history.</p>';
+          '<tr><td colspan="4" class="px-6 py-4 text-center text-error italic text-sm">Could not load history.</td></tr>';
       }
     },
 
@@ -293,9 +260,3 @@ function screenerApp() {
 }
 </script>
 {% endblock %}
-<script>
-  // Auth guard
-  if (!localStorage.getItem("se_token")) {
-    window.location.href = "/auth/login";
-  }
-</script>

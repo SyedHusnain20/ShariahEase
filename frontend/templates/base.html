@@ -1,133 +1,176 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}ShariahEase{% endblock %} — Islamic Finance AI</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>{% block title %}ShariahEase | Ethical Precision{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/static/css/main.css"/>
-  <script>
+  <script id="tailwind-config">
     tailwind.config = {
+      darkMode: "class",
       theme: {
         extend: {
-          colors: {
-            primary: { 50:'#E1F5EE',100:'#9FE1CB',200:'#5DCAA5',400:'#1D9E75',600:'#0F6E56',800:'#085041',900:'#04342C' }
+          "colors": {
+            "on-error": "#690005", "surface-container-highest": "#33343c", "outline-variant": "#3c4a42",
+            "on-surface": "#e2e1eb", "inverse-surface": "#e2e1eb", "surface-bright": "#383940",
+            "on-secondary-container": "#bab8b7", "on-primary-fixed-variant": "#005236", "secondary-fixed": "#e5e2e1",
+            "on-tertiary-fixed-variant": "#474746", "on-tertiary-fixed": "#1b1b1b", "primary-container": "#10b981",
+            "on-secondary": "#313030", "on-error-container": "#ffdad6", "on-surface-variant": "#bbcabf",
+            "primary": "#4edea3", "on-secondary-fixed-variant": "#474646", "on-tertiary-container": "#393939",
+            "surface": "#12131a", "on-background": "#e2e1eb", "secondary-fixed-dim": "#c8c6c5",
+            "tertiary": "#c8c6c5", "outline": "#86948a", "surface-tint": "#4edea3", "inverse-on-surface": "#2f3037",
+            "on-primary-container": "#00422b", "tertiary-fixed-dim": "#c8c6c5", "secondary": "#c8c6c5",
+            "surface-container-high": "#282a31", "on-primary": "#003824", "tertiary-container": "#a4a2a2",
+            "on-secondary-fixed": "#1c1b1b", "inverse-primary": "#006c49", "on-primary-fixed": "#002113",
+            "background": "#12131a", "on-tertiary": "#313030", "surface-container-low": "#1a1b22",
+            "primary-fixed": "#6ffbbe", "tertiary-fixed": "#e5e2e1", "surface-variant": "#33343c",
+            "error": "#ffb4ab", "surface-container-lowest": "#0c0e14", "primary-fixed-dim": "#4edea3",
+            "error-container": "#93000a", "secondary-container": "#4a4949", "surface-dim": "#12131a",
+            "surface-container": "#1e1f26"
           },
-          fontFamily: { urdu: ['Noto Nastaliq Urdu','serif'] }
+          "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+          "spacing": { "gutter": "16px", "stack-sm": "4px", "margin-desktop": "32px", "margin-mobile": "16px", "sidebar-width": "208px", "stack-md": "8px", "stack-lg": "16px" },
+          "fontFamily": {
+            "urdu-body": ["Noto Nastaliq Urdu"], "body-md": ["Inter"], "label-md": ["Inter"],
+            "headline-md": ["Inter"], "body-lg": ["Inter"], "headline-lg": ["Inter"], "headline-xl": ["Inter"]
+          },
+          "fontSize": {
+            "urdu-body": ["18px", {"lineHeight": "32px", "fontWeight": "400"}],
+            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+            "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+            "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600"}],
+            "headline-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+          }
         }
       }
     }
   </script>
+  <style>
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    body { background-color: #0a0a0a; color: #e2e1eb; }
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body class="overflow-hidden" x-data="{ sidebarOpen: false }">
+  
+  <!-- Mobile Sidebar Overlay -->
+  <div x-show="sidebarOpen" style="display: none;" 
+       class="fixed inset-0 bg-black/60 z-40 md:hidden transition-opacity" 
+       @click="sidebarOpen = false"
+       x-transition.opacity></div>
 
-  <div class="flex h-screen overflow-hidden">
-
-    <!-- SIDEBAR -->
-    <aside class="w-52 bg-white border-r border-gray-100 flex flex-col flex-shrink-0">
-      <div class="px-4 py-5 border-b border-gray-100">
-        <div class="text-sm font-semibold text-gray-900 tracking-tight">ShariahEase</div>
-        <div class="text-xs text-gray-400 mt-0.5">Islamic Finance AI · Pakistan</div>
+  <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+         class="fixed left-0 top-0 h-full w-[208px] bg-[#12131a] border-r border-outline-variant flex flex-col py-6 px-4 z-50 transition-transform duration-300 md:translate-x-0">
+    <div class="mb-10 flex flex-col">
+      <div class="flex justify-between items-center">
+        <h1 class="font-headline-md text-headline-md font-bold text-on-surface">ShariahEase</h1>
+        <button @click="sidebarOpen = false" class="md:hidden text-on-surface-variant hover:text-on-surface p-1">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
       </div>
-
-      <nav class="flex-1 py-3 space-y-0.5 overflow-y-auto">
-
-        <a href="/" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
-          {% if active_page == 'zakat' %}text-primary-600 font-medium bg-primary-50 border-r-2 border-primary-400
-          {% else %}text-gray-500 hover:text-gray-900 hover:bg-gray-50{% endif %}">
-          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          Zakat calculator
-        </a>
-
-        <a href="/screener" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
-          {% if active_page == 'screener' %}text-primary-600 font-medium bg-primary-50 border-r-2 border-primary-400
-          {% else %}text-gray-500 hover:text-gray-900 hover:bg-gray-50{% endif %}">
-          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M6 12h12M9 17h6"/>
-          </svg>
-          Halal screener
-        </a>
-
-        <a href="/mudarabah" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
-          {% if active_page == 'mudarabah' %}text-primary-600 font-medium bg-primary-50 border-r-2 border-primary-400
-          {% else %}text-gray-500 hover:text-gray-900 hover:bg-gray-50{% endif %}">
-          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
-          </svg>
-          Mudarabah sim
-        </a>
-
-        <a href="/chatbot" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
-          {% if active_page == 'chatbot' %}text-primary-600 font-medium bg-primary-50 border-r-2 border-primary-400
-          {% else %}text-gray-500 hover:text-gray-900 hover:bg-gray-50{% endif %}">
-          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/>
-          </svg>
-          AI chatbot
-        </a>
-
-        <a href="/charities" class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
-          {% if active_page == 'charities' %}text-primary-600 font-medium bg-primary-50 border-r-2 border-primary-400
-          {% else %}text-gray-500 hover:text-gray-900 hover:bg-gray-50{% endif %}">
-          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
-          </svg>
-          Charities
-        </a>
-
-      </nav>
-
-      <div class="px-4 py-3 border-t border-gray-100 space-y-1">
-        <div id="sidebar-auth-links" class="hidden">
-          <a href="/auth/login" class="block text-xs text-primary-600 font-medium hover:text-primary-800 py-1">Sign in</a>
-          <a href="/auth/signup" class="block text-xs text-gray-400 hover:text-gray-600 py-1">Create account</a>
-        </div>
-        <p class="text-xs text-gray-300">v1.1 · Free & Open</p>
-      </div>
-    </aside>
-
-    <!-- MAIN -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-      <header class="bg-white border-b border-gray-100 px-6 py-3
-                     flex items-center justify-between flex-shrink-0">
-        <h1 class="text-sm font-medium text-gray-900">
-          {% block page_title %}ShariahEase{% endblock %}
-        </h1>
-        <div class="flex items-center gap-3">
-          <div class="flex items-center gap-1.5">
-            <div class="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse"></div>
-            <span class="text-xs text-gray-400">Live</span>
-          </div>
-          <!-- User menu — populated by JS -->
-          <div id="user-menu" class="hidden flex items-center gap-2">
-            <span id="user-name-display" class="text-xs text-gray-500 font-medium"></span>
-            <button onclick="logout()"
-              class="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1 rounded-md hover:bg-red-50">
-              Sign out
-            </button>
-          </div>
-          <a id="login-link" href="/auth/login"
-            class="hidden text-xs text-primary-600 hover:text-primary-800 font-medium px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 transition-colors">
-            Sign in
-          </a>
-        </div>
-      </header>
-
-      <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
-        {% block content %}{% endblock %}
-      </main>
+      <span class="text-label-md font-label-md text-primary tracking-wider uppercase opacity-80">Ethical Precision</span>
     </div>
+    
+    <nav class="flex-1 space-y-1">
+      <a href="/" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
+        {% if active_page == 'zakat' %}bg-primary-container text-on-primary-container border-r-2 border-primary
+        {% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}">
+        <span class="material-symbols-outlined" data-icon="payments">payments</span>
+        <span class="font-body-md text-body-md">Zakat</span>
+      </a>
+      <a href="/screener" class="flex items-center gap-3 px-3 py-2 rounded-lg group transition-colors
+        {% if active_page == 'screener' %}bg-primary-container text-on-primary-container border-r-2 border-primary
+        {% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}">
+        <span class="material-symbols-outlined" data-icon="query_stats">query_stats</span>
+        <span class="font-body-md text-body-md">Screener</span>
+      </a>
+      <a href="/mudarabah" class="flex items-center gap-3 px-3 py-2 rounded-lg group transition-colors
+        {% if active_page == 'mudarabah' %}bg-primary-container text-on-primary-container border-r-2 border-primary
+        {% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}">
+        <span class="material-symbols-outlined" data-icon="account_balance">account_balance</span>
+        <span class="font-body-md text-body-md">Mudarabah</span>
+      </a>
+      <a href="/chatbot" class="flex items-center gap-3 px-3 py-2 rounded-lg group transition-colors
+        {% if active_page == 'chatbot' %}bg-primary-container text-on-primary-container border-r-2 border-primary
+        {% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}">
+        <span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+        <span class="font-body-md text-body-md">Chatbot</span>
+      </a>
+      <a href="/charities" class="flex items-center gap-3 px-3 py-2 rounded-lg group transition-colors
+        {% if active_page == 'charities' %}bg-primary-container text-on-primary-container border-r-2 border-primary
+        {% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}">
+        <span class="material-symbols-outlined" data-icon="volunteer_activism">volunteer_activism</span>
+        <span class="font-body-md text-body-md">Charities</span>
+      </a>
+    </nav>
+    
+    <div class="mt-auto border-t border-outline-variant pt-6 space-y-1">
+      <div id="sidebar-auth-links" class="hidden">
+        <a href="/auth/login" class="flex items-center gap-3 px-3 py-2 text-primary hover:bg-surface-container-high rounded-lg transition-all">
+          <span class="material-symbols-outlined">login</span>
+          <span class="font-body-md text-body-md">Sign in</span>
+        </a>
+        <a href="/auth/signup" class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface transition-all">
+          <span class="font-body-md text-body-md">Create account</span>
+        </a>
+      </div>
+      <div id="user-menu" class="hidden flex-col gap-1">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface transition-all">
+          <span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+          <span class="font-body-md text-body-md">Profile</span>
+        </a>
+        <button onclick="logout()" class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-error transition-all w-full text-left">
+          <span class="material-symbols-outlined" data-icon="logout">logout</span>
+          <span class="font-body-md text-body-md">Sign Out</span>
+        </button>
+      </div>
+    </div>
+  </aside>
 
+  <div class="md:ml-[208px] h-[100dvh] flex flex-col">
+    <header class="h-16 px-4 md:px-gutter flex justify-between items-center bg-[#12131a] border-b border-outline-variant shrink-0">
+      <div class="flex items-center gap-3 md:gap-4">
+        <button @click="sidebarOpen = true" class="md:hidden text-on-surface-variant hover:text-on-surface p-1">
+          <span class="material-symbols-outlined" data-icon="menu">menu</span>
+        </button>
+        <h2 class="font-headline-md text-lg md:text-headline-md text-on-surface truncate">{% block page_title %}ShariahEase{% endblock %}</h2>
+        <div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full border border-outline-variant">
+          <span class="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_#4edea3]"></span>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-primary">Live Pulse</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 md:gap-6">
+        <div class="flex items-center gap-4 text-on-surface-variant">
+          <button class="hover:text-primary transition-colors p-1">
+            <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+          </button>
+        </div>
+        <div id="header-user-info" class="hidden items-center gap-3 pl-4 md:pl-6 border-l border-outline-variant">
+          <div class="text-right hidden sm:block">
+            <p id="user-name-display" class="font-label-md text-label-md text-on-surface"></p>
+            <p class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Premium Advisor</p>
+          </div>
+          <img alt="User profile" class="w-8 h-8 rounded-lg object-cover ring-1 ring-outline-variant shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDp_PE9s72rkd2yXqmBxUClzh4aoGWzVY1C34tZPcjT6MKymA_3Wzro8YwXOQwb0QrQUvvvDP53i2mbJ_BKj9GB8D1RflyN4Z1ZEvgxcuSfReuzUoR1Is3BmhJheD9hvugO6z2x52KBkNPn496npcA9nZrSU1XH17VYwvpeNPPu2W6_zkgHLQcgldKNwutTcMsBA6_bGmh_W_Mgb2YJHOvFulSg7h7xlyGjX5L7sre-JHlfGyAv6-c-6wpw4txq_jneO3EgAjrLrug"/>
+        </div>
+        <a id="login-link" href="/auth/login" class="hidden text-xs text-on-primary-container font-medium px-4 py-2 rounded-lg bg-primary-container hover:bg-primary transition-colors">
+          Sign in
+        </a>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto bg-[#0a0a0a] p-4 md:p-margin-desktop">
+      {% block content %}{% endblock %}
+    </main>
   </div>
 
   <script src="/static/js/main.js"></script>
   <script>
-    // ── Auth UI ──────────────────────────────────────────────────────────────
     (function () {
       const token = localStorage.getItem('se_token');
       const user  = JSON.parse(localStorage.getItem('se_user') || 'null');
@@ -135,6 +178,8 @@
       if (token && user) {
         document.getElementById('user-menu').classList.remove('hidden');
         document.getElementById('user-menu').classList.add('flex');
+        document.getElementById('header-user-info').classList.remove('hidden');
+        document.getElementById('header-user-info').classList.add('flex');
         document.getElementById('user-name-display').textContent = user.name;
       } else {
         document.getElementById('login-link').classList.remove('hidden');
@@ -149,7 +194,6 @@
       window.location.href = '/auth/login';
     }
 
-    // Helper all pages can use: get auth header for fetch calls
     function authHeaders() {
       const token = localStorage.getItem('se_token');
       return token
@@ -157,7 +201,6 @@
         : { 'Content-Type': 'application/json' };
     }
 
-    // Redirect to login if 401 received
     function handleAuthError(res) {
       if (res.status === 401) {
         localStorage.removeItem('se_token');

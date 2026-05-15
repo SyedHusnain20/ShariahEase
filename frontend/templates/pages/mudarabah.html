@@ -1,252 +1,204 @@
 {% extends "base.html" %}
-{% block title %}Mudarabah Simulator{% endblock %}
-{% block page_title %}Mudarabah profit simulator{% endblock %}
+{% block title %}Mudarabah Simulator - ShariahEase{% endblock %}
+{% block page_title %}Mudarabah Simulator{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto space-y-5" x-data="mudarabahApp()">
+<div class="max-w-[1400px] mx-auto" x-data="mudarabahApp()">
 
-  <!-- Explainer banner -->
-  <div class="bg-amber-50 border border-amber-100 rounded-xl px-5 py-3">
-    <p class="text-xs text-amber-800 leading-relaxed">
-      <span class="font-medium">What is Mudarabah?</span>
-      A profit-sharing contract where you (investor) provide capital and the bank provides management.
-      Profit is shared by an agreed ratio — but only you bear the loss of capital.
-      No interest is involved, making it fully Shariah-compliant.
-    </p>
+  <!-- Warning Banner -->
+  <div class="mb-8 p-4 bg-amber-950/40 border border-amber-800 rounded-lg flex items-start gap-4">
+    <span class="material-symbols-outlined text-amber-500" data-icon="warning">warning</span>
+    <div>
+      <p class="font-body-md text-amber-200 font-semibold">Important Risk Disclosure</p>
+      <p class="font-label-md text-amber-300/80 mt-1 leading-relaxed">
+        Under Mudarabah principles, while profits are shared according to the agreed ratio, financial losses are borne solely by the Rab-ul-Mal (Investor) unless negligence by the Mudarib (Manager) is proven. Past performance does not guarantee future results.
+      </p>
+    </div>
   </div>
 
-  <!-- Input card -->
-  <div class="bg-white border border-gray-100 rounded-xl p-6 space-y-6">
-
-    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">
-      Investment details
-    </p>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
-      <!-- Principal -->
-      <div class="space-y-1">
-        <label class="text-xs text-gray-500">Principal amount (PKR)</label>
-        <input x-model.number="form.principal" type="number" min="1" placeholder="500000"
-               class="field-input"/>
-        <p class="text-xs text-gray-400">The capital you are investing</p>
+  <div class="grid grid-cols-12 gap-6">
+    
+    <!-- Input Card -->
+    <section class="col-span-12 lg:col-span-4 bg-[#141414] border border-[#262626] rounded-xl p-6 h-fit">
+      <div class="flex items-center gap-2 mb-6">
+        <span class="material-symbols-outlined text-primary" data-icon="tune">tune</span>
+        <h3 class="font-headline-md text-headline-md text-on-surface">Simulation Parameters</h3>
       </div>
-
-      <!-- Expected profit rate -->
-      <div class="space-y-1">
-        <label class="text-xs text-gray-500">Expected annual profit rate (%)</label>
-        <input x-model.number="form.profit_rate" type="number" min="0.1" max="100"
-               step="0.1" placeholder="12" class="field-input"/>
-        <p class="text-xs text-gray-400">Typical Islamic bank rates: 10–18% per year</p>
-      </div>
-
-      <!-- Investor share -->
-      <div class="space-y-1">
-        <label class="text-xs text-gray-500">Your profit share (%)</label>
-        <input x-model.number="form.investor_share" type="number" min="1" max="99"
-               step="1" placeholder="60" class="field-input" @input="updateBankShare"/>
-        <p class="text-xs text-gray-400">
-          Bank gets <span class="font-medium text-gray-600" x-text="bankShare + '%'"></span>
-          — negotiate this before signing
-        </p>
-      </div>
-
-      <!-- Period -->
-      <div class="space-y-1">
-        <label class="text-xs text-gray-500">Investment period (months)</label>
-        <input x-model.number="form.period_months" type="number" min="1" max="360"
-               step="1" placeholder="12" class="field-input"/>
-        <p class="text-xs text-gray-400">e.g. 12 = one year, 36 = three years</p>
-      </div>
-
-    </div>
-
-    <!-- Quick presets -->
-    <div class="flex flex-wrap gap-2">
-      <span class="text-xs text-gray-400 mr-1 self-center">Quick presets:</span>
-      <button @click="setPreset(500000, 12, 60, 12)"
-              class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg
-                     hover:bg-gray-50 text-gray-600 transition">
-        PKR 5L · 1 yr · 60/40
-      </button>
-      <button @click="setPreset(1000000, 14, 65, 24)"
-              class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg
-                     hover:bg-gray-50 text-gray-600 transition">
-        PKR 10L · 2 yr · 65/35
-      </button>
-      <button @click="setPreset(2500000, 16, 70, 36)"
-              class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg
-                     hover:bg-gray-50 text-gray-600 transition">
-        PKR 25L · 3 yr · 70/30
-      </button>
-    </div>
-
-    <!-- Simulate button -->
-    <button @click="simulate"
-            :disabled="loading || !form.principal || !form.profit_rate || !form.investor_share || !form.period_months"
-            class="w-full py-3 rounded-xl text-sm font-medium transition-all
-                   bg-amber-500 text-white hover:bg-amber-600
-                   disabled:opacity-40 disabled:cursor-not-allowed">
-      <span x-show="!loading">Run simulation</span>
-      <span x-show="loading" style="display:none">Simulating...</span>
-    </button>
-
-  </div>
-
-  <!-- RESULTS section — hidden until simulation runs -->
-  <div x-show="result" x-transition style="display:none" class="space-y-5">
-
-    <!-- Summary strip -->
-    <div class="grid grid-cols-3 gap-3">
-      <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
-        <p class="text-xs text-gray-400 mb-1">Principal invested</p>
-        <p class="text-base font-semibold text-gray-900"
-           x-text="formatPKR(result && result.principal)"></p>
-      </div>
-      <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
-        <p class="text-xs text-gray-400 mb-1">Your share</p>
-        <p class="text-base font-semibold text-amber-600"
-           x-text="(result && result.investor_share) + '%'"></p>
-      </div>
-      <div class="bg-white border border-gray-100 rounded-xl p-4 text-center">
-        <p class="text-xs text-gray-400 mb-1">Bank share</p>
-        <p class="text-base font-semibold text-gray-500"
-           x-text="(result && result.bank_share) + '%'"></p>
-      </div>
-    </div>
-
-    <!-- Scenario cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <template x-for="s in (result ? result.scenarios : [])" :key="s.label">
-        <div :class="{
-               'border-green-200 bg-green-50':  s.label === 'Optimistic',
-               'border-amber-200 bg-amber-50':  s.label === 'Moderate',
-               'border-red-200   bg-red-50':    s.label === 'Pessimistic',
-             }"
-             class="rounded-xl border p-4 space-y-3">
-
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-medium"
-                  :class="{
-                    'text-green-700': s.label === 'Optimistic',
-                    'text-amber-700': s.label === 'Moderate',
-                    'text-red-700':   s.label === 'Pessimistic',
-                  }"
-                  x-text="s.label">
-            </span>
-            <span class="text-xs px-2 py-0.5 rounded-full"
-                  :class="{
-                    'bg-green-100 text-green-700': s.label === 'Optimistic',
-                    'bg-amber-100 text-amber-700': s.label === 'Moderate',
-                    'bg-red-100   text-red-700':   s.label === 'Pessimistic',
-                  }">
-              <span x-show="s.label === 'Optimistic'">+30% rate</span>
-              <span x-show="s.label === 'Moderate'"   style="display:none">Base rate</span>
-              <span x-show="s.label === 'Pessimistic'" style="display:none">−45% rate</span>
-            </span>
-          </div>
-
-          <div class="space-y-1.5 text-xs">
-            <div class="flex justify-between">
-              <span class="text-gray-500">Gross profit</span>
-              <span class="font-medium text-gray-800" x-text="formatPKR(s.gross_profit)"></span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-500">Your profit</span>
-              <span class="font-medium text-gray-800" x-text="formatPKR(s.investor_profit)"></span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-500">Bank profit</span>
-              <span class="font-medium text-gray-500" x-text="formatPKR(s.bank_profit)"></span>
-            </div>
-            <div class="flex justify-between border-t border-current border-opacity-20 pt-1.5 mt-1">
-              <span class="font-medium text-gray-700">Total return</span>
-              <span class="font-semibold text-gray-900" x-text="formatPKR(s.total_return)"></span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-500">Monthly avg</span>
-              <span class="font-medium text-gray-700" x-text="formatPKR(s.monthly_return)"></span>
-            </div>
-          </div>
-
+      
+      <div class="space-y-5">
+        <div>
+          <label class="block font-label-md text-on-surface-variant mb-2">Initial Principal (PKR)</label>
+          <input class="w-full bg-[#0a0a0a] border border-[#262626] rounded-lg px-4 py-2.5 font-body-md text-on-surface focus:border-primary focus:ring-1 outline-none transition-all" 
+                 type="number" min="1000" x-model.number="form.principal"/>
         </div>
-      </template>
-    </div>
-
-    <!-- Bar chart — scenario comparison -->
-    <div class="bg-white border border-gray-100 rounded-xl p-5">
-      <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">
-        Investor profit — scenario comparison
-      </p>
-      <div style="position:relative; height:220px;">
-        <canvas id="barChart"></canvas>
+        
+        <div>
+          <label class="block font-label-md text-on-surface-variant mb-2">Expected Annual Profit Rate (%)</label>
+          <div class="flex items-center gap-4">
+            <input class="flex-1 accent-primary" type="range" min="1" max="50" step="0.5" x-model.number="form.profit_rate"/>
+            <span class="font-body-md text-primary font-bold min-w-[40px]" x-text="form.profit_rate + '%'"></span>
+          </div>
+        </div>
+        
+        <div>
+          <label class="block font-label-md text-on-surface-variant mb-2">Your Profit Share (%)</label>
+          <div class="flex gap-2 items-center">
+             <input class="w-full bg-[#0a0a0a] border border-[#262626] rounded-lg px-4 py-2.5 font-body-md text-on-surface focus:border-primary focus:ring-1 outline-none transition-all" 
+                 type="number" min="1" max="99" x-model.number="form.investor_share" @input="updateBankShare"/>
+             <div class="text-xs text-on-surface-variant whitespace-nowrap px-2">
+                Bank: <span class="font-bold text-on-surface" x-text="bankShare + '%'"></span>
+             </div>
+          </div>
+        </div>
+        
+        <div>
+          <label class="block font-label-md text-on-surface-variant mb-2">Investment Period (Months)</label>
+          <input class="w-full bg-[#0a0a0a] border border-[#262626] rounded-lg px-4 py-2.5 font-body-md text-on-surface focus:border-primary focus:ring-1 outline-none transition-all" 
+                 type="number" min="1" max="360" x-model.number="form.period_months"/>
+        </div>
+        
+        <button @click="simulate" :disabled="loading || !form.principal || !form.profit_rate || !form.investor_share || !form.period_months"
+                class="w-full bg-primary-container text-on-primary-container font-bold py-3 rounded-lg flex items-center justify-center gap-2 mt-4 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+          <span class="material-symbols-outlined" data-icon="calculate" x-show="!loading">calculate</span>
+          <span x-show="!loading">Run Simulation</span>
+          <svg x-show="loading" class="w-5 h-5 animate-spin text-on-primary-container" fill="none" viewBox="0 0 24 24" style="display:none;">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <span x-show="loading" style="display:none;">Simulating...</span>
+        </button>
       </div>
-    </div>
 
-    <!-- Line chart — monthly growth (moderate scenario) -->
-    <div class="bg-white border border-gray-100 rounded-xl p-5">
-      <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">
-        Cumulative profit growth — moderate scenario
-      </p>
-      <div style="position:relative; height:220px;">
-        <canvas id="lineChart"></canvas>
+      <!-- Error -->
+      <div x-show="errorMsg" style="display:none" class="mt-4 bg-[#2d0a0a] border border-error/20 rounded-lg px-4 py-3 text-sm text-error">
+        <span x-text="errorMsg"></span>
       </div>
-    </div>
+    </section>
+    
+    <!-- Chart Container -->
+    <section class="col-span-12 lg:col-span-8 space-y-6">
+       <!-- Scenarios (Visible after simulation) -->
+       <div class="grid grid-cols-1 md:grid-cols-3 gap-4" x-show="result" style="display:none" x-transition>
+          <template x-for="s in (result ? result.scenarios : [])" :key="s.label">
+            <div class="bg-[#141414] border rounded-xl p-5 transition-colors"
+                 :class="{
+                   'border-emerald-800 hover:border-emerald-500': s.label === 'Optimistic',
+                   'border-primary/40 hover:border-primary relative overflow-hidden': s.label === 'Moderate',
+                   'border-red-800 hover:border-red-500': s.label === 'Pessimistic'
+                 }">
+               <div x-show="s.label === 'Moderate'" class="absolute top-0 right-0 p-2">
+                 <span class="material-symbols-outlined text-primary/30 text-6xl rotate-12" data-icon="stars" style="font-variation-settings: 'FILL' 1;">stars</span>
+               </div>
+               
+               <div class="flex justify-between items-start mb-4 relative z-10">
+                  <span class="px-2 py-1 rounded font-label-md"
+                        :class="{
+                          'bg-emerald-950/50 text-emerald-400': s.label === 'Optimistic',
+                          'bg-primary/10 text-primary': s.label === 'Moderate',
+                          'bg-red-950/50 text-red-400': s.label === 'Pessimistic'
+                        }" x-text="s.label"></span>
+                  <span class="material-symbols-outlined"
+                        :class="{
+                          'text-emerald-400': s.label === 'Optimistic',
+                          'text-primary': s.label === 'Moderate',
+                          'text-red-400': s.label === 'Pessimistic'
+                        }"
+                        x-text="s.label === 'Optimistic' ? 'trending_up' : (s.label === 'Moderate' ? 'trending_flat' : 'trending_down')"></span>
+               </div>
+               
+               <h4 class="font-label-md text-on-surface-variant uppercase tracking-wider mb-1 relative z-10">Monthly Avg</h4>
+               <p class="font-headline-lg font-bold relative z-10"
+                  :class="{
+                    'text-emerald-400': s.label === 'Optimistic',
+                    'text-primary': s.label === 'Moderate',
+                    'text-red-400': s.label === 'Pessimistic'
+                  }" x-text="formatPKR(s.monthly_return)"></p>
+                  
+               <div class="mt-4 pt-4 border-t border-[#262626] space-y-2 relative z-10">
+                  <div class="flex justify-between font-label-md">
+                     <span class="text-on-surface-variant">Gross Profit</span>
+                     <span class="text-on-surface" x-text="formatPKR(s.gross_profit)"></span>
+                  </div>
+                  <div class="flex justify-between font-label-md">
+                     <span class="text-on-surface-variant">Your Profit</span>
+                     <span class="text-on-surface font-semibold" x-text="formatPKR(s.investor_profit)"></span>
+                  </div>
+                  <div class="flex justify-between font-label-md">
+                     <span class="text-on-surface-variant">Total Value</span>
+                     <span class="text-on-surface font-semibold" x-text="formatPKR(s.total_return)"></span>
+                  </div>
+               </div>
+            </div>
+          </template>
+       </div>
 
-    <!-- Fairness note -->
-    <div class="bg-white border border-gray-100 rounded-xl px-5 py-4">
-      <p class="text-xs font-medium text-gray-500 mb-2">Shariah fairness check</p>
-      <ul class="text-xs text-gray-500 space-y-1 list-none">
-        <li class="flex items-start gap-2">
-          <span class="text-green-500 mt-0.5">✓</span>
-          No interest (Riba) — profit is from real business activity, not a fixed rate
-        </li>
-        <li class="flex items-start gap-2">
-          <span class="text-green-500 mt-0.5">✓</span>
-          Loss is borne by investor only — bank loses its time and effort, not capital
-        </li>
-        <li class="flex items-start gap-2">
-          <span class="text-green-500 mt-0.5">✓</span>
-          Profit ratio agreed upfront — no hidden charges or surprise deductions
-        </li>
-        <li class="flex items-start gap-2">
-          <span class="text-amber-500 mt-0.5">⚠</span>
-          Always verify the actual contract with your bank's Shariah board certificate
-        </li>
-      </ul>
-    </div>
+       <div class="bg-[#141414] border border-[#262626] rounded-xl p-6 flex flex-col">
+          <div class="flex justify-between items-center mb-8">
+            <div>
+              <h3 class="font-headline-md text-headline-md text-on-surface">Cumulative Profit Growth</h3>
+              <p class="font-label-md text-on-surface-variant">Projected returns over the investment period (Moderate Scenario)</p>
+            </div>
+          </div>
+          <div class="w-full h-[300px] sm:h-[320px] relative">
+            <canvas class="w-full h-full" id="lineChart"></canvas>
+            <div x-show="!result" class="absolute inset-0 flex items-center justify-center text-on-surface-variant italic">
+              Run simulation to view chart
+            </div>
+          </div>
+       </div>
 
+       <div class="bg-[#141414] border border-[#262626] rounded-xl p-6 flex flex-col">
+          <div class="flex justify-between items-center mb-8">
+            <div>
+              <h3 class="font-headline-md text-headline-md text-on-surface">Profit Distribution Comparison</h3>
+            </div>
+          </div>
+          <div class="w-full h-[300px] sm:h-[320px] relative">
+            <canvas class="w-full h-full" id="barChart"></canvas>
+            <div x-show="!result" class="absolute inset-0 flex items-center justify-center text-on-surface-variant italic">
+              Run simulation to view chart
+            </div>
+          </div>
+       </div>
+
+    </section>
+    
+    <!-- Insight Section -->
+    <section class="col-span-12 bg-[#1c1c1c] border border-primary/20 rounded-xl p-6 mt-4">
+      <div class="flex flex-col md:flex-row gap-6 items-center">
+        <div class="h-48 w-full md:w-80 rounded-lg overflow-hidden shrink-0">
+          <img alt="Financial analytics dashboard" class="w-full h-full object-cover grayscale opacity-80 mix-blend-screen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8TgqyyVtDWpXXF66qsKs3OKf4HwMAevvYRL8fTMSQcvLl9ZIsAzBoU65YnC7-yxaSVbndKPYU0l7cIKgBmuasryBU6ugwPoRogkJBCeyI77FYKXAUcM0ncIBWmmgwTYhgBanls096cfIdQavPqkm5jyES7eWh4oPX1lP1_M4m7QuXd-1BpbKXavzWwj0RlrCn-gtnjg__Pc3WdW8d3ZG0J-_NxMUobLqE8R2-TeXtbTfxI8oi6X-sLfhh7X5tNDaKdYvIw0pdFhE"/>
+        </div>
+        <div class="flex-1">
+          <h3 class="font-headline-md text-headline-md text-on-surface mb-2">The Mudarabah Advantage</h3>
+          <p class="font-body-md text-on-surface-variant leading-relaxed mb-4">
+            Unlike traditional interest-based lending, Mudarabah aligns the interests of the financier and the entrepreneur. It fosters genuine partnership and ethical risk-sharing. Our simulator provides realistic profit expectations tailored to current economic indicators without promising fixed returns.
+          </p>
+          <ul class="text-sm text-on-surface-variant space-y-2 list-none">
+            <li class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+              No interest (Riba) — profit is from real business activity, not a fixed rate
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-primary text-[18px]">verified</span>
+              Loss is borne by investor only — bank loses its time and effort, not capital
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+    
   </div>
-
-  <!-- Error -->
-  <div x-show="errorMsg" x-transition style="display:none"
-       class="bg-red-50 border border-red-200 rounded-xl px-5 py-3 text-sm text-red-700"
-       x-text="errorMsg">
-  </div>
-
 </div>
 {% endblock %}
 
-
 {% block scripts %}
-<style>
-  .field-input {
-    width: 100%;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    color: #111827;
-    outline: none;
-    transition: box-shadow 0.15s, border-color 0.15s;
-  }
-  .field-input:focus {
-    box-shadow: 0 0 0 2px #f59e0b;
-    border-color: #f59e0b;
-  }
-</style>
-
 <script>
+function formatPKR(val) {
+  if (val === undefined || val === null) return 'PKR 0';
+  return 'PKR ' + parseFloat(val).toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
 let barChartInstance  = null;
 let lineChartInstance = null;
 
@@ -258,7 +210,7 @@ function mudarabahApp() {
     bankShare: 40,
 
     form: {
-      principal:      500000,
+      principal:      1000000,
       profit_rate:    12,
       investor_share: 60,
       period_months:  12,
@@ -268,21 +220,12 @@ function mudarabahApp() {
       this.bankShare = 100 - (this.form.investor_share || 0);
     },
 
-    setPreset(principal, rate, investorShare, months) {
-      this.form.principal      = principal;
-      this.form.profit_rate    = rate;
-      this.form.investor_share = investorShare;
-      this.form.period_months  = months;
-      this.bankShare           = 100 - investorShare;
-    },
-
     async simulate() {
       this.loading  = true;
       this.result   = null;
       this.errorMsg = '';
 
       try {
-        // Run scenario simulation
         const res = await fetch('/mudarabah/simulate', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -292,7 +235,6 @@ function mudarabahApp() {
         this.result    = await res.json();
         this.bankShare = this.result.bank_share;
 
-        // Wait for DOM to render result section, then draw charts
         await this.$nextTick();
         this.drawBarChart();
         await this.drawLineChart();
@@ -309,7 +251,10 @@ function mudarabahApp() {
       const ctx      = document.getElementById('barChart').getContext('2d');
       const labels   = this.result.scenarios.map(s => s.label);
       const profits  = this.result.scenarios.map(s => Math.round(s.investor_profit));
-      const colors   = ['#16a34a', '#f59e0b', '#ef4444'];
+      const colors   = ['#34d399', '#10b981', '#ef4444']; // emerald-400, primary, red-500
+
+      Chart.defaults.color = '#e2e1eb';
+      Chart.defaults.borderColor = '#262626';
 
       barChartInstance = new Chart(ctx, {
         type: 'bar',
@@ -319,8 +264,7 @@ function mudarabahApp() {
             label:           'Your profit (PKR)',
             data:            profits,
             backgroundColor: colors,
-            borderRadius:    6,
-            borderSkipped:   false,
+            borderRadius:    4,
           }]
         },
         options: {
@@ -330,22 +274,17 @@ function mudarabahApp() {
             legend: { display: false },
             tooltip: {
               callbacks: {
-                label: ctx => 'PKR ' + ctx.parsed.y.toLocaleString('en-PK'),
+                label: ctx => 'PKR ' + ctx.parsed.y.toLocaleString('en-US'),
               }
             }
           },
           scales: {
             y: {
               beginAtZero: true,
-              ticks: {
-                callback: v => 'PKR ' + Math.round(v).toLocaleString('en-PK'),
-                font:     { size: 11 },
-              },
-              grid: { color: '#f3f4f6' },
+              ticks: { callback: v => 'PKR ' + Math.round(v).toLocaleString('en-US') },
             },
             x: {
-              ticks: { font: { size: 12 } },
-              grid:  { display: false },
+              grid: { display: false }
             }
           }
         }
@@ -363,6 +302,9 @@ function mudarabahApp() {
       const chartData = await res.json();
       const ctx       = document.getElementById('lineChart').getContext('2d');
 
+      Chart.defaults.color = '#e2e1eb';
+      Chart.defaults.borderColor = '#262626';
+
       lineChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -370,8 +312,8 @@ function mudarabahApp() {
           datasets: [{
             label:           'Cumulative profit (PKR)',
             data:            chartData.data,
-            borderColor:     '#f59e0b',
-            backgroundColor: 'rgba(245,158,11,0.08)',
+            borderColor:     '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
             borderWidth:     2,
             pointRadius:     chartData.months <= 24 ? 3 : 0,
             fill:            true,
@@ -385,25 +327,18 @@ function mudarabahApp() {
             legend: { display: false },
             tooltip: {
               callbacks: {
-                label: ctx => 'PKR ' + Math.round(ctx.parsed.y).toLocaleString('en-PK'),
+                label: ctx => 'PKR ' + Math.round(ctx.parsed.y).toLocaleString('en-US'),
               }
             }
           },
           scales: {
             y: {
               beginAtZero: true,
-              ticks: {
-                callback: v => 'PKR ' + Math.round(v).toLocaleString('en-PK'),
-                font:     { size: 11 },
-              },
-              grid: { color: '#f3f4f6' },
+              ticks: { callback: v => 'PKR ' + Math.round(v).toLocaleString('en-US') },
             },
             x: {
-              ticks: {
-                maxTicksLimit: 12,
-                font:          { size: 10 },
-              },
               grid: { display: false },
+              ticks: { maxTicksLimit: 12 }
             }
           }
         }
