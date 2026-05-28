@@ -11,13 +11,13 @@
       <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-primary/10 transition-colors duration-500"></div>
       <div class="relative z-10">
         <span class="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary font-label-md text-[10px] uppercase font-bold tracking-widest mb-4 border border-primary/20">
-          Institutional Verification Active
+          Every Organization Shariah Verified
         </span>
         <h3 class="font-headline-xl text-headline-xl text-on-surface mb-2 tracking-tight">
-          <span x-text="charities.length || 'Loading'"></span> Verified Organizations
+          Give Where It Truly Counts
         </h3>
         <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
-          Explore our curated database of Shariah-compliant charitable organizations in Pakistan, audited for transparency and impact. Giving Zakat to relatives in need carries double reward.
+          Every charity here has been hand-picked and reviewed for Shariah compliance, financial transparency, and real impact on the ground in Pakistan. Giving Zakat to relatives in need carries double reward.
         </p>
       </div>
     </div>
@@ -35,7 +35,7 @@
     <div class="relative flex-1 w-full">
       <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
       <input x-model="searchQuery" 
-             class="w-full bg-[#0a0a0a] border border-[#262626] rounded-lg py-3 pl-12 pr-4 text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary focus:ring-1 transition-all" 
+             class="field-input pl-12 pr-4 py-2.5 w-full rounded-lg" 
              placeholder="Search by name, cause, or location..." type="text"/>
     </div>
     
@@ -62,11 +62,24 @@
     <template x-for="charity in filteredCharities" :key="charity.id">
       <div class="group bg-[#141414] border border-[#262626] rounded-xl overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col h-full">
         <div class="h-48 overflow-hidden relative bg-[#1c1c1c] flex items-center justify-center">
-          <!-- Fallback icon based on category if no image is present -->
-          <span class="material-symbols-outlined text-[64px] text-[#303030] group-hover:scale-110 transition-transform duration-500" 
-                x-text="charity.category_tag === 'health' ? 'local_hospital' : (charity.category_tag === 'education' ? 'school' : (charity.category_tag === 'food' ? 'restaurant' : (charity.category_tag === 'relief' ? 'ambulance' : 'volunteer_activism')))">
-          </span>
-          <div class="absolute inset-0 bg-gradient-to-t from-[#141414] to-transparent opacity-80"></div>
+          <!-- Real org image — tries webp → png → jpg, then falls back to icon -->
+          <picture class="absolute inset-0 w-full h-full" x-ref="pic">
+            <source :srcset="`/static/images/charities/${charity.id}.webp`" type="image/webp">
+            <source :srcset="`/static/images/charities/${charity.id}.png`"  type="image/png">
+            <img
+              :src="`/static/images/charities/${charity.id}.jpg`"
+              :alt="charity.name"
+              class="w-full h-full object-cover object-center"
+              @error="$el.closest('picture').style.display='none'; $el.closest('picture').nextElementSibling.style.display='flex'"
+            />
+          </picture>
+          <!-- Fallback icon (hidden when image loads) -->
+          <div class="absolute inset-0 items-center justify-center hidden" :id="`fallback-${charity.id}`">
+            <span class="material-symbols-outlined text-[64px] text-[#303030] group-hover:scale-110 transition-transform duration-500"
+                  x-text="charity.category_tag === 'health' ? 'local_hospital' : (charity.category_tag === 'education' ? 'school' : (charity.category_tag === 'food' ? 'restaurant' : (charity.category_tag === 'relief' ? 'emergency' : (charity.category_tag === 'microfinance' ? 'account_balance' : 'volunteer_activism'))))">
+            </span>
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent opacity-90 pointer-events-none"></div>
           <div class="absolute top-4 right-4 bg-[#141414]/80 backdrop-blur-md border border-white/10 px-2 py-1 rounded text-[10px] font-bold text-primary uppercase tracking-tighter">
             Shariah Compliant
           </div>

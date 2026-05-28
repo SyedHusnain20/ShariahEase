@@ -10,6 +10,7 @@ from app.services.rag_service import rag_service
 from app.services.llm_client import get_chat_response, detect_language
 from app.services.tts_service import text_to_speech_bytes
 from app.services.metal_price import get_nisab_values
+from app.services.web_search import get_web_context
 from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/chat", tags=["Chatbot"])
@@ -95,12 +96,25 @@ async def chat_message(
 
     rag_context = rag_service.build_context(request.message, top_k=5)
 
-    # Only inject live Nisab when the question is specifically about thresholds
+    # ── Web search agent ───────────────────────────────────────────────────
+    # Runs in parallel with RAG. Triggered for: Quran/Hadith queries,
+    # PSX stock data, Islamic finance news, live gold/silver prices.
+    # Returns empty string if the query doesn't need live data.
+    web_context, did_search = await get_web_context(request.message)
+
+    # ── Context assembly ───────────────────────────────────────────────────
+    # Priority: Live Nisab > Web search results > RAG knowledge base
+    context_parts = []
+
     if is_nisab_question(request.message):
         nisab_block, _ = await get_live_nisab_block()
-        full_context   = f"{nisab_block}\n\n{rag_context}"
-    else:
-        full_context   = rag_context
+        context_parts.append(nisab_block)
+
+    if web_context:
+        context_parts.append(web_context)
+
+    context_parts.append(rag_context)
+    full_context = "\n\n".join(filter(None, context_parts))
 
     sources = rag_service.search(request.message, top_k=3)
     source_names = list({
@@ -154,8 +168,15 @@ async def chat_message(
 
 
 @router.get("/history/{session_id}")
-async def get_history(session_id: str, db: Session = Depends(get_db)):
+async def get_history(
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    # Only return messages belonging to this user's session
     records = get_chat_history(db, session_id, limit=50)
+    # Filter to only this user's messages (prevents session_id enumeration)
+    records = [r for r in records if r.user_id == current_user.id]
     return [
         {"role": r.role, "content": r.content,
          "created_at": r.created_at.strftime("%I:%M %p")}
@@ -164,10 +185,16 @@ async def get_history(session_id: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/history/{session_id}")
-async def clear_history(session_id: str, db: Session = Depends(get_db)):
+async def clear_history(
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
     from app.database.models import ChatMessage
+    # Only delete messages owned by this user — prevents clearing another user's history
     db.query(ChatMessage).filter(
-        ChatMessage.session_id == session_id
+        ChatMessage.session_id == session_id,
+        ChatMessage.user_id == current_user.id,
     ).delete()
     db.commit()
     return {"cleared": True}

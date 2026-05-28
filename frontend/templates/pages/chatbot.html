@@ -479,32 +479,33 @@ function chatApp() {
         const audio = new Audio('data:audio/mp3;base64,' + msg.audio_b64);
 
         audio.addEventListener('loadedmetadata', () => {
-          this.messages[index].duration = this._fmtDuration(audio.duration);
+          this.messages.splice(index, 1, { ...this.messages[index], duration: this._fmtDuration(audio.duration) });
         });
 
         audio.addEventListener('timeupdate', () => {
           if (!audio.duration) return;
-          this.messages[index].progress    = (audio.currentTime / audio.duration) * 100;
-          this.messages[index].currentTime = this._fmtDuration(audio.currentTime);
+          this.messages.splice(index, 1, {
+            ...this.messages[index],
+            progress:    (audio.currentTime / audio.duration) * 100,
+            currentTime: this._fmtDuration(audio.currentTime),
+          });
         });
 
         audio.addEventListener('ended', () => {
-          this.messages[index].playing  = false;
-          this.messages[index].progress = 0;
-          this.messages[index].currentTime = '0:00';
+          this.messages.splice(index, 1, { ...this.messages[index], playing: false, progress: 0, currentTime: '0:00' });
         });
 
         this._players[index] = audio;
       }
 
       this._players[index].play();
-      this.messages[index].playing = true;
+      this.messages.splice(index, 1, { ...this.messages[index], playing: true });
     },
 
     _pausePlayer(index) {
       if (this._players[index]) {
         this._players[index].pause();
-        this.messages[index].playing = false;
+        this.messages.splice(index, 1, { ...this.messages[index], playing: false });
       }
     },
 
@@ -513,9 +514,7 @@ function chatApp() {
         this._players[index].pause();
         this._players[index].currentTime = 0;
       }
-      this.messages[index].playing     = false;
-      this.messages[index].progress    = 0;
-      this.messages[index].currentTime = '0:00';
+      this.messages.splice(index, 1, { ...this.messages[index], playing: false, progress: 0, currentTime: '0:00' });
     },
 
     seekAudio(msg, index, value) {

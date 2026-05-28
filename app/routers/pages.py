@@ -24,6 +24,3 @@ async def chatbot(request: Request):
 async def charities(request: Request):
     return templates.TemplateResponse("pages/charities.html", {"request": request, "active_page": "charities"})
 
-@router.get("/voice")
-async def voice(request: Request):
-    return templates.TemplateResponse("pages/voice.html", {"request": request, "active_page": "voice"})

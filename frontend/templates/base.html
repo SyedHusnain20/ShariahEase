@@ -4,6 +4,8 @@
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>{% block title %}ShariahEase | Ethical Precision{% endblock %}</title>
+  <link rel="icon" type="image/png" href="/static/images/favicon.png"/>
+  <meta name="description" content="ShariahEase — AI-powered Islamic finance assistant for Zakat calculation, halal investing, Mudarabah simulation and more."/>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -55,6 +57,38 @@
   <style>
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
     body { background-color: #0a0a0a; color: #e2e1eb; }
+
+    /* ── Nuclear input dark override ──────────────────────────
+       Tailwind CDN forms plugin sets [type='text'] { background: white }
+       using attribute selectors. This block loads after Tailwind and
+       uses the same specificity + !important to win unconditionally.
+    ─────────────────────────────────────────────────────────── */
+    input, textarea, select {
+      background-color: #0c0e14 !important;
+      color: #e2e1eb !important;
+      -webkit-text-fill-color: #e2e1eb !important;
+      border-color: #262626 !important;
+      caret-color: #4edea3;
+    }
+    input::placeholder, textarea::placeholder {
+      color: #4a5568 !important;
+      -webkit-text-fill-color: #4a5568 !important;
+      opacity: 1 !important;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: #10b981 !important;
+      box-shadow: 0 0 0 1px #10b981 !important;
+      outline: none !important;
+      background-color: #0c0e14 !important;
+    }
+    /* Autofill — browser injects yellow/white regardless of CSS */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0 1000px #0c0e14 inset !important;
+      -webkit-text-fill-color: #e2e1eb !important;
+      border-color: #262626 !important;
+    }
   </style>
 </head>
 <body class="overflow-hidden" x-data="{ sidebarOpen: false }">
@@ -105,7 +139,7 @@
       <a href="/charities" class="flex items-center gap-3 px-3 py-2 rounded-lg group transition-colors
         {% if active_page == 'charities' %}bg-primary-container text-on-primary-container border-r-2 border-primary
         {% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}">
-        <span class="material-symbols-outlined" data-icon="volunteer_activism">volunteer_activism</span>
+        <span class="material-symbols-outlined">volunteer_activism</span>
         <span class="font-body-md text-body-md">Charities</span>
       </a>
     </nav>
@@ -121,8 +155,8 @@
         </a>
       </div>
       <div id="user-menu" class="hidden flex-col gap-1">
-        <a href="#" class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface transition-all">
-          <span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+        <a href="/auth/profile" class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg transition-all">
+          <span class="material-symbols-outlined">account_circle</span>
           <span class="font-body-md text-body-md">Profile</span>
         </a>
         <button onclick="logout()" class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-error transition-all w-full text-left">
@@ -145,20 +179,120 @@
           <span class="text-[10px] font-bold uppercase tracking-widest text-primary">Live Pulse</span>
         </div>
       </div>
-      <div class="flex items-center gap-4 md:gap-6">
-        <div class="flex items-center gap-4 text-on-surface-variant">
-          <button class="hover:text-primary transition-colors p-1">
-            <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+      <div class="flex items-center gap-2 md:gap-4" x-data="headerUI()">
+
+        <!-- ── Notification Bell ─────────────────────────── -->
+        <div class="relative">
+          <button @click="toggleNotifs"
+                  class="relative hover:text-primary transition-colors p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant">
+            <span class="material-symbols-outlined text-[22px]">notifications</span>
+            <!-- Unread badge -->
+            <span x-show="unreadCount > 0"
+                  class="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary shadow-[0_0_6px_#4edea3]"></span>
           </button>
-        </div>
-        <div id="header-user-info" class="hidden items-center gap-3 pl-4 md:pl-6 border-l border-outline-variant">
-          <div class="text-right hidden sm:block">
-            <p id="user-name-display" class="font-label-md text-label-md text-on-surface"></p>
-            <p class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Premium Advisor</p>
+
+          <!-- Notification dropdown -->
+          <div x-show="notifsOpen" @click.outside="notifsOpen = false"
+               x-transition:enter="transition ease-out duration-150"
+               x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+               x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+               x-transition:leave="transition ease-in duration-100"
+               x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+               style="display:none"
+               class="absolute right-0 top-full mt-2 w-80 bg-[#141414] border border-[#262626] rounded-xl shadow-2xl shadow-black/40 z-50 overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-[#262626]">
+              <span class="text-label-md font-semibold text-on-surface uppercase tracking-widest">Notifications</span>
+              <button @click="markAllRead" class="text-[11px] text-primary hover:text-primary/80 transition-colors font-medium">Mark all read</button>
+            </div>
+            <ul class="max-h-72 overflow-y-auto divide-y divide-[#1e1e1e]">
+              <template x-for="n in notifications" :key="n.id">
+                <li class="px-4 py-3 flex gap-3 items-start hover:bg-surface-container-high transition-colors"
+                    :class="n.unread ? 'bg-surface-container-low/60' : ''">
+                  <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                       :class="n.type === 'zakat' ? 'bg-primary/10 text-primary' : n.type === 'tip' ? 'bg-primary-container/30 text-on-primary-container' : 'bg-surface-container-high text-on-surface-variant'">
+                    <span class="material-symbols-outlined text-[15px]" x-text="n.icon"></span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-body-md text-on-surface leading-snug" x-text="n.title"></p>
+                    <p class="text-[11px] text-on-surface-variant mt-0.5" x-text="n.time"></p>
+                  </div>
+                  <span x-show="n.unread" class="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-2"></span>
+                </li>
+              </template>
+            </ul>
+            <div class="px-4 py-2.5 border-t border-[#262626] text-center">
+              <span class="text-[11px] text-on-surface-variant">ShariahEase keeps you updated on Zakat deadlines &amp; Nisab changes</span>
+            </div>
           </div>
-          <img alt="User profile" class="w-8 h-8 rounded-lg object-cover ring-1 ring-outline-variant shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDp_PE9s72rkd2yXqmBxUClzh4aoGWzVY1C34tZPcjT6MKymA_3Wzro8YwXOQwb0QrQUvvvDP53i2mbJ_BKj9GB8D1RflyN4Z1ZEvgxcuSfReuzUoR1Is3BmhJheD9hvugO6z2x52KBkNPn496npcA9nZrSU1XH17VYwvpeNPPu2W6_zkgHLQcgldKNwutTcMsBA6_bGmh_W_Mgb2YJHOvFulSg7h7xlyGjX5L7sre-JHlfGyAv6-c-6wpw4txq_jneO3EgAjrLrug"/>
         </div>
-        <a id="login-link" href="/auth/login" class="hidden text-xs text-on-primary-container font-medium px-4 py-2 rounded-lg bg-primary-container hover:bg-primary transition-colors">
+
+        <!-- ── Profile Dropdown ──────────────────────────── -->
+        <div id="header-user-info" class="hidden relative">
+          <button @click="toggleProfile"
+                  class="flex items-center gap-2.5 pl-3 md:pl-4 border-l border-outline-variant hover:opacity-80 transition-opacity">
+            <div class="text-right hidden sm:block">
+              <p id="user-name-display" class="font-label-md text-label-md text-on-surface leading-tight"></p>
+              <p class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Islamic Finance AI</p>
+            </div>
+            <div id="user-avatar-circle" class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center ring-1 ring-outline-variant shrink-0">
+              <span id="user-avatar-initials" class="text-xs font-bold text-on-primary-container"></span>
+            </div>
+            <span class="material-symbols-outlined text-[16px] text-on-surface-variant hidden sm:block">expand_more</span>
+          </button>
+
+          <!-- Profile dropdown panel -->
+          <div x-show="profileOpen" @click.outside="profileOpen = false"
+               x-transition:enter="transition ease-out duration-150"
+               x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+               x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+               x-transition:leave="transition ease-in duration-100"
+               x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+               style="display:none"
+               class="absolute right-0 top-full mt-2 w-60 bg-[#141414] border border-[#262626] rounded-xl shadow-2xl shadow-black/40 z-50 overflow-hidden">
+
+            <!-- User info header -->
+            <div class="px-4 py-3 border-b border-[#262626]">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center ring-1 ring-outline-variant shrink-0">
+                  <span id="dropdown-avatar-initials" class="text-sm font-bold text-on-primary-container"></span>
+                </div>
+                <div class="min-w-0">
+                  <p id="dropdown-user-name" class="text-body-md font-semibold text-on-surface truncate"></p>
+                  <p id="dropdown-user-email" class="text-[11px] text-on-surface-variant truncate"></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Menu items -->
+            <ul class="py-1">
+              <li>
+                <a href="/auth/profile"
+                   class="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
+                  <span class="material-symbols-outlined text-[18px]">account_circle</span>
+                  My Profile
+                </a>
+              </li>
+              <li>
+                <a href="/zakat/history"
+                   class="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
+                  <span class="material-symbols-outlined text-[18px]">history</span>
+                  Calculation History
+                </a>
+              </li>
+              <li class="border-t border-[#262626] mt-1 pt-1">
+                <button onclick="logout()"
+                        class="flex items-center gap-3 px-4 py-2.5 text-body-md text-error hover:bg-error/10 transition-colors w-full text-left">
+                  <span class="material-symbols-outlined text-[18px]">logout</span>
+                  Sign Out
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Sign in link (logged out state) -->
+        <a id="login-link" href="/auth/login"
+           class="hidden text-xs text-on-primary-container font-medium px-4 py-2 rounded-lg bg-primary-container hover:bg-primary transition-colors">
           Sign in
         </a>
       </div>
@@ -171,6 +305,7 @@
 
   <script src="/static/js/main.js"></script>
   <script>
+    // ── Auth state init ─────────────────────────────────
     (function () {
       const token = localStorage.getItem('se_token');
       const user  = JSON.parse(localStorage.getItem('se_user') || 'null');
@@ -181,6 +316,11 @@
         document.getElementById('header-user-info').classList.remove('hidden');
         document.getElementById('header-user-info').classList.add('flex');
         document.getElementById('user-name-display').textContent = user.name;
+        const initials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+        document.getElementById('user-avatar-initials').textContent  = initials;
+        document.getElementById('dropdown-avatar-initials').textContent = initials;
+        document.getElementById('dropdown-user-name').textContent  = user.name;
+        document.getElementById('dropdown-user-email').textContent = user.email || 'Islamic Finance AI';
       } else {
         document.getElementById('login-link').classList.remove('hidden');
         document.getElementById('sidebar-auth-links').classList.remove('hidden');
@@ -209,6 +349,55 @@
         return true;
       }
       return false;
+    }
+
+    // ── Header UI Alpine component ───────────────────────
+    function headerUI() {
+      return {
+        notifsOpen:  false,
+        profileOpen: false,
+        unreadCount: 3,
+
+        notifications: [
+          {
+            id: 1, unread: true, type: 'zakat',
+            icon: 'payments',
+            title: 'Nisab updated — Gold Nisab now PKR 35,60,950',
+            time: 'Just now',
+          },
+          {
+            id: 2, unread: true, type: 'tip',
+            icon: 'lightbulb',
+            title: 'Ramadan tip: Zakat on savings is due before Eid al-Fitr',
+            time: '2 hours ago',
+          },
+          {
+            id: 3, unread: true, type: 'tip',
+            icon: 'info',
+            title: 'New: Halal screener now covers PSX-listed ETFs',
+            time: 'Yesterday',
+          },
+          {
+            id: 4, unread: false, type: 'system',
+            icon: 'check_circle',
+            title: 'Your Zakat certificate was downloaded successfully',
+            time: '3 days ago',
+          },
+        ],
+
+        toggleNotifs() {
+          this.notifsOpen  = !this.notifsOpen;
+          this.profileOpen = false;
+        },
+        toggleProfile() {
+          this.profileOpen = !this.profileOpen;
+          this.notifsOpen  = false;
+        },
+        markAllRead() {
+          this.notifications = this.notifications.map(n => ({ ...n, unread: false }));
+          this.unreadCount   = 0;
+        },
+      };
     }
   </script>
   {% block scripts %}{% endblock %}

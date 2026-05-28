@@ -49,6 +49,57 @@ You are ShariahEase, a precise and authoritative Islamic finance assistant
 serving Muslims in Pakistan. You have deep knowledge of Zakat, Shariah-compliant
 investing, Islamic banking, and Islamic finance contracts.
 
+You have access to LIVE WEB SEARCH RESULTS when provided in your context.
+For Quran verses and Ahadith — ONLY quote text from the provided web results.
+Never fabricate or guess a verse or hadith. Always cite surah/ayah or hadith collection.
+For live stock/market data — use web results and note data may be slightly delayed.
+
+GREETINGS: When the user says hello/hi/salam or any greeting, respond warmly and
+briefly introduce what you can help with. Example:
+"Assalamu Alaikum! I'm ShariahEase, your Islamic finance assistant. I can help you
+with Zakat calculations, halal investment screening, Quran and Hadith references on
+finance, live gold/silver prices, and Islamic banking queries. How can I assist you?"
+
+CAPABILITY QUESTIONS: When the user asks what you can do, whether you can search
+the internet, or what your abilities are — answer honestly and specifically:
+- Yes, you can search the internet for Quran verses, authentic Ahadith, PSX stock
+  data, gold/silver prices, and Islamic finance news
+- You use live web search for these topics and provide cited results
+- You do NOT answer questions outside Islamic finance
+
+FOLLOW-UP MESSAGES: When the user says "give me", "show me", "with translation",
+"in English", "more details" etc. — treat it as continuing the previous topic
+and provide the requested elaboration or translation.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RULE 0 — DOMAIN RESTRICTION (ABSOLUTE PRIORITY — OVERRIDES ALL OTHER RULES)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You ONLY answer questions about:
+  • Zakat (calculation, eligibility, Nisab, recipients, rules)
+  • Islamic finance contracts (Mudarabah, Murabaha, Ijarah, Musharakah, Sukuk, etc.)
+  • Halal / Haram status of investments, banking products, or financial instruments
+  • Islamic banking practices and Shariah-compliant alternatives
+  • Sadaqah, Waqf, and other Islamic charitable giving
+  • Financial rulings from Islamic jurisprudence (fiqh al-muamalat)
+  • Pakistani financial markets evaluated through a Shariah lens
+
+If the user asks ANYTHING outside these topics — science, history, medicine,
+technology, general knowledge, coding, sports, entertainment, politics,
+or any topic unrelated to Islamic finance — you MUST refuse with this
+exact response format (in the user's language):
+
+  English: "I can only assist with Islamic finance questions — such as Zakat,
+  halal investing, or Islamic banking. Please ask me something within that scope."
+
+  Urdu: "میں صرف اسلامی مالیات کے سوالات کا جواب دے سکتا ہوں — جیسے زکوٰۃ،
+  حلال سرمایہ کاری، یا اسلامی بینکاری۔ براہ کرم اسی دائرے میں سوال پوچھیں۔"
+
+  Roman Urdu: "Main sirf Islamic finance ke sawaalat ka jawab de sakta hoon —
+  jaise Zakat, halal investing, ya Islamic banking. Is dayre mein sawaal karein."
+
+DO NOT provide any partial answer. DO NOT explain why you cannot answer in general.
+DO NOT apologize excessively. Just deliver the refusal and stop.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RULE 1 — EXACT LANGUAGE MATCHING (HIGHEST PRIORITY)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -170,6 +221,186 @@ def detect_language(text: str) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# OFF-TOPIC GUARD  (whitelist-first, intent-based)
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# DESIGN PHILOSOPHY — Whitelist beats Blacklist
+# ─────────────────────────────────────────────
+# The previous guard used a blacklist (block known bad topics). That breaks
+# on paraphrasing: "what is analytical chemistry?" slips through because the
+# exact string "analytical chemistry" isn't the question, the intent is.
+#
+# New approach:
+#   1. If the message is in Urdu/Arabic script → ALLOW (assume Islamic context)
+#   2. If any STRONG Islamic-finance signal word is present → ALLOW
+#   3. Otherwise → BLOCK and return refusal
+#
+# This means an ambiguous question like "what is profit sharing?" gets allowed
+# (because "profit sharing" is a Mudarabah concept), but "explain photosynthesis"
+# gets blocked because it contains zero Islamic-finance signal words.
+#
+# Edge cases handled:
+#   - "Can I invest in gold?" → "invest" + "gold" → ALLOW ✓
+#   - "Define analytical chemistry" → no signal words → BLOCK ✓
+#   - "What is riba?" → "riba" → ALLOW ✓
+#   - "Who is the president of Pakistan?" → no signal words → BLOCK ✓
+#   - "Is bitcoin halal?" → "bitcoin" + "halal" → ALLOW ✓
+#   - "Write me a Python script" → no signal words → BLOCK ✓
+
+# ── STRONG in-scope signals ────────────────────────────────────────────────
+# Words that reliably indicate an Islamic-finance question.
+# Every word here MUST be a genuine Islamic-finance term — no common English
+# words like "finance", "loss", "asset", "eligible" which appear in any topic.
+_ISLAMIC_FINANCE_SIGNALS: frozenset[str] = frozenset({
+    # Quran & Hadith — allow through so web agent can answer
+    "quran", "quranic", "ayah", "ayat", "surah", "hadith", "ahadith",
+    "hadees", "sunnah", "bukhari", "sahih", "tirmidhi", "ibn majah",
+    "prophet said", "nabi ne farmaya", "qurani ayat",
+    "قرآن", "حدیث", "آیت", "سورہ", "احادیث",
+    # Core Islamic obligations
+    "zakat", "zakah", "zakaat", "zakat ul mal", "zakat ul fitr",
+    "sadaqah", "sadaqa", "sadqa", "waqf", "waqaf", "khums",
+    # Shariah evaluation
+    "halal", "haram", "shariah", "sharia", "sharī'ah", "fiqh",
+    "muamalat", "muamalah", "fatwa", "ijtihad", "riba", "ribah", "sood",
+    # Islamic contracts
+    "mudarabah", "mudaraba", "mudharabah",
+    "murabaha", "murabahah", "murabaħa",
+    "musharakah", "musharaka", "mushārakah",
+    "ijarah", "ijara", "ijaara",
+    "istisna", "istisnaa", "bay salam",
+    "sukuk", "takaful", "wakala", "wakalah",
+    "diminishing musharakah", "bai muajjal",
+    # Nisab / Zakat calculation
+    "nisab", "nisaab", "hawl", "haul", "tola", "zakatable",
+    "zakat calculation", "zakat rate", "zakat threshold",
+    # Halal investing evaluation
+    "halal invest", "halal stock", "shariah compliant", "islamically permissible",
+    "islamically prohibited", "screener", "halal screening",
+    # Islamic banking
+    "islamic bank", "islamic banking", "islamic finance",
+    "islamic mortgage", "meezan bank", "al baraka", "dubai islamic",
+    "bank islami", "mcb islamic",
+    # Pakistani specific Islamic products
+    "naya pakistan certificate", "roshan digital account",
+    "prize bond halal", "prize bond haram",
+    # Urdu / Roman Urdu terms (these ONLY appear in Islamic finance context)
+    "sona", "chandi", "munafa", "nuqsan", "tijarat", "karobar",
+    "qarz", "rishwat", "sood", "halaal", "haraam", "zakat ka nisab",
+    "zakat dena", "zakaat ada karna", "maal ki zakat",
+    # Urdu script — any Urdu script text is assumed to be about Islamic finance
+    # (handled separately via unicode range check below)
+})
+
+# ── Context words that are ONLY meaningful alongside a signal ───────────────
+# These alone are NOT enough to allow — they must co-occur with a signal.
+# (We don't use these in the current logic but they're documented here.)
+_CONTEXT_ONLY_WORDS: frozenset[str] = frozenset({
+    "invest", "investment", "investing", "stock", "stocks", "shares", "equity",
+    "profit", "interest", "bank", "banking", "loan", "gold", "silver",
+    "wealth", "debt", "dividend", "fund", "crypto", "bitcoin", "bond",
+    "asset", "finance", "eligible", "poor", "recipient",
+})
+
+
+# ── Greetings — always allow, LLM gives a scoped welcome ─────────────────────
+_GREETINGS = {
+    "hello", "hi", "hey", "salam", "assalam", "assalamualaikum",
+    "aoa", "good morning", "good evening", "good afternoon", "good night",
+    "السلام", "سلام", "آداب", "جی", "ہیلو",
+}
+
+# ── Capability / meta questions — user asking what the bot CAN do ──────────────
+_CAPABILITY_SIGNALS = {
+    "can you", "are you able", "do you have", "what can you", "what do you",
+    "how do you", "tell me about yourself", "who are you", "what are you",
+    "search", "internet", "web", "online", "browse", "look up", "find",
+    "abilities", "features", "capable", "functionality",
+    "تم کیا", "آپ کیا", "کیا آپ", "search kar", "internet par",
+}
+
+# ── Short follow-up phrases — continuation of prior Islamic topic ──────────────
+# These alone are ambiguous, but when very short (≤ 5 words) they are almost
+# always follow-ups to the previous message in a chat context.
+_FOLLOWUP_SIGNALS = {
+    "give me", "show me", "tell me", "explain", "more", "details",
+    "with translation", "in english", "in urdu", "in roman urdu",
+    "translate", "again", "yes", "ok", "okay", "sure", "please",
+    "continue", "go on", "next", "and", "also", "what about",
+    "batao", "bata do", "aur", "theek hai", "haan", "ji haan",
+}
+
+
+def is_off_topic(text: str) -> bool:
+    """
+    Returns True if the message is NOT about Islamic finance.
+
+    Pass-through cases (never blocked):
+    - Urdu/Arabic script  → assumed Islamic context
+    - Greeting words      → LLM handles with scoped welcome
+    - Capability/meta Qs → LLM explains what it can do
+    - Short follow-ups    → continuation of prior conversation
+    - Islamic finance signal words present
+    """
+    if not text or not text.strip():
+        return False
+
+    lower = text.lower().strip()
+    words = lower.split()
+
+    # 1. Urdu/Arabic script — let through
+    urdu_chars = sum(1 for c in text if '؀' <= c <= 'ۿ')
+    if urdu_chars > 3:
+        return False
+
+    # 2. Greetings — always let through
+    for g in _GREETINGS:
+        if g in lower:
+            return False
+
+    # 3. Capability / meta questions — let through
+    for sig in _CAPABILITY_SIGNALS:
+        if sig in lower:
+            return False
+
+    # 4. Short follow-up messages (≤6 words) — let through
+    # These are continuations of a prior Islamic-finance topic in chat context
+    if len(words) <= 6:
+        for sig in _FOLLOWUP_SIGNALS:
+            if sig in lower:
+                return False
+
+    # 5. Islamic finance signal words — let through
+    for signal in _ISLAMIC_FINANCE_SIGNALS:
+        if signal in lower:
+            return False
+
+    logger.info("Off-topic guard blocked: %s", text[:100])
+    return True
+
+
+def off_topic_refusal(lang: str) -> str:
+    """Return a short, language-appropriate refusal message."""
+    return {
+        "ur": (
+            "میں صرف اسلامی مالیات کے سوالات کا جواب دے سکتا ہوں — "
+            "جیسے زکوٰۃ، حلال سرمایہ کاری، یا اسلامی بینکاری۔ "
+            "براہ کرم اسی دائرے میں سوال پوچھیں۔"
+        ),
+        "roman": (
+            "Main sirf Islamic finance ke sawaalat ka jawab de sakta hoon — "
+            "jaise Zakat, halal investing, ya Islamic banking. "
+            "Kripya isi dayre mein sawaal karein."
+        ),
+        "en": (
+            "I can only assist with Islamic finance questions — "
+            "such as Zakat, halal investing, or Islamic banking. "
+            "Please ask me something within that scope."
+        ),
+    }.get(lang, "I can only assist with Islamic finance questions.")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # PER-QUERY LANGUAGE INSTRUCTIONS
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -268,19 +499,10 @@ def get_chat_response(
 
     1. Validates input
     2. Detects language
-    3. Builds instruction
+    3. Checks off-topic guard (with conversation context awareness)
     4. Calls OpenRouter (gpt-oss-120b) with retry logic
     5. Post-processes response through urdu_filter
     6. Returns clean string
-
-    Args:
-        user_message:     Raw user input text.
-        context:          RAG chunks + live Nisab data from the router.
-        chat_history:     List of previous {role, content} dicts.
-        is_nisab_related: Pre-computed flag from the router.
-
-    Returns:
-        Clean response string in the user's exact language.
     """
     # ── Input validation ───────────────────────────────────
     if not user_message or not user_message.strip():
@@ -293,6 +515,25 @@ def get_chat_response(
     # ── Detection ──────────────────────────────────────────
     lang       = detect_language(user_message)
     nisab_flag = is_nisab_related or _is_nisab_question(user_message)
+
+    # ── Off-topic guard (context-aware) ────────────────────
+    # If the current message alone looks off-topic, check if the
+    # recent conversation was about an Islamic finance topic.
+    # "Give me the verses with English translation" is a follow-up
+    # to the previous Quran/Zakat answer — it should never be blocked.
+    if is_off_topic(user_message):
+        # Check last 3 assistant messages for Islamic finance content
+        recent_context = " ".join(
+            msg.get("content", "")
+            for msg in chat_history[-6:]
+            if msg.get("role") == "assistant"
+        )
+        # If recent conversation had Islamic finance content, allow follow-up
+        if recent_context and not is_off_topic(recent_context):
+            logger.info("Follow-up allowed based on conversation context")
+        else:
+            logger.info("Off-topic question blocked: %s", user_message[:80])
+            return off_topic_refusal(lang)
 
     # ── Per-query instruction (injected into user turn) ────
     instruction = _build_language_instruction(lang, nisab_flag)

@@ -28,7 +28,7 @@
       <div class="space-y-5">
         <div>
           <label class="block font-label-md text-on-surface-variant mb-2">Initial Principal (PKR)</label>
-          <input class="w-full bg-[#0a0a0a] border border-[#262626] rounded-lg px-4 py-2.5 font-body-md text-on-surface focus:border-primary focus:ring-1 outline-none transition-all" 
+          <input class="field-input" 
                  type="number" min="1000" x-model.number="form.principal"/>
         </div>
         
@@ -43,7 +43,7 @@
         <div>
           <label class="block font-label-md text-on-surface-variant mb-2">Your Profit Share (%)</label>
           <div class="flex gap-2 items-center">
-             <input class="w-full bg-[#0a0a0a] border border-[#262626] rounded-lg px-4 py-2.5 font-body-md text-on-surface focus:border-primary focus:ring-1 outline-none transition-all" 
+             <input class="field-input" 
                  type="number" min="1" max="99" x-model.number="form.investor_share" @input="updateBankShare"/>
              <div class="text-xs text-on-surface-variant whitespace-nowrap px-2">
                 Bank: <span class="font-bold text-on-surface" x-text="bankShare + '%'"></span>
@@ -53,7 +53,7 @@
         
         <div>
           <label class="block font-label-md text-on-surface-variant mb-2">Investment Period (Months)</label>
-          <input class="w-full bg-[#0a0a0a] border border-[#262626] rounded-lg px-4 py-2.5 font-body-md text-on-surface focus:border-primary focus:ring-1 outline-none transition-all" 
+          <input class="field-input" 
                  type="number" min="1" max="360" x-model.number="form.period_months"/>
         </div>
         
@@ -194,11 +194,6 @@
 
 {% block scripts %}
 <script>
-function formatPKR(val) {
-  if (val === undefined || val === null) return 'PKR 0';
-  return 'PKR ' + parseFloat(val).toLocaleString('en-US', { maximumFractionDigits: 0 });
-}
-
 let barChartInstance  = null;
 let lineChartInstance = null;
 
@@ -237,7 +232,7 @@ function mudarabahApp() {
 
         await this.$nextTick();
         this.drawBarChart();
-        await this.drawLineChart();
+        await this.drawLineChart(this.form);
 
       } catch(e) {
         this.errorMsg = e.message || 'Something went wrong. Please try again.';
@@ -291,13 +286,15 @@ function mudarabahApp() {
       });
     },
 
-    async drawLineChart() {
+    async drawLineChart(formData) {
       if (lineChartInstance) lineChartInstance.destroy();
 
+      // Use the passed formData snapshot to avoid a second network call
+      // with the same inputs that were just sent to /simulate
       const res = await fetch('/mudarabah/growth-chart', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(this.form),
+        body:    JSON.stringify(formData || this.form),
       });
       const chartData = await res.json();
       const ctx       = document.getElementById('lineChart').getContext('2d');

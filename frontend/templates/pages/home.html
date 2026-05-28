@@ -43,34 +43,34 @@
           <!-- Name field for Certificate -->
           <div class="space-y-2 mb-4 pb-4 border-b border-[#262626]">
             <label class="text-label-md text-on-surface-variant">Your name (for certificate)</label>
-            <input class="w-full sm:w-1/2 h-11 px-4 rounded-lg field-input font-body-md" placeholder="e.g. Aisha Khan" type="text" x-model="form.user_name"/>
+            <input class="field-input w-full sm:w-1/2" placeholder="e.g. Aisha Khan" type="text" x-model="form.user_name"/>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-2">
               <label class="text-label-md text-on-surface-variant">Cash in Hand & Bank</label>
-              <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.cash"/>
+              <input class="field-input" placeholder="0.00" type="number" min="0" x-model.number="form.cash"/>
             </div>
             <div class="space-y-2">
               <label class="text-label-md text-on-surface-variant">Gold Value</label>
-              <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.gold_value"/>
+              <input class="field-input" placeholder="0.00" type="number" min="0" x-model.number="form.gold_value"/>
             </div>
           </div>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-2">
               <label class="text-label-md text-on-surface-variant">Silver Value</label>
-              <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.silver_value"/>
+              <input class="field-input" placeholder="0.00" type="number" min="0" x-model.number="form.silver_value"/>
             </div>
             <div class="space-y-2">
               <label class="text-label-md text-on-surface-variant">Business Assets/Inventory</label>
-              <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.business_inventory"/>
+              <input class="field-input" placeholder="0.00" type="number" min="0" x-model.number="form.business_inventory"/>
             </div>
           </div>
           
           <div class="space-y-2">
             <label class="text-label-md text-on-surface-variant">Receivables (Money owed to you)</label>
-            <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.receivables"/>
+            <input class="field-input" placeholder="0.00" type="number" min="0" x-model.number="form.receivables"/>
           </div>
           
           <div class="pt-4 border-t border-[#262626]">
@@ -78,11 +78,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="space-y-2">
                 <label class="text-label-md text-on-surface-variant">Debts Payable</label>
-                <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.debts"/>
+                <input class="field-input" placeholder="0.00" type="number" min="0" x-model.number="form.debts"/>
               </div>
               <div class="space-y-2">
                 <label class="text-label-md text-on-surface-variant">Immediate Expenses</label>
-                <input class="w-full h-11 px-4 rounded-lg field-input font-body-md" placeholder="0.00" type="number" min="0" x-model.number="form.immediate_expenses"/>
+                <input class="field-input" placeholder="0.00" type="number" min="0" x-model.number="form.immediate_expenses"/>
               </div>
             </div>
           </div>
@@ -181,8 +181,18 @@
 
       <!-- Initial Religious Context Card -->
       <div x-show="!result" class="bg-[#141414] border border-[#262626] rounded-xl p-6 relative h-64 flex flex-col justify-center">
-        <div class="absolute inset-0 opacity-10 pointer-events-none rounded-xl overflow-hidden">
-          <img class="w-full h-full object-cover grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4i_QuPpk-vwqaen11jA2GnzMxG0uilauS0DT_D-4Oz9L3P9rxrg4SfHdwcnrJ1kNyBnz4QEL2skC6qTI3gtl94zHTtRRd_EW6_JHrclQ6j5ByS_ylErI0l-ok-ng-MNn8KkGFhKCg5YNvOYO2twvRt1xRptVoCgXpY3y-dZGqXyCglRgTjN8Hauhpsg7A1SZmieQl_rpAQYdyHAzJT-1bSQ9MV7nbhKju34I4bd-CPzDzPNIeQclTXm-rvDXR8x26hWypz1upvLE" alt="Islamic pattern"/>
+        <div class="absolute inset-0 opacity-10 pointer-events-none rounded-xl overflow-hidden text-primary">
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <pattern id="islamic-geo" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
+              <path d="M24 0L48 24L24 48L0 24Z" fill="none" stroke="currentColor" stroke-width="0.6"/>
+              <circle cx="24" cy="24" r="10" fill="none" stroke="currentColor" stroke-width="0.4"/>
+              <circle cx="0"  cy="0"  r="4"  fill="none" stroke="currentColor" stroke-width="0.4"/>
+              <circle cx="48" cy="0"  r="4"  fill="none" stroke="currentColor" stroke-width="0.4"/>
+              <circle cx="0"  cy="48" r="4"  fill="none" stroke="currentColor" stroke-width="0.4"/>
+              <circle cx="48" cy="48" r="4"  fill="none" stroke="currentColor" stroke-width="0.4"/>
+            </pattern>
+            <rect width="100%" height="100%" fill="url(#islamic-geo)"/>
+          </svg>
         </div>
         <div class="relative z-10 text-center">
           <h4 class="font-urdu-body text-urdu-body text-primary mb-4 text-xl">زکوٰۃ ایک فریضہ ہے</h4>
@@ -212,11 +222,6 @@
 
 {% block scripts %}
 <script>
-  function formatPKR(val) {
-    if (val === undefined || val === null) return 'PKR 0';
-    return 'PKR ' + parseFloat(val).toLocaleString('en-US', { maximumFractionDigits: 0 });
-  }
-
   function zakatApp() {
     return {
       nisabRate: 'gold',

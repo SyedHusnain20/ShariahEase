@@ -35,21 +35,96 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ── FIELD INPUT UTILITY ───────────────────────────────── */
+/*
+  The Tailwind CDN "forms" plugin injects rules like:
+    [type='text'] { background-color: #fff; }
+  using attribute selectors which beat plain class selectors.
+  We must match or exceed that specificity AND use !important.
+*/
+
+/* Base reset for ALL inputs — beats the forms plugin */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+input[type="search"],
+textarea,
+select {
+  background-color: #0c0e14 !important;
+  background: #0c0e14 !important;
+  color: #e2e1eb !important;
+  border-color: #262626 !important;
+  -webkit-text-fill-color: #e2e1eb !important;
+}
+
+input[type="text"]::placeholder,
+input[type="number"]::placeholder,
+input[type="email"]::placeholder,
+input[type="tel"]::placeholder,
+input[type="password"]::placeholder,
+input[type="search"]::placeholder,
+textarea::placeholder {
+  color: #4a5568 !important;
+  -webkit-text-fill-color: #4a5568 !important;
+  opacity: 1;
+}
+
+/* Autofill override — browsers inject yellow/white bg on autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0c0e14 inset !important;
+  -webkit-text-fill-color: #e2e1eb !important;
+  caret-color: #e2e1eb;
+  border-color: #262626 !important;
+}
+
+/* .field-input class — used on Zakat / login / signup inputs */
 .field-input {
+  display: block;
   width: 100%;
-  border: 1px solid #33343c;
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  line-height: 1.5;
+  background-color: #0c0e14 !important;
+  background: #0c0e14 !important;
+  color: #e2e1eb !important;
+  -webkit-text-fill-color: #e2e1eb !important;
+  border: 1px solid #262626 !important;
   border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  color: #e2e1eb;
-  background: #0c0e14;
   outline: none;
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  caret-color: #4edea3;
 }
-.field-input:focus {
-  box-shadow: 0 0 0 1px #10b981;
-  border-color: #10b981;
+
+.field-input::placeholder {
+  color: #4a5568 !important;
+  -webkit-text-fill-color: #4a5568 !important;
+  opacity: 1;
 }
+
+.field-input:focus,
+.field-input:focus-visible,
+.field-input:focus-within {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 1px #10b981 !important;
+  outline: none !important;
+  background-color: #0c0e14 !important;
+}
+
+/* Remove number spinners */
+.field-input::-webkit-outer-spin-button,
+.field-input::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.field-input[type="number"],
+input[type="number"].field-input { -moz-appearance: textfield; }
 
 /* ── NUMBER INPUTS always LTR ──────────────────────────── */
 input[type="number"],

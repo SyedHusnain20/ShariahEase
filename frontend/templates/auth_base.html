@@ -4,6 +4,7 @@
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>{% block title %}Secure Access - ShariahEase{% endblock %}</title>
+  <link rel="icon" type="image/png" href="/static/images/favicon.png"/>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -52,6 +53,31 @@
   </script>
   <style>
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    input, textarea, select {
+      background-color: #0c0e14 !important;
+      color: #e2e1eb !important;
+      -webkit-text-fill-color: #e2e1eb !important;
+      border-color: #262626 !important;
+      caret-color: #4edea3;
+    }
+    input::placeholder, textarea::placeholder {
+      color: #4a5568 !important;
+      -webkit-text-fill-color: #4a5568 !important;
+      opacity: 1 !important;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: #10b981 !important;
+      box-shadow: 0 0 0 1px #10b981 !important;
+      outline: none !important;
+      background-color: #0c0e14 !important;
+    }
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0 1000px #0c0e14 inset !important;
+      -webkit-text-fill-color: #e2e1eb !important;
+      border-color: #262626 !important;
+    }
   </style>
 </head>
 <body class="bg-[#0a0a0a] min-h-screen flex items-center justify-center font-body-md text-body-md px-margin-mobile">

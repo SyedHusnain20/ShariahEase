@@ -1,14 +1,24 @@
+import os
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
-import os
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
+logger = logging.getLogger(__name__)
+
 # ── Config ────────────────────────────────────────────────────────────────────
-SECRET_KEY  = os.getenv("SECRET_KEY", "shariahease-secret-change-in-production-2024")
-ALGORITHM   = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7   # 7 days
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    SECRET_KEY = "dev-only-insecure-key-SET-SECRET_KEY-IN-ENV"
+    logger.warning(
+        "⚠️  SECRET_KEY not set in .env — using insecure dev default. "
+        "Generate one: python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
+
+ALGORITHM                    = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES  = 60 * 24 * 7   # 7 days
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

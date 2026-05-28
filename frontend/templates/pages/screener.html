@@ -27,7 +27,7 @@
       <div class="relative flex-1 group">
         <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
         <input x-model="query" @keydown.enter="checkInvestment" 
-          class="w-full bg-[#0a0a0a] border border-[#262626] rounded-lg py-4 pl-12 pr-4 focus:ring-1 focus:ring-primary focus:border-primary outline-none text-on-surface transition-all placeholder:text-on-surface-variant/50" 
+          class="field-input pl-12 pr-4 py-2.5 w-full rounded-lg" 
           placeholder="Enter Ticker, Fund, or Asset Name (e.g. ENGRO, Bitcoin...)" type="text"/>
       </div>
       <button @click="checkInvestment" :disabled="loading || !query.trim()" 
@@ -191,43 +191,47 @@ function screenerApp() {
     },
 
     async loadHistory() {
+      const el = document.getElementById('history-list');
       try {
-        const res     = await fetch('/screener/history');
-        const records = await res.json();
-        const el      = document.getElementById('history-list');
+        const res = await fetch('/screener/history', {
+          headers: authHeaders(),
+        });
 
-        if (!records.length) {
-          el.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-on-surface-variant italic text-sm">No screenings yet.</td></tr>';
+        if (res.status === 401) {
+          el.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center"><div class="flex flex-col items-center gap-2 text-on-surface-variant"><span class="material-symbols-outlined text-[36px] opacity-40">lock</span><p class="text-sm font-medium">Sign in to see your screening history</p></div></td></tr>';
           return;
         }
 
-        el.innerHTML = records.map(r => `
-          <tr class="hover:bg-[#1c1c1c] transition-colors">
-            <td class="px-6 py-4">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center text-xs font-bold text-on-surface-variant">
-                  \${r.query.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p class="font-medium text-on-surface">\${r.query}</p>
-                </div>
-              </div>
-            </td>
-            <td class="px-6 py-4">
-              <span class="flex items-center gap-1.5 text-sm font-bold \${r.verdict === 'HALAL' ? 'text-primary' : (r.verdict === 'HARAM' ? 'text-red-500' : 'text-amber-500')}">
-                <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">\${r.verdict === 'HALAL' ? 'check_circle' : (r.verdict === 'HARAM' ? 'cancel' : 'warning')}</span>
-                \${r.verdict}
-              </span>
-            </td>
-            <td class="px-6 py-4 text-sm text-on-surface-variant">\${r.screened_at}</td>
+        if (!res.ok) throw new Error('Failed');
+        const records = await res.json();
+
+        if (!records.length) {
+          el.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center"><div class="flex flex-col items-center gap-2 text-on-surface-variant"><span class="material-symbols-outlined text-[36px] opacity-40">manage_search</span><p class="text-sm font-medium">Nothing searched yet!</p><p class="text-xs opacity-60">Your screening history will appear here after your first search.</p></div></td></tr>';
+          return;
+        }
+
+        el.innerHTML = records.map(r => {
+          const safeQ = r.query.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          const icon  = r.verdict === 'HALAL' ? 'check_circle' : (r.verdict === 'HARAM' ? 'cancel' : 'warning');
+          const color = r.verdict === 'HALAL' ? 'text-primary' : (r.verdict === 'HARAM' ? 'text-red-500' : 'text-amber-500');
+          const letter = r.query.charAt(0).toUpperCase();
+          return `<tr class="hover:bg-[#1c1c1c] transition-colors">
+            <td class="px-6 py-4"><div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center text-xs font-bold text-on-surface-variant">${letter}</div>
+              <p class="font-medium text-on-surface">${r.query}</p>
+            </div></td>
+            <td class="px-6 py-4"><span class="flex items-center gap-1.5 text-sm font-bold ${color}">
+              <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">${icon}</span>
+              ${r.verdict}
+            </span></td>
+            <td class="px-6 py-4 text-sm text-on-surface-variant">${r.screened_at}</td>
             <td class="px-6 py-4 text-right">
-              <button onclick="document.querySelector('[x-data]').__x.$data.query = '\${r.query.replace(/'/g, "\\'")}'; document.querySelector('[x-data]').__x.$data.checkInvestment(); window.scrollTo(0,0);" class="text-primary hover:underline text-sm font-medium">Re-check</button>
-            </td>
-          </tr>
-        `).join('');
+              <button onclick="recheckQuery('${safeQ}')" class="text-primary hover:underline text-sm font-medium">Re-check</button>
+            </td></tr>`;
+        }).join('');
+
       } catch(e) {
-        document.getElementById('history-list').innerHTML =
-          '<tr><td colspan="4" class="px-6 py-4 text-center text-error italic text-sm">Could not load history.</td></tr>';
+        el.innerHTML = '<tr><td colspan="4" class="px-6 py-6 text-center text-error italic text-sm">Could not load history. Please refresh.</td></tr>';
       }
     },
 
@@ -246,7 +250,12 @@ function screenerApp() {
           body:    JSON.stringify({ query: q }),
         });
 
+        if (res.status === 401) {
+          this.errorMsg = 'Please sign in to use the screener.';
+          return;
+        }
         if (!res.ok) throw new Error('Screening failed. Please try again.');
+
         this.result = await res.json();
         await this.loadHistory();
 
@@ -257,6 +266,16 @@ function screenerApp() {
       }
     },
   }
+}
+
+// ── RECHECK BRIDGE — Alpine v3 safe global helper ──────────
+function recheckQuery(query) {
+  const root = document.querySelector('[x-data]');
+  if (!root) return;
+  const comp = Alpine.$data(root);
+  comp.query = query;
+  comp.checkInvestment();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 </script>
 {% endblock %}

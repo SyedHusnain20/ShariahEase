@@ -44,9 +44,9 @@ async function getJSON(url) {
 // ── TOAST NOTIFICATION ─────────────────────────────────────
 function showToast(message, type = "info") {
   const colors = {
-    success: "background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d",
-    error:   "background:#fef2f2;border:1px solid #fecaca;color:#dc2626",
-    info:    "background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8",
+    success: "background:#00422b;border:1px solid #10b981;color:#4edea3",
+    error:   "background:#2d0a0a;border:1px solid rgba(255,180,171,0.4);color:#ffb4ab",
+    info:    "background:#1e1f26;border:1px solid #3c4a42;color:#bbcabf",
   };
   const toast = document.createElement("div");
   toast.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;
