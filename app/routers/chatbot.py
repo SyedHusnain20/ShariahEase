@@ -87,7 +87,7 @@ async def chat_message(
     save_message(db, request.session_id, "user", request.message, user_id=current_user.id)
 
     # Fetch history after saving, exclude the just-saved user message
-    all_records     = get_chat_history(db, request.session_id, limit=13)
+    all_records     = get_chat_history(db, request.session_id, limit=13, user_id=current_user.id)
     history_records = all_records[:-1]
     chat_history    = [
         {"role": r.role, "content": r.content}
@@ -174,9 +174,7 @@ async def get_history(
     current_user: models.User = Depends(get_current_user),
 ):
     # Only return messages belonging to this user's session
-    records = get_chat_history(db, session_id, limit=50)
-    # Filter to only this user's messages (prevents session_id enumeration)
-    records = [r for r in records if r.user_id == current_user.id]
+    records = get_chat_history(db, session_id, limit=50, user_id=current_user.id)
     return [
         {"role": r.role, "content": r.content,
          "created_at": r.created_at.strftime("%I:%M %p")}

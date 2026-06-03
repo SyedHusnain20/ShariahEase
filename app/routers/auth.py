@@ -7,6 +7,9 @@ from app.database.db import get_db
 from app.database import models
 from app.services.auth_service import hash_password, verify_password, create_access_token
 from app.dependencies import get_current_user
+import os
+
+_IS_PRODUCTION = os.getenv("ENV", "development") == "production"
 
 router    = APIRouter(prefix="/auth", tags=["Auth"])
 templates = Jinja2Templates(directory="frontend/templates")
@@ -65,7 +68,7 @@ def signup(body: SignupRequest, response: Response, db: Session = Depends(get_db
     token = create_access_token({"sub": str(user.id)})
 
     # Also set cookie so Jinja2 page loads work
-    response.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=60*60*24*7)
+    response.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=60*60*24*7, secure=_IS_PRODUCTION)
 
     return TokenResponse(
         access_token = token,
@@ -82,7 +85,7 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     token = create_access_token({"sub": str(user.id)})
-    response.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=60*60*24*7)
+    response.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=60*60*24*7, secure=_IS_PRODUCTION)
 
     return TokenResponse(
         access_token = token,

@@ -11,8 +11,11 @@
       <div class="flex-1 z-10">
         <span class="text-primary font-label-md tracking-widest uppercase">Methodology</span>
         <h3 class="font-headline-lg text-headline-lg text-on-surface mt-2 mb-4">Precision Shariah Screening</h3>
-        <p class="text-on-surface-variant max-w-2xl">
+        <p class="text-on-surface-variant max-w-2xl hidden md:block">
           Our screener evaluates assets based on Islamic finance standards. We analyze business activities, debt-to-asset ratios, and interest income to ensure your portfolio remains purely halal.
+        </p>
+        <p class="text-on-surface-variant max-w-2xl md:hidden">
+          Our screener evaluates assets based on Islamic finance standards to ensure your portfolio remains purely halal.
         </p>
       </div>
       <div class="hidden lg:block absolute right-[-50px] top-[-50px] opacity-10">
@@ -32,7 +35,8 @@
       </div>
       <button @click="checkInvestment" :disabled="loading || !query.trim()" 
         class="bg-primary-container text-on-primary-container px-8 py-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100">
-        <span x-show="!loading">Check Verdict</span>
+        <span x-show="!loading" class="hidden md:inline">Check Verdict</span>
+        <span x-show="!loading" class="md:hidden">Check</span>
         <span class="material-symbols-outlined" x-show="!loading">analytics</span>
         <svg x-show="loading" class="w-5 h-5 animate-spin text-on-primary-container" fill="none" viewBox="0 0 24 24" style="display:none;">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -52,20 +56,20 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Current Analysis Display -->
       <div class="lg:col-span-2 border rounded-xl p-8 flex flex-col md:flex-row gap-8 items-center transition-colors"
-           :class="result && result.verdict === 'HALAL' ? 'bg-emerald-950/30 border-emerald-800/50' : (result && result.verdict === 'HARAM' ? 'bg-red-950/30 border-red-800/50' : 'bg-amber-950/30 border-amber-800/50')">
+           :class="result && result.verdict === 'HALAL' ? 'bg-emerald-950/30 border-emerald-800/50' : (result && result.verdict === 'HARAM' ? 'bg-red-950/30 border-red-800/50' : (result && result.verdict === 'INVALID' ? 'bg-blue-950/30 border-blue-800/50' : 'bg-amber-950/30 border-amber-800/50'))">
         
         <div class="w-32 h-32 rounded-full border-4 flex items-center justify-center"
-             :class="result && result.verdict === 'HALAL' ? 'border-primary bg-emerald-900/40' : (result && result.verdict === 'HARAM' ? 'border-red-500 bg-red-900/40' : 'border-amber-500 bg-amber-900/40')">
+             :class="result && result.verdict === 'HALAL' ? 'border-primary bg-emerald-900/40' : (result && result.verdict === 'HARAM' ? 'border-red-500 bg-red-900/40' : (result && result.verdict === 'INVALID' ? 'border-blue-400 bg-blue-900/40' : 'border-amber-500 bg-amber-900/40'))">
           <span class="material-symbols-outlined !text-6xl" style="font-variation-settings: 'FILL' 1;"
-                :class="result && result.verdict === 'HALAL' ? 'text-primary' : (result && result.verdict === 'HARAM' ? 'text-red-500' : 'text-amber-500')"
-                x-text="result && result.verdict === 'HALAL' ? 'check_circle' : (result && result.verdict === 'HARAM' ? 'cancel' : 'warning')"></span>
+                :class="result && result.verdict === 'HALAL' ? 'text-primary' : (result && result.verdict === 'HARAM' ? 'text-red-500' : (result && result.verdict === 'INVALID' ? 'text-blue-400' : 'text-amber-500'))"
+                x-text="result && result.verdict === 'HALAL' ? 'check_circle' : (result && result.verdict === 'HARAM' ? 'cancel' : (result && result.verdict === 'INVALID' ? 'info' : 'warning'))"></span>
         </div>
         
         <div class="flex-1 text-center md:text-left">
           <div class="flex items-center justify-center md:justify-start gap-3 mb-2">
             <h4 class="font-headline-lg text-headline-lg text-white" x-text="result && result.query"></h4>
             <span class="px-3 py-1 rounded-full text-label-md border uppercase font-bold"
-                  :class="result && result.verdict === 'HALAL' ? 'bg-primary/20 text-primary border-primary/30' : (result && result.verdict === 'HARAM' ? 'bg-red-500/20 text-red-500 border-red-500/30' : 'bg-amber-500/20 text-amber-500 border-amber-500/30')"
+                  :class="result && result.verdict === 'HALAL' ? 'bg-primary/20 text-primary border-primary/30' : (result && result.verdict === 'HARAM' ? 'bg-red-500/20 text-red-500 border-red-500/30' : (result && result.verdict === 'INVALID' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : 'bg-amber-500/20 text-amber-500 border-amber-500/30'))"
                   x-text="result && result.verdict"></span>
           </div>
           <p class="text-on-surface-variant mb-6" x-text="'Confidence: ' + (result && result.confidence)"></p>
@@ -257,7 +261,7 @@ function screenerApp() {
         if (!res.ok) throw new Error('Screening failed. Please try again.');
 
         this.result = await res.json();
-        await this.loadHistory();
+        if (this.result.verdict !== 'INVALID') await this.loadHistory();
 
       } catch(e) {
         this.errorMsg = e.message || 'Something went wrong. Please try again.';

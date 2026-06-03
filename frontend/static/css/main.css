@@ -56,6 +56,7 @@ select {
   color: #e2e1eb !important;
   border-color: #262626 !important;
   -webkit-text-fill-color: #e2e1eb !important;
+  border-radius: 0.5rem !important;
 }
 
 input[type="text"]::placeholder,
@@ -95,7 +96,7 @@ input:-webkit-autofill:active {
   color: #e2e1eb !important;
   -webkit-text-fill-color: #e2e1eb !important;
   border: 1px solid #262626 !important;
-  border-radius: 0.5rem;
+  border-radius: 0.5rem !important;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   -webkit-appearance: none;
@@ -155,3 +156,45 @@ a, button {
   transition: color 0.12s, background-color 0.12s,
               border-color 0.12s, opacity 0.12s;
 }
+
+/* ── SELECT DROPDOWNS ──────────────────────────────────── */
+select {
+  border-radius: 0.5rem !important;
+  border: 1px solid #262626 !important;
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+}
+
+/* ── RANGE SLIDER ──────────────────────────────────────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px !important;
+  background: #262626;
+  outline: none;
+  border: none !important;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #4edea3;
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(78, 222, 163, 0.15);
+  transition: box-shadow 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 5px rgba(78, 222, 163, 0.25);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #4edea3;
+  cursor: pointer;
+  border: none;
+}
+

@@ -170,12 +170,14 @@ _QURAN_HADITH_SIGNALS = {
     "quran", "quranic", "ayah", "ayat", "surah", "sura",
     "hadith", "ahadith", "hadees", "sunnah", "bukhari", "muslim",
     "tirmidhi", "abu dawood", "ibn majah", "authentic hadith",
+    "sahih", "sahih hadith", "sahih bukhari", "sahih muslim",
     "prophet said", "prophet muhammad", "rasulullah",
     "verse about", "verses about", "what does quran say", "what does islam say",
     "with translation", "translate the verse", "full verse",
     "search the web", "search internet", "surf the internet", "find the hadith",
     "qurani ayat", "hadees", "nabi ne farmaya", "bukhari mein",
     "tarjuma", "translation ke saath",
+    "give me hadith", "show me hadith", "list hadith", "narration",
     "قرآنی آیت", "حدیث", "آیت", "سورہ", "بخاری", "احادیث", "ترجمہ",
 }
 
@@ -308,6 +310,90 @@ def format_web_results(results: list[dict], category: SearchCategory) -> str:
     return (header + body + "\n=== END ===") if body.strip() else ""
 
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SUNNAH.COM API — Direct hadith search (free, no key required)
+# Much more reliable than scraping DDG for hadith text
+# ═══════════════════════════════════════════════════════════════════════════════
+
+async def _search_sunnah_com(topic: str) -> str:
+    """
+    Queries sunnah.com's public search endpoint for hadith on a topic.
+    Returns a formatted context block with up to 3 authentic narrations,
+    or empty string if the request fails.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=8.0, follow_redirects=True, headers={
+            "User-Agent": "Mozilla/5.0 (compatible; ShariahEase/1.0)",
+            "Accept": "application/json",
+        }) as client:
+            # sunnah.com search API (public, no auth needed for basic search)
+            res = await client.get(
+                "https://api.sunnah.com/v1/hadiths/search",
+                params={"q": topic, "limit": 5, "page": 1},
+                headers={"X-API-Key": "SqD712P3E82xnwOAEOkGd5JZH8s9wRR24TgV8yv"},
+            )
+            if res.status_code != 200:
+                raise ValueError(f"sunnah.com returned {res.status_code}")
+
+            data = res.json()
+            hadiths = data.get("data", [])
+            if not hadiths:
+                return ""
+
+            lines = ["=== AUTHENTIC HADITH FROM SUNNAH.COM ==="]
+            lines.append(f"Topic: {topic}")
+            lines.append("Source: sunnah.com (verified narrations)")
+            lines.append("")
+
+            for i, h in enumerate(hadiths[:3], 1):
+                collection = h.get("collection", "")
+                book_name  = h.get("bookName", "")
+                hadith_num = h.get("hadithNumber", "")
+                grade      = h.get("grades", [{}])[0].get("grade", "") if h.get("grades") else ""
+                body       = h.get("body", "").strip()
+
+                if body:
+                    lines.append(f"[Hadith {i}]")
+                    lines.append(f"Collection : {collection} | {book_name} #{hadith_num}")
+                    if grade:
+                        lines.append(f"Grade      : {grade}")
+                    lines.append(f"Text       : {body[:600]}")
+                    lines.append("")
+
+            lines.append("INSTRUCTION: Quote these hadith texts exactly. Always cite collection name and number.")
+            lines.append("=== END HADITH ===")
+            result = "\n".join(lines)
+            logger.info("sunnah.com: found %d hadiths for '%s'", len(hadiths[:3]), topic)
+            return result
+
+    except Exception as e:
+        logger.warning("sunnah.com search failed: %s", e)
+        return ""
+
+
+async def _extract_hadith_topic(user_message: str) -> str:
+    """
+    Pulls the key Islamic topic from the user's message for the sunnah.com query.
+    E.g. 'give me 3 sahih ahadith on zakat' → 'zakat'
+    """
+    msg = user_message.lower()
+    # Common Islamic finance topics to look for
+    topics = [
+        "zakat", "sadaqah", "riba", "interest", "trade", "business",
+        "gold", "silver", "nisab", "charity", "debt", "loan",
+        "mudarabah", "musharakah", "halal", "haram", "zakah",
+    ]
+    for t in topics:
+        if t in msg:
+            return t
+    # Fallback: strip common filler words and return cleaned query
+    filler = {"give", "me", "3", "some", "a", "few", "sahih", "authentic",
+               "ahadith", "hadith", "on", "about", "the", "topic", "of",
+               "please", "show", "list", "narrations"}
+    words = [w for w in msg.split() if w not in filler and len(w) > 2]
+    return " ".join(words[:4]) if words else user_message.strip()
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # MAIN ENTRY POINT
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -333,19 +419,32 @@ async def get_web_context(user_message: str) -> tuple[str, bool]:
     search_cat = classify_for_search(user_message)
 
     if search_cat != SearchCategory.NONE:
-        if search_cat == SearchCategory.STOCK_PRICE:
-            query = _build_price_query(user_message, company)
-        elif search_cat == SearchCategory.QURAN_HADITH:
-            query = f"{user_message.strip()} site:islamqa.info OR site:sunnah.com OR site:quran.com"
-        elif search_cat == SearchCategory.GOLD_SILVER:
-            query = "gold silver price Pakistan PKR today sarafa 2025"
-        else:
-            query = f"{user_message.strip()} Pakistan Islamic finance 2025"
+        if search_cat == SearchCategory.QURAN_HADITH:
+            # Primary: sunnah.com API for verified hadith text (most reliable)
+            topic = await _extract_hadith_topic(user_message)
+            sunnah_context = await _search_sunnah_com(topic)
+            if sunnah_context:
+                context_parts.append(sunnah_context)
 
-        results     = await web_search(query, max_results=4)
-        web_context = format_web_results(results, search_cat)
-        if web_context:
-            context_parts.append(web_context)
+            # Secondary: DDG web search for Quran verses and supporting fatawa
+            query   = f"{user_message.strip()} quran zakat islamqa"
+            results = await web_search(query, max_results=3)
+            web_ctx = format_web_results(results, search_cat)
+            if web_ctx:
+                context_parts.append(web_ctx)
+
+        else:
+            if search_cat == SearchCategory.STOCK_PRICE:
+                query = _build_price_query(user_message, company)
+            elif search_cat == SearchCategory.GOLD_SILVER:
+                query = "gold silver price Pakistan PKR today sarafa 2025"
+            else:
+                query = f"{user_message.strip()} Pakistan Islamic finance 2025"
+
+            results     = await web_search(query, max_results=4)
+            web_context = format_web_results(results, search_cat)
+            if web_context:
+                context_parts.append(web_context)
 
     full_context = "\n\n".join(context_parts)
     return full_context, bool(full_context)

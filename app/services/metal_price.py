@@ -9,17 +9,17 @@ load_dotenv()
 METAL_API_KEY = os.getenv("METAL_API_KEY", "")
 
 # ── FALLBACK PRICES (PKR) ─────────────────────────────────
-# Update these manually every few weeks if API key not set.
-# As of early 2025 approximate PKR values:
-FALLBACK_GOLD_PER_GRAM   = 21000.0   # PKR per gram of 24k gold
-FALLBACK_SILVER_PER_GRAM = 250.0     # PKR per gram of silver
+# Last updated: May 2026. Update manually every few weeks if API key not set.
+# Check current rates at: https://sarafa.pk or https://goldapi.io
+FALLBACK_GOLD_PER_GRAM   = 27500.0   # PKR per gram of 24k gold (May 2026)
+FALLBACK_SILVER_PER_GRAM = 310.0     # PKR per gram of silver   (May 2026)
 
 # Nisab weights (fixed Islamic values — never change)
 GOLD_NISAB_GRAMS   = 87.48    # 7.5 tola
 SILVER_NISAB_GRAMS = 612.36   # 52.5 tola
 
 # USD to PKR fallback rate (updated manually)
-FALLBACK_USD_TO_PKR = 278.0
+FALLBACK_USD_TO_PKR = 283.0   # May 2026
 
 # Simple in-memory cache — avoids hammering the API on every page load
 _cache = {

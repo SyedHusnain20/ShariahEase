@@ -86,12 +86,15 @@ def save_message(db: Session, session_id: str, role: str, content: str, language
     return msg
 
 
-def get_chat_history(db: Session, session_id: str, limit: int = 20):
-    """Get conversation history for a session — oldest first."""
-    return (
-        db.query(models.ChatMessage)
-        .filter(models.ChatMessage.session_id == session_id)
-        .order_by(models.ChatMessage.created_at.asc())
-        .limit(limit)
-        .all()
+def get_chat_history(db: Session, session_id: str, limit: int = 20, user_id: int = None):
+    """
+    Get conversation history for a session — oldest first.
+    user_id is required in authenticated contexts to prevent session_id
+    enumeration (User A reading User B's chat by guessing their session_id).
+    """
+    q = db.query(models.ChatMessage).filter(
+        models.ChatMessage.session_id == session_id
     )
+    if user_id is not None:
+        q = q.filter(models.ChatMessage.user_id == user_id)
+    return q.order_by(models.ChatMessage.created_at.asc()).limit(limit).all()

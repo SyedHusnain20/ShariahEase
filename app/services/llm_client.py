@@ -49,9 +49,18 @@ You are ShariahEase, a precise and authoritative Islamic finance assistant
 serving Muslims in Pakistan. You have deep knowledge of Zakat, Shariah-compliant
 investing, Islamic banking, and Islamic finance contracts.
 
-You have access to LIVE WEB SEARCH RESULTS when provided in your context.
-For Quran verses and Ahadith — ONLY quote text from the provided web results.
-Never fabricate or guess a verse or hadith. Always cite surah/ayah or hadith collection.
+You have access to LIVE WEB SEARCH RESULTS and SUNNAH.COM HADITH DATA when provided in your context.
+
+For Ahadith:
+- When the context contains a "AUTHENTIC HADITH FROM SUNNAH.COM" block, you MUST quote those
+  hadith texts exactly and cite the collection name and number provided.
+- Do NOT say "I cannot provide" or "please refer elsewhere" when hadith data is in the context.
+- If asked for multiple ahadith and the context has them, list all of them clearly.
+- If context has NO hadith data (sunnah.com unavailable), then and only then say the service
+  is temporarily unavailable and suggest sunnah.com directly.
+
+For Quran verses — ONLY quote text from the provided web results.
+Never fabricate or guess a verse or hadith not present in context.
 For live stock/market data — use web results and note data may be slightly delayed.
 
 GREETINGS: When the user says hello/hi/salam or any greeting, respond warmly and
@@ -646,10 +655,12 @@ def _error_message(error: Exception, lang: str) -> str:
 # INVESTMENT SCREENER
 # ═══════════════════════════════════════════════════════════════════════════
 
-def screen_investment(query: str, context: str) -> dict:
+def screen_investment(query: str, context: str, has_kmi_data: bool = False) -> dict:
     """
     Shariah compliance screener.
-    Uses a minimal, format-locked prompt for consistent output parsing.
+
+    has_kmi_data=True means the context already contains a definitive KMI
+    database entry — the LLM must not override or soften that verdict.
     """
     if not query or not query.strip():
         return {
@@ -658,15 +669,36 @@ def screen_investment(query: str, context: str) -> dict:
             "recommendation": "Please enter an investment name.",
         }
 
+    # If we have authoritative KMI data, instruct model to trust it
+    kmi_instruction = ""
+    if has_kmi_data:
+        kmi_instruction = (
+            "CRITICAL: The context contains a SHARIAHEASE SHARIAH COMPLIANCE DATABASE entry. "
+            "This is the authoritative KMI All-Share Index data. "
+            "You MUST use the Shariah Status from that entry as your VERDICT. "
+            "Do NOT soften it to DOUBTFUL. Do NOT say 'verify elsewhere'. "
+            "State the verdict clearly and cite the KMI index listing.\n\n"
+        )
+
     prompt = (
         "You are a Shariah compliance expert for Islamic finance in Pakistan.\n"
-        "Analyze the query using ONLY the provided context. Be factual and concise.\n\n"
+        "You have access to the PSX KMI All-Share Index database, live web search results, "
+        "and a Shariah knowledge base. Use all available context to give a definitive answer.\n\n"
+        f"{kmi_instruction}"
         f"Context:\n---\n{context}\n---\n\n"
         f"Investment query: {query}\n\n"
+        "Rules:\n"
+        "- If context has a KMI database entry, trust it completely\n"
+        "- For cryptocurrency: Bitcoin/Ethereum are DOUBTFUL (scholarly debate exists); "
+        "  meme coins and gambling tokens are HARAM\n"
+        "- For mutual funds: Islamic funds with Shariah supervisory board = HALAL; conventional = HARAM\n"
+        "- For PSX stocks not in KMI: screen by sector (tobacco/alcohol/conventional banking = HARAM, "
+        "  manufacturing/tech/pharma = likely HALAL pending debt ratio check)\n"
+        "- NEVER say 'check another website' or 'I cannot determine' when context provides data\n\n"
         "Respond in this EXACT format with no extra text:\n"
         "VERDICT: [HALAL / HARAM / DOUBTFUL]\n"
         "CONFIDENCE: [HIGH / MEDIUM / LOW]\n"
-        "REASON: [2-3 sentences maximum]\n"
+        "REASON: [2-3 sentences — cite KMI status or web source if available]\n"
         "RECOMMENDATION: [1 sentence]"
     )
 
@@ -675,7 +707,7 @@ def screen_investment(query: str, context: str) -> dict:
             model       = MODEL,
             messages    = [{"role": "user", "content": prompt}],
             temperature = 0.1,
-            max_tokens  = 2000,   # reasoning model headroom
+            max_tokens  = 2000,
             top_p       = TOP_P,
         )
         raw_content = response.choices[0].message.content
@@ -690,6 +722,7 @@ def screen_investment(query: str, context: str) -> dict:
             "reason":         "Analysis could not be completed due to a service error.",
             "recommendation": "Please try again or consult a qualified Islamic scholar.",
         }
+
 
 
 def _parse_screening_response(raw: str) -> dict:

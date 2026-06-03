@@ -64,7 +64,7 @@ AUTH_LIMIT      = 15    # login / signup attempts per IP per minute
 AI_LIMIT        = 60    # chat, screener, zakat calls per IP per minute
 
 AUTH_PATHS = {"/auth/login", "/auth/signup"}
-AI_PATHS   = {"/chat/message", "/screener/check", "/voice/ask", "/zakat/calculate"}
+AI_PATHS   = {"/chat/message", "/screener/check", "/zakat/calculate"}
 
 # Paths that are NEVER rate-limited (static assets, health check)
 EXEMPT_PREFIXES = ("/static/", "/favicon")
@@ -176,8 +176,8 @@ async def receive(request: Request):
         sig_header = request.headers.get("X-Hub-Signature-256", "")
         if secret and sig_header:
             body = await request.body()
-            expected = "sha256=" + hmac.new(
-                secret.encode(), body, hashlib.sha256
+            expected = "sha256=" + hmac.HMAC(
+                key=secret.encode(), msg=body, digestmod=hashlib.sha256
             ).hexdigest()
             if not hmac.compare_digest(expected, sig_header):
                 logger.warning("Invalid WhatsApp webhook signature")
@@ -192,14 +192,14 @@ async def receive(request: Request):
 
     logger.info("WhatsApp webhook received")
     try:
-        msg    = data["entry"][0]["changes"][0]["value"]["messages"][0]
-        sender = msg["from"]
-        text   = msg["text"]["body"]
-        logger.info("Message from %s", sender)
+        msg          = data["entry"][0]["changes"][0]["value"]["messages"][0]
+        sender       = msg["from"]
+        message_type = msg.get("type", "text")
+        logger.info("Message from %s type=%s", sender, message_type)
         from app.services.whatsapp_service import handle_message
-        await handle_message(sender, text)
+        await handle_message(sender, message_type, msg)
     except (KeyError, IndexError):
-        pass
+        pass  # not a message event (e.g. delivery receipt, status update)
     return JSONResponse({"status": "ok"})
 
 # ── Health ────────────────────────────────────────────────────────────────────

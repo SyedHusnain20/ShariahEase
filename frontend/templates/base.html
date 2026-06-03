@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>{% block title %}ShariahEase | Ethical Precision{% endblock %}</title>
+  <title>{% block title %}ShariahEase | Islamic Finance, Simplified{% endblock %}</title>
   <link rel="icon" type="image/png" href="/static/images/favicon.png"/>
   <meta name="description" content="ShariahEase — AI-powered Islamic finance assistant for Zakat calculation, halal investing, Mudarabah simulation and more."/>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -108,11 +108,11 @@
           <span class="material-symbols-outlined text-[20px]">close</span>
         </button>
       </div>
-      <span class="text-label-md font-label-md text-primary tracking-wider uppercase opacity-80">Ethical Precision</span>
+      <span class="hidden md:block text-label-md font-label-md text-primary tracking-wider uppercase opacity-80">Islamic Finance, Simplified</span>
     </div>
     
     <nav class="flex-1 space-y-1">
-      <a href="/" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
+      <a href="/zakat" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
         {% if active_page == 'zakat' %}bg-primary-container text-on-primary-container border-r-2 border-primary
         {% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}">
         <span class="material-symbols-outlined" data-icon="payments">payments</span>
@@ -144,7 +144,17 @@
       </a>
     </nav>
     
-    <div class="mt-auto border-t border-outline-variant pt-6 space-y-1">
+    <div class="mt-auto border-t border-outline-variant pt-4 space-y-1">
+
+      <!-- About -->
+      <a href="/about"
+         class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
+                {% if active_page == 'about' %}bg-primary-container text-on-primary-container{% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}">
+        <span class="material-symbols-outlined text-[20px]">info</span>
+        <span class="font-body-md text-body-md">About</span>
+      </a>
+
+      <!-- Auth links (logged out) -->
       <div id="sidebar-auth-links" class="hidden">
         <a href="/auth/login" class="flex items-center gap-3 px-3 py-2 text-primary hover:bg-surface-container-high rounded-lg transition-all">
           <span class="material-symbols-outlined">login</span>
@@ -154,16 +164,29 @@
           <span class="font-body-md text-body-md">Create account</span>
         </a>
       </div>
+
+      <!-- User menu (logged in) — Profile removed -->
       <div id="user-menu" class="hidden flex-col gap-1">
-        <a href="/auth/profile" class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg transition-all">
-          <span class="material-symbols-outlined">account_circle</span>
-          <span class="font-body-md text-body-md">Profile</span>
-        </a>
-        <button onclick="logout()" class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-error transition-all w-full text-left">
-          <span class="material-symbols-outlined" data-icon="logout">logout</span>
+        <button onclick="logout()" class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-error hover:bg-error/5 rounded-lg transition-all w-full text-left">
+          <span class="material-symbols-outlined text-[20px]" data-icon="logout">logout</span>
           <span class="font-body-md text-body-md">Sign Out</span>
         </button>
       </div>
+
+      <!-- Divider -->
+      <div class="border-t border-outline-variant/50 pt-3 mt-2">
+        <!-- WhatsApp CTA — clean single-line row -->
+        <a href="https://wa.me/923XXXXXXXXX?text=Assalam+o+Alaikum!+I+want+to+ask+about+Islamic+finance."
+           target="_blank" rel="noopener noreferrer"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#25D366]/8 transition-all group">
+          <svg class="w-[18px] h-[18px] shrink-0 text-[#25D366]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.856L.057 23.57a.75.75 0 00.918.919l5.82-1.528A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.716 9.716 0 01-4.949-1.349l-.355-.212-3.683.966.983-3.595-.231-.369A9.718 9.718 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+          </svg>
+          <span class="font-body-md text-body-md text-[#25D366]/80 group-hover:text-[#25D366] transition-colors">Chat on WhatsApp</span>
+        </a>
+      </div>
+
     </div>
   </aside>
 
@@ -174,57 +197,11 @@
           <span class="material-symbols-outlined" data-icon="menu">menu</span>
         </button>
         <h2 class="font-headline-md text-lg md:text-headline-md text-on-surface truncate">{% block page_title %}ShariahEase{% endblock %}</h2>
-        <div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full border border-outline-variant">
-          <span class="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_#4edea3]"></span>
-          <span class="text-[10px] font-bold uppercase tracking-widest text-primary">Live Pulse</span>
-        </div>
+
       </div>
       <div class="flex items-center gap-2 md:gap-4" x-data="headerUI()">
 
-        <!-- ── Notification Bell ─────────────────────────── -->
-        <div class="relative">
-          <button @click="toggleNotifs"
-                  class="relative hover:text-primary transition-colors p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant">
-            <span class="material-symbols-outlined text-[22px]">notifications</span>
-            <!-- Unread badge -->
-            <span x-show="unreadCount > 0"
-                  class="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary shadow-[0_0_6px_#4edea3]"></span>
-          </button>
 
-          <!-- Notification dropdown -->
-          <div x-show="notifsOpen" @click.outside="notifsOpen = false"
-               x-transition:enter="transition ease-out duration-150"
-               x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
-               x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-               x-transition:leave="transition ease-in duration-100"
-               x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-               style="display:none"
-               class="absolute right-0 top-full mt-2 w-80 bg-[#141414] border border-[#262626] rounded-xl shadow-2xl shadow-black/40 z-50 overflow-hidden">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-[#262626]">
-              <span class="text-label-md font-semibold text-on-surface uppercase tracking-widest">Notifications</span>
-              <button @click="markAllRead" class="text-[11px] text-primary hover:text-primary/80 transition-colors font-medium">Mark all read</button>
-            </div>
-            <ul class="max-h-72 overflow-y-auto divide-y divide-[#1e1e1e]">
-              <template x-for="n in notifications" :key="n.id">
-                <li class="px-4 py-3 flex gap-3 items-start hover:bg-surface-container-high transition-colors"
-                    :class="n.unread ? 'bg-surface-container-low/60' : ''">
-                  <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                       :class="n.type === 'zakat' ? 'bg-primary/10 text-primary' : n.type === 'tip' ? 'bg-primary-container/30 text-on-primary-container' : 'bg-surface-container-high text-on-surface-variant'">
-                    <span class="material-symbols-outlined text-[15px]" x-text="n.icon"></span>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-body-md text-on-surface leading-snug" x-text="n.title"></p>
-                    <p class="text-[11px] text-on-surface-variant mt-0.5" x-text="n.time"></p>
-                  </div>
-                  <span x-show="n.unread" class="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-2"></span>
-                </li>
-              </template>
-            </ul>
-            <div class="px-4 py-2.5 border-t border-[#262626] text-center">
-              <span class="text-[11px] text-on-surface-variant">ShariahEase keeps you updated on Zakat deadlines &amp; Nisab changes</span>
-            </div>
-          </div>
-        </div>
 
         <!-- ── Profile Dropdown ──────────────────────────── -->
         <div id="header-user-info" class="hidden relative">
@@ -266,13 +243,6 @@
             <!-- Menu items -->
             <ul class="py-1">
               <li>
-                <a href="/auth/profile"
-                   class="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
-                  <span class="material-symbols-outlined text-[18px]">account_circle</span>
-                  My Profile
-                </a>
-              </li>
-              <li>
                 <a href="/zakat/history"
                    class="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
                   <span class="material-symbols-outlined text-[18px]">history</span>
@@ -301,6 +271,118 @@
     <main class="flex-1 overflow-y-auto bg-[#0a0a0a] p-4 md:p-margin-desktop">
       {% block content %}{% endblock %}
     </main>
+  </div>
+
+  <!-- ── About Modal ─────────────────────────────────────────────── -->
+  <div id="about-modal"
+       class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+       onclick="if(event.target===this) this.classList.add('hidden')">
+    <div class="bg-[#12131a] border border-[#262626] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-[#262626]">
+        <div>
+          <h3 class="font-headline-md text-on-surface font-bold">About ShariahEase</h3>
+          <p class="text-[11px] text-on-surface-variant mt-0.5">Built by Syed Hasnain</p>
+        </div>
+        <button onclick="document.getElementById('about-modal').classList.add('hidden')"
+                class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <div class="px-6 py-5 space-y-6">
+
+        <!-- About the app -->
+        <div>
+          <p class="text-sm text-on-surface-variant leading-relaxed">
+            ShariahEase is an AI-powered Islamic finance assistant — built to make Zakat, halal investing, and Islamic economics accessible to every Muslim. It's free, open, and built with care for the community.
+          </p>
+        </div>
+
+        <!-- WhatsApp bot -->
+        <div class="bg-[#25D366]/5 border border-[#25D366]/20 rounded-xl p-4 flex gap-3 items-start">
+          <svg class="w-5 h-5 text-[#25D366] shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.856L.057 23.57a.75.75 0 00.918.919l5.82-1.528A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.716 9.716 0 01-4.949-1.349l-.355-.212-3.683.966.983-3.595-.231-.369A9.718 9.718 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+          </svg>
+          <div>
+            <p class="text-sm font-semibold text-[#25D366]">ShariahEase on WhatsApp</p>
+            <p class="text-xs text-on-surface-variant mt-0.5 mb-2">Ask Islamic finance questions directly on WhatsApp — no login needed.</p>
+            <a href="https://wa.me/923XXXXXXXXX?text=Assalam+o+Alaikum!+I+want+to+ask+about+Islamic+finance."
+               target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#25D366] border border-[#25D366]/30 px-3 py-1.5 rounded-lg hover:bg-[#25D366]/10 transition-all">
+              Open WhatsApp Chat →
+            </a>
+          </div>
+        </div>
+
+        <!-- My other projects -->
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-3">My Other Projects</p>
+          <div class="space-y-2">
+
+            <a href="https://huggingface.co/spaces/HasnainCodes/QanoonDaan"
+               target="_blank" rel="noopener noreferrer"
+               class="flex items-start gap-3 p-3 bg-[#141414] border border-[#262626] hover:border-primary/40 rounded-xl transition-all group">
+              <div class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-blue-400 text-[16px]">gavel</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">QanoonDaan — قانون دان</p>
+                <p class="text-xs text-on-surface-variant mt-0.5">RAG-based Pakistani legal advisory chatbot. Ask questions in Urdu, Roman Urdu, or English.</p>
+                <p class="text-[10px] text-primary/60 mt-1">huggingface.co → Live Demo</p>
+              </div>
+            </a>
+
+            <a href="https://huggingface.co/spaces/HasnainCodes/ResuFit"
+               target="_blank" rel="noopener noreferrer"
+               class="flex items-start gap-3 p-3 bg-[#141414] border border-[#262626] hover:border-primary/40 rounded-xl transition-all group">
+              <div class="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-purple-400 text-[16px]">description</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">ResuFit</p>
+                <p class="text-xs text-on-surface-variant mt-0.5">AI resume screening API — matches resumes to job descriptions using NLP. Built with FastAPI & spaCy.</p>
+                <p class="text-[10px] text-primary/60 mt-1">huggingface.co → Live Demo</p>
+              </div>
+            </a>
+
+          </div>
+        </div>
+
+        <!-- Contact / Suggestions -->
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-3">Contact & Suggestions</p>
+          <div class="space-y-2">
+            <a href="https://wa.me/923XXXXXXXXX" target="_blank" rel="noopener noreferrer"
+               class="flex items-center gap-3 px-3 py-2.5 bg-[#141414] border border-[#262626] hover:border-[#25D366]/40 rounded-xl transition-all group">
+              <svg class="w-4 h-4 text-[#25D366]" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.856L.057 23.57a.75.75 0 00.918.919l5.82-1.528A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.716 9.716 0 01-4.949-1.349l-.355-.212-3.683.966.983-3.595-.231-.369A9.718 9.718 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
+              <span class="text-sm text-on-surface-variant group-hover:text-[#25D366] transition-colors">WhatsApp me directly</span>
+            </a>
+            <a href="https://www.linkedin.com/in/syed-hasnain-developer/"
+               target="_blank" rel="noopener noreferrer"
+               class="flex items-center gap-3 px-3 py-2.5 bg-[#141414] border border-[#262626] hover:border-blue-500/40 rounded-xl transition-all group">
+              <svg class="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              <span class="text-sm text-on-surface-variant group-hover:text-blue-400 transition-colors">LinkedIn</span>
+            </a>
+            <a href="https://github.com/HasnainCodes"
+               target="_blank" rel="noopener noreferrer"
+               class="flex items-center gap-3 px-3 py-2.5 bg-[#141414] border border-[#262626] hover:border-white/20 rounded-xl transition-all group">
+              <svg class="w-4 h-4 text-on-surface-variant" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+              <span class="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">GitHub</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Footer note -->
+        <div class="border-t border-[#262626] pt-4 flex items-center justify-between">
+          <p class="text-[11px] text-on-surface-variant">Made with ❤️ for the Muslim community</p>
+          <span class="text-[10px] text-on-surface-variant/40">v1.0</span>
+        </div>
+
+      </div>
+    </div>
   </div>
 
   <script src="/static/js/main.js"></script>
@@ -354,48 +436,9 @@
     // ── Header UI Alpine component ───────────────────────
     function headerUI() {
       return {
-        notifsOpen:  false,
         profileOpen: false,
-        unreadCount: 3,
-
-        notifications: [
-          {
-            id: 1, unread: true, type: 'zakat',
-            icon: 'payments',
-            title: 'Nisab updated — Gold Nisab now PKR 35,60,950',
-            time: 'Just now',
-          },
-          {
-            id: 2, unread: true, type: 'tip',
-            icon: 'lightbulb',
-            title: 'Ramadan tip: Zakat on savings is due before Eid al-Fitr',
-            time: '2 hours ago',
-          },
-          {
-            id: 3, unread: true, type: 'tip',
-            icon: 'info',
-            title: 'New: Halal screener now covers PSX-listed ETFs',
-            time: 'Yesterday',
-          },
-          {
-            id: 4, unread: false, type: 'system',
-            icon: 'check_circle',
-            title: 'Your Zakat certificate was downloaded successfully',
-            time: '3 days ago',
-          },
-        ],
-
-        toggleNotifs() {
-          this.notifsOpen  = !this.notifsOpen;
-          this.profileOpen = false;
-        },
         toggleProfile() {
           this.profileOpen = !this.profileOpen;
-          this.notifsOpen  = false;
-        },
-        markAllRead() {
-          this.notifications = this.notifications.map(n => ({ ...n, unread: false }));
-          this.unreadCount   = 0;
         },
       };
     }

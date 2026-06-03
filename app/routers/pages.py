@@ -6,6 +6,10 @@ templates = Jinja2Templates(directory="frontend/templates")
 
 @router.get("/")
 async def home(request: Request):
+    return templates.TemplateResponse("pages/chatbot.html", {"request": request, "active_page": "chatbot"})
+
+@router.get("/zakat")
+async def zakat_page(request: Request):
     return templates.TemplateResponse("pages/home.html", {"request": request, "active_page": "zakat"})
 
 @router.get("/screener")
@@ -23,4 +27,8 @@ async def chatbot(request: Request):
 @router.get("/charities")
 async def charities(request: Request):
     return templates.TemplateResponse("pages/charities.html", {"request": request, "active_page": "charities"})
+
+@router.get("/about")
+async def about(request: Request):
+    return templates.TemplateResponse("pages/about.html", {"request": request, "active_page": "about"})
 

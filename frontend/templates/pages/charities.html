@@ -16,8 +16,11 @@
         <h3 class="font-headline-xl text-headline-xl text-on-surface mb-2 tracking-tight">
           Give Where It Truly Counts
         </h3>
-        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl hidden md:block">
           Every charity here has been hand-picked and reviewed for Shariah compliance, financial transparency, and real impact on the ground in Pakistan. Giving Zakat to relatives in need carries double reward.
+        </p>
+        <p class="font-body-md text-body-md text-on-surface-variant md:hidden">
+          Hand-picked Shariah compliant charities in Pakistan.
         </p>
       </div>
     </div>
@@ -126,22 +129,55 @@
       </div>
     </template>
     
-    <!-- More Info Card -->
-    <div class="bg-primary-container/5 border-2 border-dashed border-primary/20 rounded-xl p-8 flex flex-col items-center justify-center text-center">
-      <span class="material-symbols-outlined text-primary text-5xl mb-4">info</span>
-      <h4 class="font-headline-md text-headline-md text-on-surface mb-2">Want to suggest a charity?</h4>
-      <p class="text-on-surface-variant mb-6 font-body-md text-sm">Our compliance team audits organizations every quarter. Submit a suggestion for vetting.</p>
-      <button class="border border-primary text-primary font-label-md text-label-md px-6 py-2.5 rounded-lg hover:bg-primary/10 transition-colors">Submit Request</button>
-    </div>
+
     
   </div>
 
-  <!-- Empty State -->
-  <div x-show="filteredCharities.length === 0 && !loading" class="bg-[#141414] border border-[#262626] rounded-xl p-10 text-center" style="display:none;">
-    <p class="text-sm text-on-surface-variant">No charities found matching your search.</p>
-    <button @click="searchQuery = ''; activeCategory = 'all'; loadCharities()" class="mt-3 text-xs text-primary hover:underline">
-      Clear filters
-    </button>
+  <!-- Empty State: local not found → trigger web search -->
+  <div x-show="filteredCharities.length === 0 && !loading && searchQuery" style="display:none;">
+
+    <!-- Auto web search result -->
+    <div x-show="!webSearchLoading && webResults.length > 0" class="space-y-4 mb-6" style="display:none;">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="material-symbols-outlined text-primary">travel_explore</span>
+        <p class="text-sm text-on-surface-variant">Live web results for <span class="text-primary font-semibold" x-text="'"' + searchQuery + '"'"></span></p>
+      </div>
+      <template x-for="r in webResults" :key="r.url">
+        <a :href="r.url" target="_blank" rel="noopener noreferrer"
+           class="flex gap-4 bg-[#141414] border border-[#262626] hover:border-primary/50 rounded-xl p-5 transition-all duration-200 group block">
+          <div class="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-primary text-xl">open_in_new</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-on-surface group-hover:text-primary transition-colors truncate" x-text="r.title"></p>
+            <p class="text-xs text-on-surface-variant mt-1 line-clamp-2" x-text="r.snippet"></p>
+            <p class="text-[10px] text-primary/60 mt-1.5 truncate" x-text="r.url"></p>
+          </div>
+        </a>
+      </template>
+      <p class="text-[11px] text-on-surface-variant/60 pt-2">
+        ⚠ These are external web results. Always verify SECP registration and Shariah compliance before donating.
+      </p>
+    </div>
+
+    <!-- Web search loading -->
+    <div x-show="webSearchLoading" class="bg-[#141414] border border-[#262626] rounded-xl p-10 text-center" style="display:none;">
+      <svg class="w-6 h-6 animate-spin text-primary mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+      <p class="text-sm text-on-surface-variant">Searching the web for <span class="text-primary" x-text="searchQuery"></span>...</p>
+    </div>
+
+    <!-- Web search found nothing -->
+    <div x-show="!webSearchLoading && webResults.length === 0 && webSearchDone" class="bg-[#141414] border border-[#262626] rounded-xl p-10 text-center" style="display:none;">
+      <span class="material-symbols-outlined text-on-surface-variant text-4xl mb-3 block">search_off</span>
+      <p class="text-sm text-on-surface-variant">No results found for <span class="text-primary font-semibold" x-text="'"' + searchQuery + '"'"></span>.</p>
+      <button @click="searchQuery = ''; activeCategory = 'all'; loadCharities(); clearWebResults()" class="mt-3 text-xs text-primary hover:underline">
+        Clear search
+      </button>
+    </div>
+
   </div>
 
   <!-- Loading State -->
@@ -156,9 +192,13 @@
   <!-- Bottom note -->
   <div class="mt-8 bg-[#2d1b0a] border border-amber-900/50 rounded-xl px-6 py-4 flex gap-4">
     <span class="material-symbols-outlined text-amber-500">warning</span>
-    <p class="text-sm text-amber-200/90 leading-relaxed">
+    <p class="text-sm text-amber-200/90 leading-relaxed hidden md:block">
       <span class="font-bold text-amber-500">Important:</span>
       Always verify an organization's legitimacy before donating. Look for SECP registration and transparent annual reports. Zakat given to a non-eligible recipient does not count as fulfilled.
+    </p>
+    <p class="text-xs text-amber-200/90 leading-relaxed md:hidden">
+      <span class="font-bold text-amber-500">Important:</span>
+      Verify SECP registration. Zakat given to a non-eligible recipient is invalid.
     </p>
   </div>
 
@@ -174,6 +214,10 @@ function charitiesApp() {
     activeCategory:  'all',
     searchQuery:     '',
     loading:         true,
+    webResults:      [],
+    webSearchLoading: false,
+    webSearchDone:   false,
+    _webSearchTimer: null,
 
     get filteredCharities() {
       const q = this.searchQuery.toLowerCase();
@@ -189,11 +233,24 @@ function charitiesApp() {
     async init() {
       await this.loadCategories();
       await this.loadCharities();
+      // Watch searchQuery — auto web-search after 600ms debounce when local returns nothing
+      this.$watch('searchQuery', (val) => {
+        clearTimeout(this._webSearchTimer);
+        this.webResults     = [];
+        this.webSearchDone  = false;
+        if (!val || val.length < 2) return;
+        this._webSearchTimer = setTimeout(async () => {
+          // Only fire web search if local filter is empty
+          if (this.filteredCharities.length === 0) {
+            await this.searchWeb(val);
+          }
+        }, 600);
+      });
     },
 
     async loadCategories() {
       try {
-        const res      = await fetch('/charities/categories');
+        const res = await fetch('/charities/categories');
         this.categories = await res.json();
       } catch(e) {
         this.categories = [{ tag: 'all', label: 'All Causes' }];
@@ -206,13 +263,33 @@ function charitiesApp() {
         const url = this.activeCategory === 'all'
           ? '/charities/list'
           : `/charities/list?category=${this.activeCategory}`;
-        const res      = await fetch(url);
+        const res = await fetch(url);
         this.charities = await res.json();
       } catch(e) {
         this.charities = [];
       } finally {
         this.loading = false;
       }
+    },
+
+    async searchWeb(query) {
+      this.webSearchLoading = true;
+      this.webSearchDone    = false;
+      try {
+        const res  = await fetch(`/charities/search?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        this.webResults = data.results || [];
+      } catch(e) {
+        this.webResults = [];
+      } finally {
+        this.webSearchLoading = false;
+        this.webSearchDone    = true;
+      }
+    },
+
+    clearWebResults() {
+      this.webResults    = [];
+      this.webSearchDone = false;
     },
   }
 }
