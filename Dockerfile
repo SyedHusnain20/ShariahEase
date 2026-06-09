@@ -1,32 +1,36 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-import os
+FROM python:3.11-slim
 
-# On HF Spaces, DATABASE_PATH=/data/shariahease.db (set as a Space Variable)
-# Locally, falls back to ./shariahease.db at project root
-DB_PATH = os.getenv("DATABASE_PATH", "./shariahease.db")
-DATABASE_URL = f"sqlite:///{DB_PATH}"
+# Non-root user required by HF Spaces
+RUN useradd -m -u 1000 appuser
 
-# Ensure the directory exists (e.g. /data/ on HF Spaces)
-os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
+WORKDIR /app
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False}  # needed for SQLite only
-)
+# System deps — gcc/g++ needed for FAISS, faster-whisper native libs
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
-# Each request gets its own session, closed after
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Install Python deps (separate layer for caching)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# All ORM models inherit from this
-Base = declarative_base()
+# Copy full project
+COPY --chown=appuser:appuser . .
 
+# Persistent storage directory for SQLite DB
+RUN mkdir -p /data && chown appuser:appuser /data
 
-# Dependency — inject into FastAPI routes with Depends()
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+USER appuser
+
+# HF Spaces mandatory port
+EXPOSE 7860
+
+# Environment defaults (overridden by Space Variables/Secrets)
+ENV DATABASE_PATH=/data/shariahease.db
+ENV ENV=production
+ENV PYTHONUNBUFFERED=1
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
