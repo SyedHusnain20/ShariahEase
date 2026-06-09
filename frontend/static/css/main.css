@@ -7,9 +7,21 @@ html, body {
   text-align: left !important;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 /* ── BASE ──────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
+}
+
+img, svg, canvas, video {
+  max-width: 100%;
+}
+
+button, a, input, select, textarea {
+  touch-action: manipulation;
 }
 
 /* Page fade-in on navigation */
@@ -86,7 +98,7 @@ input:-webkit-autofill:active {
 .field-input {
   display: block;
   width: 100%;
-  height: 2.25rem;
+  min-height: 2.5rem;
   padding: 0 0.75rem;
   font-size: 0.8125rem;
   font-family: inherit;
@@ -157,6 +169,92 @@ a, button {
               border-color 0.12s, opacity 0.12s;
 }
 
+@media (max-width: 640px) {
+  main {
+    scroll-padding-bottom: 1rem;
+  }
+
+  .field-input,
+  select,
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="search"],
+  textarea {
+    font-size: 16px !important;
+  }
+
+  .material-symbols-outlined {
+    line-height: 1;
+  }
+
+  .mobile-history-table,
+  .mobile-history-table thead,
+  .mobile-history-table tbody,
+  .mobile-history-table tr,
+  .mobile-history-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .mobile-history-table thead {
+    display: none;
+  }
+
+  .mobile-history-table tbody {
+    background: transparent;
+  }
+
+  .mobile-history-table tr {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #262626;
+  }
+
+  .mobile-history-table tr:last-child {
+    border-bottom: 0;
+  }
+
+  .mobile-history-table td {
+    padding: 0.35rem 0 !important;
+    white-space: normal;
+  }
+
+  .mobile-history-table td[data-label] {
+    display: grid;
+    grid-template-columns: minmax(4.5rem, 35%) minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .mobile-history-table td[data-label]::before {
+    content: attr(data-label);
+    color: #bbcabf;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .mobile-history-table td[data-label="Action"] {
+    align-items: start;
+  }
+
+  .mobile-history-table td[data-label="Action"] > * {
+    justify-self: start;
+  }
+
+  .mobile-history-table .mobile-history-empty {
+    padding: 0;
+  }
+
+  .mobile-history-table .mobile-history-empty td {
+    display: block;
+    padding: 1.5rem 1rem !important;
+  }
+}
+
 /* ── SELECT DROPDOWNS ──────────────────────────────────── */
 select {
   border-radius: 0.5rem !important;
@@ -197,4 +295,3 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   border: none;
 }
-

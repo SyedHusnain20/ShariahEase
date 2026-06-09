@@ -1,6 +1,6 @@
 {% extends "auth_base.html" %}
 {% block content %}
-<div class="w-full max-w-sm">
+<div class="w-full max-w-sm mx-auto px-4 sm:px-0">
   <!-- Signup Card -->
   <div class="bg-[#141414] border border-[#262626] rounded-xl overflow-hidden flex flex-col shadow-2xl" id="signup-card">
     
@@ -14,7 +14,7 @@
       <span class="text-primary font-label-md text-label-md"></span>
     </div>
 
-    <div class="px-stack-lg pt-stack-lg pb-stack-md flex flex-col items-center text-center">
+    <div class="px-4 sm:px-stack-lg pt-stack-lg pb-stack-md flex flex-col items-center text-center">
       <div class="w-12 h-12 bg-primary-container rounded-lg flex items-center justify-center mb-stack-lg">
         <span class="material-symbols-outlined text-on-primary-container text-[28px]" data-icon="person_add">person_add</span>
       </div>
@@ -22,7 +22,7 @@
       <p class="font-body-md text-body-md text-on-surface-variant">Your history stays private & secure</p>
     </div>
     
-    <div class="p-stack-lg space-y-stack-lg">
+    <div class="px-4 sm:px-stack-lg pb-stack-lg space-y-stack-lg">
       <div class="space-y-stack-sm">
         <label class="font-label-md text-label-md text-on-surface-variant px-1">Full Name</label>
         <input id="name" class="field-input" placeholder="e.g. Ahmed Khan" required type="text"/>
@@ -48,7 +48,7 @@
       
     </div>
     
-    <div class="bg-surface-container-low p-stack-lg border-t border-[#262626] text-center">
+    <div class="bg-surface-container-low px-4 sm:px-stack-lg py-stack-lg border-t border-[#262626] text-center">
       <p class="font-body-md text-body-md text-on-surface-variant">
         Already have an account? 
         <a class="text-primary font-semibold hover:underline" href="/auth/login">Sign in</a>
@@ -57,7 +57,7 @@
   </div>
   
   <!-- Footer Links -->
-  <div class="mt-stack-lg flex justify-center gap-6">
+  <div class="mt-stack-lg flex flex-wrap justify-center gap-x-6 gap-y-2">
     <a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy</a>
     <a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Support</a>
     <a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Compliance</a>

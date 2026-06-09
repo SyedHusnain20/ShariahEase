@@ -3,8 +3,13 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 
-# SQLite file will be created at root of your project
-DATABASE_URL = "sqlite:///./shariahease.db"
+# On HF Spaces, DATABASE_PATH=/data/shariahease.db (set as a Space Variable)
+# Locally, falls back to ./shariahease.db at project root
+DB_PATH = os.getenv("DATABASE_PATH", "./shariahease.db")
+DATABASE_URL = f"sqlite:///{DB_PATH}"
+
+# Ensure the directory exists (e.g. /data/ on HF Spaces)
+os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
 
 engine = create_engine(
     DATABASE_URL,

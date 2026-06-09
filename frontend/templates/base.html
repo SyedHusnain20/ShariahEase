@@ -100,7 +100,7 @@
        x-transition.opacity></div>
 
   <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-         class="fixed left-0 top-0 h-full w-[208px] bg-[#12131a] border-r border-outline-variant flex flex-col py-6 px-4 z-50 transition-transform duration-300 md:translate-x-0">
+         class="fixed left-0 top-0 h-full w-[min(84vw,280px)] md:w-[208px] bg-[#12131a] border-r border-outline-variant flex flex-col py-5 md:py-6 px-4 z-50 transition-transform duration-300 md:translate-x-0">
     <div class="mb-10 flex flex-col">
       <div class="flex justify-between items-center">
         <h1 class="font-headline-md text-headline-md font-bold text-on-surface">ShariahEase</h1>
@@ -191,15 +191,15 @@
   </aside>
 
   <div class="md:ml-[208px] h-[100dvh] flex flex-col">
-    <header class="h-16 px-4 md:px-gutter flex justify-between items-center bg-[#12131a] border-b border-outline-variant shrink-0">
-      <div class="flex items-center gap-3 md:gap-4">
-        <button @click="sidebarOpen = true" class="md:hidden text-on-surface-variant hover:text-on-surface p-1">
+    <header class="h-14 sm:h-16 px-3 sm:px-4 md:px-gutter flex justify-between items-center bg-[#12131a] border-b border-outline-variant shrink-0">
+      <div class="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0">
+        <button @click="sidebarOpen = true" class="md:hidden text-on-surface-variant hover:text-on-surface p-2 -ml-2">
           <span class="material-symbols-outlined" data-icon="menu">menu</span>
         </button>
-        <h2 class="font-headline-md text-lg md:text-headline-md text-on-surface truncate">{% block page_title %}ShariahEase{% endblock %}</h2>
+        <h2 class="font-headline-md text-base sm:text-lg md:text-headline-md text-on-surface truncate">{% block page_title %}ShariahEase{% endblock %}</h2>
 
       </div>
-      <div class="flex items-center gap-2 md:gap-4" x-data="headerUI()">
+      <div class="flex items-center gap-2 md:gap-4 shrink-0" x-data="headerUI()">
 
 
 
@@ -225,7 +225,7 @@
                x-transition:leave="transition ease-in duration-100"
                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
                style="display:none"
-               class="absolute right-0 top-full mt-2 w-60 bg-[#141414] border border-[#262626] rounded-xl shadow-2xl shadow-black/40 z-50 overflow-hidden">
+               class="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] max-w-60 bg-[#141414] border border-[#262626] rounded-xl shadow-2xl shadow-black/40 z-50 overflow-hidden">
 
             <!-- User info header -->
             <div class="px-4 py-3 border-b border-[#262626]">
@@ -268,7 +268,7 @@
       </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto bg-[#0a0a0a] p-4 md:p-margin-desktop">
+    <main class="flex-1 overflow-y-auto bg-[#0a0a0a] p-3 sm:p-4 lg:p-margin-desktop">
       {% block content %}{% endblock %}
     </main>
   </div>

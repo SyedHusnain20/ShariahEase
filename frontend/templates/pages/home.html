@@ -3,28 +3,28 @@
 {% block page_title %}Zakat Calculator{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto" x-data="zakatApp()">
+<div class="max-w-6xl mx-auto space-y-4 sm:space-y-6" x-data="zakatApp()">
   
   <!-- Nisab Bar -->
-  <section class="mb-stack-lg bg-[#141414] border border-[#262626] rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-    <div class="flex items-center gap-4">
+  <section class="bg-[#141414] border border-[#262626] rounded-xl p-4 sm:p-5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+    <div class="flex items-center gap-3 sm:gap-4 min-w-0">
       <span class="material-symbols-outlined text-primary" data-icon="info">info</span>
       <p class="text-body-md text-on-surface-variant hidden md:block">Current Nisab Values (Pakistan PKR)</p>
       <p class="text-body-md text-on-surface-variant md:hidden">Nisab (PKR)</p>
     </div>
-    <div class="flex flex-wrap gap-4 sm:gap-8 justify-center md:justify-end w-full md:w-auto">
-      <div class="text-right">
+    <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-8 justify-center md:justify-end w-full md:w-auto">
+      <div class="text-left sm:text-right bg-[#0f0f0f] sm:bg-transparent border border-[#262626] sm:border-0 rounded-lg sm:rounded-none p-3 sm:p-0">
         <p class="text-label-md text-on-surface-variant uppercase tracking-wider hidden md:block">Gold (7.5 Tola)</p>
         <p class="text-label-md text-on-surface-variant uppercase tracking-wider md:hidden">Gold</p>
-        <p class="font-headline-md text-on-surface" id="nisab-gold">Loading...</p>
+        <p class="font-headline-md text-sm sm:text-base text-on-surface" id="nisab-gold">Loading...</p>
       </div>
-      <div class="text-right">
+      <div class="text-left sm:text-right bg-[#0f0f0f] sm:bg-transparent border border-[#262626] sm:border-0 rounded-lg sm:rounded-none p-3 sm:p-0">
         <p class="text-label-md text-on-surface-variant uppercase tracking-wider hidden md:block">Silver (52.5 Tola)</p>
         <p class="text-label-md text-on-surface-variant uppercase tracking-wider md:hidden">Silver</p>
-        <p class="font-headline-md text-primary" id="nisab-silver">Loading...</p>
+        <p class="font-headline-md text-sm sm:text-base text-primary" id="nisab-silver">Loading...</p>
       </div>
-      <div class="text-right flex flex-col justify-center">
-        <select x-model="nisabRate" class="text-xs border border-[#33343c] rounded-lg px-2 py-1 text-on-surface bg-[#0c0e14] focus:ring-1 focus:ring-primary outline-none transition-colors">
+      <div class="text-left sm:text-right flex flex-col justify-center col-span-2">
+        <select x-model="nisabRate" class="text-xs border border-[#33343c] rounded-lg px-3 py-2 sm:px-2 sm:py-1 text-on-surface bg-[#0c0e14] focus:ring-1 focus:ring-primary outline-none transition-colors w-full sm:w-auto">
           <option value="gold">Gold (Recommended)</option>
           <option value="silver">Silver (Conservative)</option>
         </select>
@@ -32,14 +32,14 @@
     </div>
   </section>
 
-  <div class="grid grid-cols-12 gap-gutter">
+  <div class="grid grid-cols-12 gap-4 lg:gap-gutter">
     
     <!-- Main Form Card -->
     <div class="col-span-12 lg:col-span-7 space-y-gutter">
-      <div class="bg-[#141414] border border-[#262626] rounded-xl p-6">
-        <div class="flex justify-between items-center mb-6">
+      <div class="bg-[#141414] border border-[#262626] rounded-xl p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-3 mb-5 sm:mb-6">
           <h3 class="font-headline-md text-on-surface">Asset Breakdown</h3>
-          <span class="text-label-md text-on-surface-variant italic">Values in PKR</span>
+          <span class="text-label-md text-on-surface-variant italic">PKR values</span>
         </div>
         
         <form class="space-y-4">
@@ -119,7 +119,7 @@
 
       <!-- History Card -->
       <div class="bg-[#141414] border border-[#262626] rounded-xl overflow-hidden">
-        <div class="p-6 border-b border-[#262626] flex justify-between items-center">
+        <div class="p-4 sm:p-6 border-b border-[#262626] flex justify-between items-center">
           <h3 class="font-headline-md text-on-surface">Recent Calculations</h3>
         </div>
         <ul id="history-list" class="divide-y divide-[#262626]">
@@ -135,9 +135,9 @@
       <!-- Verdict Badge & Main Result (Visible only after calculation) -->
       <div x-show="result" style="display:none" x-transition 
            :class="result && result.is_zakat_due ? 'border-[#262626] bg-[#141414]' : 'border-[#262626] bg-[#141414] opacity-80'"
-           class="border rounded-xl p-6 md:p-8 text-center relative overflow-hidden shadow-2xl">
+           class="border rounded-xl p-4 sm:p-6 md:p-8 text-center relative overflow-hidden shadow-2xl">
         
-        <div class="absolute top-4 right-4">
+        <div class="static sm:absolute sm:top-4 sm:right-4 mb-4 sm:mb-0 flex justify-center sm:block">
           <span :class="result && result.is_zakat_due ? 'bg-primary/10 text-primary border-primary/20' : 'bg-surface-variant text-on-surface-variant border-outline-variant'"
                 class="px-3 py-1 rounded-full text-[11px] font-bold uppercase border">
             <span x-text="result && result.is_zakat_due ? 'Zakat Eligible' : 'Below Nisab'"></span>
@@ -146,28 +146,28 @@
         
         <p class="text-label-md text-on-surface-variant uppercase tracking-widest mb-2 hidden md:block">Estimated Payable Zakat</p>
         <p class="text-label-md text-on-surface-variant uppercase tracking-widest mb-2 md:hidden">Payable Zakat</p>
-        <h2 class="text-[48px] font-bold leading-none mb-4" :class="result && result.is_zakat_due ? 'text-primary' : 'text-on-surface'">
+        <h2 class="text-[clamp(2rem,11vw,3rem)] font-bold leading-none mb-4 break-words" :class="result && result.is_zakat_due ? 'text-primary' : 'text-on-surface'">
           <span x-text="formatPKR(result && result.zakat_due)">0</span>
         </h2>
         
-        <div class="space-y-4 text-left mt-8">
-          <div class="flex justify-between items-center py-3 border-b border-[#262626]">
+        <div class="space-y-2 sm:space-y-4 text-left mt-6 sm:mt-8">
+          <div class="flex justify-between gap-4 items-center py-3 border-b border-[#262626]">
             <span class="text-body-md text-on-surface-variant">Total Assets</span>
-            <span class="font-body-md text-on-surface" x-text="formatPKR(result && result.total_assets)"></span>
+            <span class="font-body-md text-on-surface text-right break-words" x-text="formatPKR(result && result.total_assets)"></span>
           </div>
-          <div class="flex justify-between items-center py-3 border-b border-[#262626]">
+          <div class="flex justify-between gap-4 items-center py-3 border-b border-[#262626]">
             <span class="text-body-md text-on-surface-variant">Total Deductions</span>
-            <span class="font-body-md text-on-surface" x-text="'- ' + formatPKR(result && result.total_deductions)"></span>
+            <span class="font-body-md text-on-surface text-right break-words" x-text="'- ' + formatPKR(result && result.total_deductions)"></span>
           </div>
-          <div class="flex justify-between items-center py-3 border-b border-[#262626]">
+          <div class="flex justify-between gap-4 items-center py-3 border-b border-[#262626]">
             <span class="text-body-md text-on-surface-variant font-semibold">Zakatable Wealth</span>
-            <span class="font-body-md text-on-surface font-semibold" x-text="formatPKR(result && result.zakatable_wealth)"></span>
+            <span class="font-body-md text-on-surface font-semibold text-right break-words" x-text="formatPKR(result && result.zakatable_wealth)"></span>
           </div>
-          <div class="flex justify-between items-center py-3 border-b border-[#262626]">
+          <div class="flex justify-between gap-4 items-center py-3 border-b border-[#262626]">
             <span class="text-body-md text-on-surface-variant">Nisab Threshold</span>
-            <span class="font-body-md text-on-surface" x-text="formatPKR(result && result.nisab_threshold)"></span>
+            <span class="font-body-md text-on-surface text-right break-words" x-text="formatPKR(result && result.nisab_threshold)"></span>
           </div>
-          <div class="flex justify-between items-center py-3">
+          <div class="flex justify-between gap-4 items-center py-3">
             <span class="text-body-md text-on-surface-variant">Zakat Rate</span>
             <span class="font-body-md text-primary">2.5%</span>
           </div>
@@ -186,7 +186,7 @@
       </div>
 
       <!-- Initial Religious Context Card -->
-      <div x-show="!result" class="bg-[#141414] border border-[#262626] rounded-xl p-6 relative h-64 flex flex-col justify-center">
+      <div x-show="!result" class="bg-[#141414] border border-[#262626] rounded-xl p-5 sm:p-6 relative min-h-52 sm:h-64 flex flex-col justify-center">
         <div class="absolute inset-0 opacity-10 pointer-events-none rounded-xl overflow-hidden text-primary">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <pattern id="islamic-geo" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
@@ -202,19 +202,23 @@
         </div>
         <div class="relative z-10 text-center">
           <h4 class="font-urdu-body text-urdu-body text-primary mb-4 text-xl">زکوٰۃ ایک فریضہ ہے</h4>
-          <p class="text-body-md text-on-surface mb-4">"And establish prayer and give Zakat and bow with those who bow."</p>
+          <p class="text-body-md text-on-surface mb-4 hidden sm:block">"And establish prayer and give Zakat and bow with those who bow."</p>
+          <p class="text-body-md text-on-surface mb-4 sm:hidden">"Establish prayer and give Zakat."</p>
           <p class="text-label-md text-on-surface-variant">— Al-Baqarah 2:43</p>
         </div>
       </div>
 
       <!-- AI Insight Card -->
-      <div class="bg-[#1c1c1c] border border-primary/20 rounded-xl p-6">
+      <div class="bg-[#1c1c1c] border border-primary/20 rounded-xl p-5 sm:p-6">
         <div class="flex items-center gap-3 mb-4">
           <span class="material-symbols-outlined text-primary" data-icon="smart_toy">smart_toy</span>
           <h4 class="font-headline-md text-on-surface">AI Assistant</h4>
         </div>
-        <p class="text-body-md text-on-surface-variant mb-4">
+        <p class="text-body-md text-on-surface-variant mb-4 hidden sm:block">
           Unsure if your gold is zakatable? Or how to value your business inventory? Ask our Shariah AI for guidance.
+        </p>
+        <p class="text-body-md text-on-surface-variant mb-4 sm:hidden">
+          Need help with gold, inventory, or deductions?
         </p>
         <a href="/chatbot" class="text-primary text-label-md font-bold flex items-center gap-1 hover:gap-2 transition-all">
           Ask Chatbot <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
@@ -274,17 +278,17 @@
             return;
           }
           el.innerHTML = records.map(r => `
-            <li class="p-4 hover:bg-[#1c1c1c] transition-colors flex items-center justify-between">
-              <div class="flex items-center gap-4">
+            <li class="p-4 hover:bg-[#1c1c1c] transition-colors flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+              <div class="flex items-center gap-3 sm:gap-4 min-w-0">
                 <div class="w-10 h-10 rounded ${r.is_zakat_due ? 'bg-primary/10' : 'bg-surface-variant'} flex items-center justify-center">
                   <span class="material-symbols-outlined ${r.is_zakat_due ? 'text-primary' : 'text-on-surface-variant'}" data-icon="history">history</span>
                 </div>
-                <div>
-                  <p class="font-body-md text-on-surface">${r.user_name}</p>
+                <div class="min-w-0">
+                  <p class="font-body-md text-on-surface truncate">${r.user_name}</p>
                   <p class="text-[10px] text-on-surface-variant">${r.calculated_at}</p>
                 </div>
               </div>
-              <div class="text-right">
+              <div class="text-left sm:text-right ml-[52px] sm:ml-0">
                 <p class="font-body-md text-on-surface">${formatPKR(r.zakat_due)}</p>
                 <span class="px-2 py-0.5 rounded-full text-[10px] ${r.is_zakat_due ? 'bg-primary/20 text-primary' : 'bg-on-surface-variant/10 text-on-surface-variant'} font-bold uppercase tracking-tighter">
                   ${r.is_zakat_due ? 'Eligible' : 'Exempt'}

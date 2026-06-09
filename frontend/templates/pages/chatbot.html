@@ -14,6 +14,17 @@
     min-width: 200px;
     max-width: 280px;
   }
+  @media (max-width: 640px) {
+    .audio-bubble {
+      min-width: min(210px, 72vw);
+      max-width: 72vw;
+      padding: 9px 11px;
+    }
+    .play-btn {
+      width: 34px;
+      height: 34px;
+    }
+  }
   @media (min-width: 640px) {
     .audio-bubble {
       min-width: 240px;
@@ -96,15 +107,15 @@
   }
 </style>
 
-<div class="flex flex-col h-[calc(100dvh-64px)] relative -m-4 md:-m-margin-desktop bg-[#0a0a0a]" x-data="chatApp()">
+<div class="flex flex-col h-[calc(100dvh-56px)] sm:h-[calc(100dvh-64px)] relative -m-3 sm:-m-4 lg:-m-margin-desktop bg-[#0a0a0a]" x-data="chatApp()">
   
   <!-- Chat Header -->
-  <div class="px-4 md:px-6 py-4 bg-[#141414] border-b border-[#262626] flex items-center justify-between z-10 shrink-0">
-    <div class="flex items-center gap-3 md:gap-4">
-      <div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container shadow-sm shrink-0">
+  <div class="px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-[#141414] border-b border-[#262626] flex items-center justify-between z-10 shrink-0">
+    <div class="flex items-center gap-2.5 md:gap-4 min-w-0">
+      <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container shadow-sm shrink-0">
         <span class="material-symbols-outlined">smart_toy</span>
       </div>
-      <div>
+      <div class="min-w-0">
         <h2 class="font-headline-md text-base md:text-headline-md text-on-surface">ShariahEase AI</h2>
         <div class="flex items-center gap-2 mt-0.5">
           <span class="text-xs md:text-label-md text-on-surface-variant hidden md:inline">Expertise: Ethical Finance</span>
@@ -121,15 +132,15 @@
   </div>
 
   <!-- Message Area -->
-  <div class="flex-1 overflow-y-auto p-6 space-y-6" id="messages-container">
+  <div class="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6" id="messages-container">
     
     <!-- Welcome Message -->
-    <div x-show="messages.length === 0" class="flex gap-4 max-w-3xl">
-      <div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0">
+    <div x-show="messages.length === 0" class="flex gap-3 sm:gap-4 max-w-3xl">
+      <div class="w-8 h-8 rounded-lg bg-surface-container-highest hidden sm:flex items-center justify-center shrink-0">
         <span class="material-symbols-outlined text-primary text-[20px]">smart_toy</span>
       </div>
       <div class="space-y-3 w-full">
-        <div class="bg-[#1c1c1c] border border-[#262626] p-4 rounded-xl rounded-tl-none shadow-sm">
+        <div class="bg-[#1c1c1c] border border-[#262626] p-3 sm:p-4 rounded-xl sm:rounded-tl-none shadow-sm">
           <p class="text-body-md text-on-surface leading-relaxed hidden md:block">
             Assalamu Alaikum! I am your Islamic finance assistant. Ask me anything about:
           </p>
@@ -147,15 +158,15 @@
 
     <!-- Messages Loop -->
     <template x-for="(msg, index) in messages" :key="index">
-      <div :class="msg.role === 'user' ? 'flex-row-reverse ml-auto' : 'flex-row'" class="flex gap-4 max-w-3xl">
+      <div :class="msg.role === 'user' ? 'flex-row-reverse ml-auto' : 'flex-row'" class="flex gap-2.5 sm:gap-4 max-w-3xl">
         
         <!-- Avatar -->
         <div :class="msg.role === 'user' ? 'bg-primary text-on-primary' : 'bg-surface-container-highest text-primary'"
-             class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+             class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0">
           <span class="material-symbols-outlined text-[20px]" x-text="msg.role === 'user' ? 'person' : 'smart_toy'"></span>
         </div>
 
-        <div class="space-y-2 max-w-[85%]" :class="msg.role === 'user' ? 'text-right' : ''">
+        <div class="space-y-1.5 sm:space-y-2 max-w-[82%] sm:max-w-[85%] min-w-0" :class="msg.role === 'user' ? 'text-right' : ''">
           
           <!-- AUDIO BUBBLE -->
           <template x-if="msg.type === 'audio' && msg.audio_b64">
@@ -175,7 +186,7 @@
           <!-- TEXT BUBBLE -->
           <template x-if="msg.type !== 'audio'">
             <div :class="msg.role === 'user' ? 'bg-primary-container text-on-primary-container rounded-tr-none' : 'bg-[#1c1c1c] border border-[#262626] text-on-surface rounded-tl-none'"
-                 class="p-4 rounded-xl shadow-sm text-left">
+                 class="p-3 sm:p-4 rounded-xl shadow-sm text-left">
               <p class="text-body-md leading-relaxed whitespace-pre-wrap" x-text="msg.content"></p>
               
               <!-- Sources -->
@@ -187,17 +198,17 @@
             </div>
           </template>
 
-          <div class="text-label-md text-on-surface-variant px-1" x-text="msg.time"></div>
+          <div class="text-[10px] sm:text-label-md text-on-surface-variant px-1" x-text="msg.time"></div>
         </div>
       </div>
     </template>
 
     <!-- Typing Indicator -->
-    <div x-show="loading" class="flex gap-4 max-w-3xl">
-      <div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0">
+    <div x-show="loading" class="flex gap-2.5 sm:gap-4 max-w-3xl">
+      <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0">
         <span class="material-symbols-outlined text-primary text-[20px]">smart_toy</span>
       </div>
-      <div class="bg-[#1c1c1c] border border-[#262626] p-4 rounded-xl rounded-tl-none shadow-sm flex items-center h-[52px]">
+      <div class="bg-[#1c1c1c] border border-[#262626] p-3 sm:p-4 rounded-xl rounded-tl-none shadow-sm flex items-center h-11 sm:h-[52px]">
         <div class="flex gap-1.5 items-center">
           <div class="typing-dot"></div>
           <div class="typing-dot"></div>
@@ -209,13 +220,13 @@
   </div>
 
   <!-- Suggestion Chips & Input Area -->
-  <div class="bg-[#0f0f0f] border-t border-[#262626] px-6 py-4 space-y-4 shrink-0">
+  <div class="bg-[#0f0f0f] border-t border-[#262626] px-3 sm:px-4 md:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4 shrink-0">
     
     <!-- Question Chips (Only show if empty) -->
-    <div class="flex gap-3 overflow-x-auto no-scrollbar pb-1" x-show="messages.length === 0">
+    <div class="flex gap-2 sm:gap-3 overflow-x-auto no-scrollbar pb-1" x-show="messages.length === 0">
       <template x-for="q in suggestedQuestions" :key="q">
         <button @click="sendSuggested(q)"
-                class="shrink-0 px-4 py-2 rounded-full border border-[#303030] bg-[#141414] text-body-md text-on-surface-variant hover:text-primary hover:border-primary/50 transition-all active:scale-95"
+                class="shrink-0 px-3 sm:px-4 py-2 rounded-full border border-[#303030] bg-[#141414] text-sm sm:text-body-md text-on-surface-variant hover:text-primary hover:border-primary/50 transition-all active:scale-95"
                 x-text="q"></button>
       </template>
     </div>
@@ -238,7 +249,7 @@
         </div>
 
         <textarea x-model="inputText" @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()" @input="autoResize($event.target)"
-                  class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant/50 pl-4 pr-2 py-3 resize-none text-sm md:text-base leading-snug no-scrollbar" 
+                  class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant/50 pl-3 sm:pl-4 pr-2 py-3 resize-none text-base leading-snug no-scrollbar" 
                   placeholder="Ask ShariahEase..." rows="1" style="max-height: 120px; min-height: 48px;"></textarea>
         
         <div class="flex items-center gap-1 pb-0.5 pr-0.5 shrink-0">
@@ -260,10 +271,10 @@
       </div>
     </div>
     
-    <p class="text-center text-[10px] text-on-surface-variant/40 pb-1">
+    <p class="text-center text-[10px] text-on-surface-variant/40 pb-1 hidden sm:block">
       ShariahEase AI may produce financial information that should be cross-verified with a certified Shariah advisor.
     </p>
-    <p class="text-center text-[10px] text-on-surface-variant/30 pb-2">
+    <p class="text-center text-[10px] text-on-surface-variant/30 pb-2 hidden md:block">
       Made with ❤️ for the Muslims
     </p>
   </div>

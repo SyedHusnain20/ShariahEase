@@ -3,17 +3,17 @@
 {% block page_title %}Vetted Charities{% endblock %}
 
 {% block content %}
-<div class="max-w-[1400px] mx-auto space-y-gutter" x-data="charitiesApp()">
+<div class="max-w-[1400px] mx-auto space-y-gutter px-4 sm:px-6 lg:px-0" x-data="charitiesApp()">
 
   <!-- Header Hero Card -->
   <div class="grid grid-cols-12 gap-gutter mb-stack-lg">
-    <div class="col-span-12 lg:col-span-8 bg-[#141414] border border-[#262626] rounded-xl p-8 relative overflow-hidden group">
+    <div class="col-span-12 lg:col-span-8 bg-[#141414] border border-[#262626] rounded-xl p-5 sm:p-8 relative overflow-hidden group">
       <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-primary/10 transition-colors duration-500"></div>
       <div class="relative z-10">
         <span class="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary font-label-md text-[10px] uppercase font-bold tracking-widest mb-4 border border-primary/20">
           Every Organization Shariah Verified
         </span>
-        <h3 class="font-headline-xl text-headline-xl text-on-surface mb-2 tracking-tight">
+        <h3 class="font-headline-xl text-xl sm:text-headline-xl text-on-surface mb-2 tracking-tight">
           Give Where It Truly Counts
         </h3>
         <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl hidden md:block">
@@ -24,7 +24,7 @@
         </p>
       </div>
     </div>
-    <div class="col-span-12 lg:col-span-4 bg-[#1c1c1c] border border-[#262626] rounded-xl p-8 flex flex-col justify-center items-center text-center">
+    <div class="col-span-12 lg:col-span-4 bg-[#1c1c1c] border border-[#262626] rounded-xl p-5 sm:p-8 flex flex-col justify-center items-center text-center">
       <div class="w-16 h-16 rounded-full bg-surface-container-highest border border-outline-variant flex items-center justify-center mb-4">
         <span class="material-symbols-outlined text-primary text-3xl">verified_user</span>
       </div>
@@ -34,7 +34,7 @@
   </div>
 
   <!-- Filters & Search -->
-  <div class="flex flex-col md:flex-row gap-gutter items-center mb-margin-desktop">
+  <div class="flex flex-col gap-3 sm:gap-gutter items-stretch sm:items-center mb-margin-desktop">
     <div class="relative flex-1 w-full">
       <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
       <input x-model="searchQuery" 
@@ -42,7 +42,7 @@
              placeholder="Search by name, cause, or location..." type="text"/>
     </div>
     
-    <div class="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar w-full md:w-auto">
+    <div class="flex gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar w-full">
       <template x-for="cat in categories" :key="cat.tag">
         <button @click="activeCategory = cat.tag; loadCharities()"
                 :class="activeCategory === cat.tag 
@@ -64,7 +64,7 @@
     
     <template x-for="charity in filteredCharities" :key="charity.id">
       <div class="group bg-[#141414] border border-[#262626] rounded-xl overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col h-full">
-        <div class="h-48 overflow-hidden relative bg-[#1c1c1c] flex items-center justify-center">
+        <div class="h-40 sm:h-48 overflow-hidden relative bg-[#1c1c1c] flex items-center justify-center">
           <!-- Real org image — tries webp → png → jpg, then falls back to icon -->
           <picture class="absolute inset-0 w-full h-full" x-ref="pic">
             <source :srcset="`/static/images/charities/${charity.id}.webp`" type="image/webp">
@@ -88,7 +88,7 @@
           </div>
         </div>
         
-        <div class="p-6 flex flex-col flex-1 relative z-10 -mt-6 bg-[#141414] rounded-t-xl">
+        <div class="p-4 sm:p-6 flex flex-col flex-1 relative z-10 -mt-6 bg-[#141414] rounded-t-xl">
           <div class="flex justify-between items-start mb-1">
             <h4 class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors" x-text="charity.name"></h4>
             <span class="text-xs px-2 py-0.5 rounded-full font-medium"
@@ -116,13 +116,13 @@
              </template>
           </div>
           
-          <div class="flex gap-3">
+          <div class="flex gap-2 sm:gap-3">
             <a :href="charity.website" target="_blank" rel="noopener"
-               class="flex-1 bg-primary text-on-primary font-label-md text-label-md py-2.5 rounded-lg font-semibold hover:brightness-110 active:scale-95 transition-all text-center">
+               class="flex-1 bg-primary text-on-primary font-label-md text-label-md py-2.5 rounded-lg font-semibold hover:brightness-110 active:scale-95 transition-all text-center text-sm">
                Donate Now
             </a>
-            <a :href="charity.website" target="_blank" rel="noopener" class="w-12 flex items-center justify-center border border-[#262626] rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
-              <span class="material-symbols-outlined">public</span>
+            <a :href="charity.website" target="_blank" rel="noopener" class="w-10 sm:w-12 flex items-center justify-center border border-[#262626] rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
+              <span class="material-symbols-outlined text-[18px] sm:text-[24px]">public</span>
             </a>
           </div>
         </div>
@@ -190,7 +190,7 @@
   </div>
 
   <!-- Bottom note -->
-  <div class="mt-8 bg-[#2d1b0a] border border-amber-900/50 rounded-xl px-6 py-4 flex gap-4">
+  <div class="mt-8 bg-[#2d1b0a] border border-amber-900/50 rounded-xl px-4 sm:px-6 py-4 flex gap-3 sm:gap-4">
     <span class="material-symbols-outlined text-amber-500">warning</span>
     <p class="text-sm text-amber-200/90 leading-relaxed hidden md:block">
       <span class="font-bold text-amber-500">Important:</span>
