@@ -10,13 +10,11 @@ __pycache__/
 *.pyo
 
 # FAISS index (large binary files, rebuilt on deployment)
-knowledge_base/index/
-knowledge_base/
 UI_components/
 UI_components/ShariahEase-logo/
 # Database file
 *.db
-
+*.log
 # Generated certificates
 certificates/*.pdf
 
