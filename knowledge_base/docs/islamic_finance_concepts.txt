@@ -1,0 +1,135 @@
+ISLAMIC FINANCE CONCEPTS AND CONTRACTS
+=======================================
+
+CORE PROHIBITIONS IN ISLAMIC FINANCE
+
+RIBA (Interest / Usury)
+Riba literally means increase or addition. In Islamic finance, Riba refers to any predetermined, guaranteed increase on a loan or deposit regardless of the outcome of the underlying transaction. This is the most fundamental prohibition in Islamic finance.
+
+There are two types of Riba:
+Riba al-Nasiah: Interest on loans - charging extra money for lending. This is what conventional banks charge on loans and credit cards.
+Riba al-Fadl: Unequal exchange of the same commodity - for example exchanging 1 kg of gold for 1.1 kg of gold.
+
+The Quran forbids Riba in multiple verses including Al-Baqarah 2:275-279 and Al-Imran 3:130.
+
+GHARAR (Excessive Uncertainty)
+Gharar means uncertainty, hazard, or risk in a contract. Islamic finance prohibits contracts with excessive uncertainty about the subject matter, price, or terms. Minor uncertainty is acceptable in commerce, but major uncertainty that could lead to dispute or unfair outcomes is prohibited.
+
+Examples of Gharar include:
+- Selling fish in the sea that you have not yet caught
+- Conventional insurance where the benefit is uncertain
+- Speculative derivatives and futures contracts
+- Selling goods you do not own or have not yet produced
+
+MAYSIR (Gambling)
+Maysir refers to games of chance where one party gains at the direct expense of another without any productive economic activity. This includes casino gambling, lotteries, and purely speculative financial transactions.
+
+PERMISSIBLE ISLAMIC FINANCE CONTRACTS
+
+MUDARABAH (Profit-Sharing Partnership)
+Mudarabah is a partnership where one party (Rabb ul Maal, the investor) provides capital and the other party (Mudarib, the entrepreneur or manager) provides skills and management.
+
+Key features:
+- Profit is shared between investor and manager at a pre-agreed ratio (e.g., 60-40 or 70-30)
+- Loss of capital is borne entirely by the investor
+- The manager loses their time, effort, and potential profit but not capital
+- The profit-sharing ratio must be agreed before the contract begins
+- No party may claim a fixed lump sum as profit
+
+Applications in Pakistan:
+- Islamic bank savings and investment accounts (bank acts as Mudarib)
+- Islamic mutual funds
+- Modaraba companies listed on Pakistan Stock Exchange
+
+MUSHARAKAH (Partnership / Joint Venture)
+Musharakah means sharing or partnership. Both parties contribute capital and share profit and loss according to their capital contribution or an agreed ratio.
+
+Types of Musharakah:
+Shirkat ul Milk: Joint ownership of an asset
+Shirkat ul Aqd: Contractual partnership for a business venture
+
+Diminishing Musharakah (Musharakah Mutanaqisah):
+Used by Islamic banks for home financing. The bank and customer co-own the property. The customer gradually buys out the bank's share through monthly payments while paying rent on the bank's remaining share. Eventually the customer owns the property completely.
+
+MURABAHA (Cost-Plus Sale)
+Murabaha is a sale where the seller discloses the cost of the item and adds an agreed profit margin. It is not a loan - it is a genuine sale transaction.
+
+How it works in Islamic banking:
+1. Customer wants to buy a car
+2. Bank purchases the car from the dealer
+3. Bank sells the car to the customer at cost plus agreed profit
+4. Customer pays in installments
+5. The profit is fixed at the time of sale and cannot increase if payment is delayed
+
+Important: The bank must actually own the item before selling it to the customer. A bank cannot charge Murabaha profit on something it does not own.
+
+Applications: Car financing, home appliance financing, working capital for businesses, trade finance.
+
+IJARAH (Lease)
+Ijarah means lease or rent. The owner of an asset leases it to another party for an agreed rental and period.
+
+Key features:
+- The lessor (owner) remains responsible for major maintenance
+- Rental must be for a lawful purpose
+- The asset itself must be halal
+
+Ijarah wa Iqtina (Lease ending in ownership):
+A lease where the customer gradually acquires ownership of the asset. Used for vehicle and equipment financing in Islamic banks. At the end of the lease period, the asset is transferred to the customer through a gift or sale at a nominal price.
+
+ISTISNA (Manufacturing Contract)
+A contract to manufacture or construct an asset with specified features at an agreed price. Used for project financing, construction, and custom manufacturing. Payment may be made in installments during construction.
+
+SALAM (Forward Sale)
+A contract where full payment is made in advance for goods to be delivered at a future date. The price, quantity, quality, and delivery date must all be specified precisely. Used in agricultural financing to help farmers.
+
+TAWARRUQ (Commodity Murabaha)
+A three-party sale transaction used to generate liquidity. Widely used in Islamic banking for personal financing and liquidity management. Its permissibility is debated among scholars - it is permitted by most Pakistani scholars but considered controversial by some.
+
+WAKALAH (Agency)
+A contract where one party (the principal) appoints another (the agent) to perform a specific task. Used in Takaful (Islamic insurance) and Islamic fund management. The agent may charge a fee for their services.
+
+TAKAFUL (Islamic Insurance)
+Takaful is the Shariah-compliant alternative to conventional insurance. It is based on mutual cooperation and solidarity among participants.
+
+How Takaful works:
+- Participants contribute to a common pool (Tabarru - donation)
+- The pool is used to compensate members who suffer losses
+- A Takaful operator manages the pool for a fee (Wakalah model) or profit share (Mudarabah model)
+- Surplus in the pool belongs to participants, not the operator
+- Funds are invested only in Shariah-compliant instruments
+
+Types of Takaful in Pakistan:
+- General Takaful: Covers property, motor, health, travel
+- Family Takaful: Equivalent to life insurance
+
+WAQF (Endowment)
+An inalienable charitable endowment under Islamic law. A person may dedicate property or assets permanently for a charitable purpose. The asset cannot be sold or transferred. Income from the Waqf is used for the designated charitable purpose. Many mosques, Islamic schools, and hospitals are run as Waqf.
+
+SUKUK (Islamic Bonds)
+Sukuk are certificates representing proportional ownership in an underlying tangible asset, pool of assets, or a project. Unlike conventional bonds, Sukuk holders own a share of the asset and receive returns from the asset's performance, not interest.
+
+Differences from conventional bonds:
+- Conventional bond: Debt instrument, pays interest, issuer owes a fixed amount
+- Sukuk: Ownership certificate, pays profit from asset performance, holder owns part of an asset
+
+Pakistan Sukuk:
+The Government of Pakistan regularly issues Ijarah Sukuk backed by government buildings and infrastructure. Islamic banks are major investors in these Sukuk. The National Highway Authority and other entities have also issued Sukuk.
+
+ISLAMIC BANKING IN PAKISTAN
+Pakistan's State Bank regulates Islamic banking through the Islamic Banking Department. As of 2024, Islamic banking in Pakistan has grown to represent approximately 20 percent of the total banking sector.
+
+Major Islamic banks in Pakistan:
+- Meezan Bank (largest standalone Islamic bank)
+- Bank Islami Pakistan
+- Dubai Islamic Bank Pakistan
+- Al Baraka Bank Pakistan
+- MCB Islamic Bank
+
+Conventional banks with Islamic banking windows:
+- HBL Islamic
+- UBL Ameen
+- NBP Tezraftaar
+- Standard Chartered Saadiq
+- Habib Metropolitan Sirat
+
+All Islamic banks in Pakistan must be certified by their Shariah Supervisory Board and comply with State Bank of Pakistan's Shariah Governance Framework.

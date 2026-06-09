@@ -1,0 +1,74 @@
+PAKISTAN ISLAMIC FINANCE - FREQUENTLY ASKED QUESTIONS
+=====================================================
+
+ZAKAT IN PAKISTAN - COMMON QUESTIONS
+
+Q: How does government Zakat deduction work in Pakistan?
+A: Under the Zakat and Ushr Ordinance 1980, the government automatically deducts Zakat from savings accounts, profit and loss sharing accounts, and similar accounts on the first of Ramadan each year if the balance is equal to or above the Nisab threshold. The deducted Zakat is sent to the Central Zakat Fund and distributed through Local Zakat Committees to deserving recipients. Sunni Muslims are subject to this deduction by default. A Muslim who wishes to pay Zakat directly may file a declaration (CZ-50 form) with their bank claiming exemption from compulsory deduction. Shia Muslims are automatically exempt.
+
+Q: Is Zakat deducted from salary accounts in Pakistan?
+A: No. Zakat is only deducted from savings accounts and similar accounts, not from current accounts or salary accounts. If you receive your salary in a current account, no automatic Zakat deduction occurs.
+
+Q: What is the Nisab value in Pakistan this year?
+A: The Nisab is announced by the Central Zakat Administration at the start of Ramadan each year based on the prevailing gold and silver prices. You can check the current Nisab on the Ministry of Religious Affairs website or through your Islamic bank. Our app fetches the current gold and silver prices to show you the most up to date Nisab value.
+
+Q: Can I give Zakat to my poor relatives in Pakistan?
+A: Yes, you can give Zakat to qualifying relatives such as siblings, cousins, aunts, uncles, and their families who are below the Nisab threshold. Giving Zakat to relatives has double reward in Islam - both fulfilling the obligation and maintaining family ties. However, you cannot give Zakat to your parents, children, spouse, or any person you are legally obligated to support financially.
+
+Q: Which charities in Pakistan are trusted for Zakat?
+A: The most widely trusted Zakat-eligible organizations in Pakistan include:
+- Edhi Foundation: Pakistan's largest welfare organization, runs orphanages, ambulances, and shelter homes
+- Akhuwat Foundation: Provides interest-free microfinance to poor families
+- Shaukat Khanum Memorial Cancer Hospital: Provides free cancer treatment to deserving patients
+- The Citizens Foundation (TCF): Builds and runs schools in underserved areas
+- Sundas Foundation: Blood-related diseases and thalassemia treatment
+- Saylani Welfare Trust: Food, education, and medical support
+- JDC Foundation: Multiple welfare programs
+- Al-Khidmat Foundation: Jamaat-e-Islami affiliated welfare organization
+
+Always verify an organization's legitimacy before donating. Look for organizations registered with SECP as an NGO and with transparent annual reports.
+
+Q: Is Zakat due on Prize Bonds in Pakistan?
+A: Prize bonds are conventional government savings instruments that pay prizes through a lottery draw. Most Pakistani scholars consider conventional prize bonds to be problematic because they contain elements of Gharar and Maysir (gambling). If a person holds prize bonds, Zakat is due on their face value. The prize money received is considered a windfall and should be given to charity entirely according to many scholars, or at minimum Zakat should be paid on it.
+
+ISLAMIC BANKING QUESTIONS
+
+Q: Is Meezan Bank fully halal?
+A: Meezan Bank is Pakistan's largest dedicated Islamic bank and operates under strict Shariah supervision by a board of respected scholars including members from the Darul Uloom Karachi. Its products and operations are reviewed and certified by its Shariah Supervisory Board. It is generally considered Shariah-compliant by Pakistani scholars and is widely used by Muslims seeking halal banking. However, like any institution, individual transactions should be reviewed if in doubt.
+
+Q: Is keeping money in a conventional bank account haram in Pakistan?
+A: Keeping money in a current account (no interest) at a conventional bank is generally considered permissible out of necessity, as it is needed for day-to-day transactions. However, keeping money in an interest-bearing savings account at a conventional bank is considered haram as it involves Riba. Muslims should use Islamic bank accounts or declare their savings account profit as charity (not personal income) if they must use a conventional bank.
+
+Q: What is the difference between Islamic bank profit and conventional bank interest?
+A: In a conventional bank savings account, the bank pays a fixed predetermined interest rate on your deposit regardless of what the bank does with your money. In an Islamic bank profit and loss sharing account, the bank invests your money in halal activities and shares the actual profit earned with you at a profit-sharing ratio agreed in advance. The profit rate may vary each month based on actual earnings. The key difference is that Islamic bank returns are tied to real economic activity while conventional interest is a predetermined guaranteed increase, which is Riba.
+
+Q: Is Easypaisa and JazzCash halal?
+A: Mobile wallets like Easypaisa and JazzCash are mobile money transfer and payment services. Using them for payments and transfers is generally permissible. However, their savings wallet features that pay profit may be from conventional interest-based structures and should be investigated. Easypaisa is run by Telenor Microfinance Bank. Users concerned about Shariah compliance should check whether the profit on their wallet balance comes from an Islamic or conventional structure.
+
+HALAL INVESTMENT QUESTIONS IN PAKISTAN
+
+Q: Is investing in Meezan Islamic Fund halal?
+A: Meezan Islamic Fund is managed by Al Meezan Investment Management, which operates under Shariah supervision. The fund invests only in Shariah-compliant equities screened by their Shariah Advisor. It is widely considered halal by Pakistani scholars. As with all investments, returns are not guaranteed.
+
+Q: Are Roshan Digital Accounts halal?
+A: Roshan Digital Accounts are offered by multiple banks for overseas Pakistanis. The halal status depends on the specific bank and account type. Islamic banks like Meezan Bank and Bank Islami offer Roshan Digital Accounts on Islamic terms using Mudarabah profit-sharing. Conventional banks offer interest-based Roshan Digital Accounts which would not be halal. Overseas Pakistanis should choose the Islamic bank version of this account.
+
+Q: Is the National Savings Bahbood Certificate halal?
+A: The regular Bahbood Savings Certificate from National Savings pays a fixed return which is considered Riba by most scholars and therefore haram. However, the government introduced Shariah-compliant alternatives. Muslims should look for the specifically labeled Islamic National Savings products or Shariah-compliant Ijarah Sukuk from the government as alternatives.
+
+Q: Is investing in PSX stocks halal?
+A: Investing in individual stocks on the Pakistan Stock Exchange can be halal if the company passes Shariah screening. The PSX in collaboration with Meezan Bank's Shariah Advisor publishes a list of Shariah-compliant stocks called the KMI (Karachi Meezan Index) 30 and KMI All Shares index. Stocks of conventional banks, insurance companies, tobacco companies, and alcohol companies are excluded. Before investing in any individual stock, check if it is on the Shariah-compliant list.
+
+Q: What is Modaraba and is it halal?
+A: A Modaraba is a Shariah-compliant financial institution unique to Pakistan, established under the Modarabas Companies and Modarabas Ordinance 1980. Modarabas raise funds from public investors and invest in Islamic financial activities. They are regulated by SECP and must have a Religious Board approval. Modarabas listed on the PSX include First Habib Modaraba, First Pak Modaraba, and others. Investing in a listed Modaraba is generally considered halal as it is specifically designed as an Islamic financial structure.
+
+MUDARABAH INVESTMENT QUESTIONS
+
+Q: What profit rate should I expect from a Mudarabah account in Pakistan?
+A: Profit rates on Islamic bank Mudarabah deposits in Pakistan typically range from 10 percent to 18 percent per annum depending on the amount deposited, the term, and the bank's performance. Larger amounts and longer terms generally earn higher profit rates. These rates vary monthly based on the bank's actual earnings from its investments. They are not guaranteed and may be higher or lower than the announced rate.
+
+Q: What is the typical profit-sharing ratio in Mudarabah accounts?
+A: Pakistani Islamic banks typically offer profit-sharing ratios between 50-50 and 70-30 (investor to bank) depending on the deposit amount and tenure. For example, a one-year term deposit might offer a 65-35 ratio where the investor gets 65 percent of profits and the bank keeps 35 percent as the Mudarib's share. Higher deposit amounts often qualify for better ratios. The ratio is fixed at the time of opening the account and cannot be changed during the term.
+
+Q: What happens if the Islamic bank makes a loss on my Mudarabah deposit?
+A: In a genuine Mudarabah contract, if the bank makes a loss due to the normal risks of business (not due to negligence or misconduct), the investor bears the financial loss while the bank loses its effort and management without compensation. However, in practice, Pakistani Islamic banks have never passed losses to depositors as their diversified investment portfolios have always generated profits. In case of bank failure, deposits are protected up to Rs. 500,000 per depositor by the Deposit Protection Corporation of Pakistan.

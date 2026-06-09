@@ -1,0 +1,118 @@
+SHARIAH SCREENING CRITERIA FOR HALAL INVESTMENTS
+=================================================
+
+INTRODUCTION TO HALAL INVESTING
+Halal investing means putting money into businesses and financial instruments that comply with Islamic law (Shariah). The core prohibition is Riba (interest), but Shariah screening covers much more than just avoiding interest. A fully Shariah-compliant investment must avoid haram business activities, maintain acceptable financial ratios, and operate with ethical business practices.
+
+BUSINESS ACTIVITY SCREENING - PRIMARY SCREEN
+The first and most important screen is the nature of the company's business. A company is considered haram if its primary or significant business involves any of the following:
+
+ABSOLUTELY PROHIBITED INDUSTRIES (any involvement = automatic exclusion):
+- Alcohol production, distribution, retail, or promotion
+- Pork and pork-related products (processing, distribution, restaurants serving pork)
+- Conventional banking and financial institutions that deal in interest (Riba)
+- Conventional insurance companies based on interest and gambling elements
+- Weapons manufacturing for use against civilians, weapons of mass destruction
+- Gambling, casinos, betting, lotteries, and games of chance
+- Pornography, adult entertainment, and obscene content
+- Tobacco and cigarette manufacturing and distribution
+
+GENERALLY PROHIBITED (significant involvement = exclusion):
+- Conventional banks even if they have Islamic windows (unless Islamic banking is the primary business)
+- Interest-bearing financial products and derivatives
+- Short selling and speculative trading (Gharar - excessive uncertainty)
+- Companies with significant revenues from haram sources (threshold varies by standard)
+
+TOLERANCE THRESHOLDS FOR MIXED BUSINESSES
+Many companies have small incidental revenues from impermissible sources. Different Shariah standards have different tolerance thresholds:
+
+AAOIFI Standard (used in Gulf countries and Pakistan):
+- Impermissible revenue must be less than 5 percent of total revenue
+- Interest income must be less than 5 percent of total revenue
+
+MSCI and Dow Jones Islamic Index Standard:
+- Impermissible revenue less than 5 percent of total revenue
+- Interest income less than 5 percent of total revenue
+
+S&P Shariah Indices Standard:
+- Impermissible revenue less than 5 percent of total revenue
+
+If a company has impermissible revenue below the threshold, an investor may still invest but must purify their returns by donating the proportional impermissible portion to charity. This is called income purification.
+
+FINANCIAL RATIO SCREENING - SECONDARY SCREEN
+Even if a company passes the business activity screen, it must also pass financial ratio screens to ensure it does not rely excessively on debt or interest-based financing.
+
+DEBT RATIO (Leverage Screen):
+The ratio of total debt to total assets must be below 33 percent according to most Shariah standards. Some standards use total market capitalization as the denominator instead of total assets.
+
+Formula: Total Interest-Bearing Debt / Total Assets < 33%
+
+This ensures the company is not primarily financed through interest-bearing loans.
+
+INTEREST INCOME RATIO:
+Interest and non-operating income must be less than 5 percent of total revenue.
+
+Formula: (Interest Income + Non-operating Income) / Total Revenue < 5%
+
+ACCOUNTS RECEIVABLE RATIO:
+Some standards require that accounts receivable and cash are less than 67 percent or 49 percent of total assets. This ensures the company has real productive assets.
+
+Formula: (Accounts Receivable + Cash) / Total Assets < 67% (or 49% by stricter standards)
+
+SHARIAH-COMPLIANT INVESTMENT TYPES IN PAKISTAN
+
+Islamic Mutual Funds in Pakistan:
+The following types of Islamic mutual funds are available in Pakistan through SECP-licensed Asset Management Companies:
+
+Islamic Equity Funds: Invest in Shariah-screened stocks listed on the Pakistan Stock Exchange. All holdings are reviewed by a Shariah Supervisory Board. Examples include Meezan Islamic Fund, Al-Ameen Islamic Aggressive Income Fund, and NBP Islamic Equity Fund.
+
+Islamic Income Funds: Invest in Shariah-compliant fixed-income instruments such as Sukuk (Islamic bonds) and government Islamic securities. No conventional interest-bearing bonds are held.
+
+Islamic Money Market Funds: Invest in short-term Shariah-compliant instruments. Used as a halal alternative to conventional savings accounts.
+
+Islamic Balanced Funds: Mix of Shariah-compliant equity and income instruments.
+
+Islamic Fund of Funds: Invest in units of other Islamic mutual funds.
+
+SUKUK - ISLAMIC BONDS
+Sukuk are Shariah-compliant alternatives to conventional bonds. Instead of paying interest, Sukuk represent ownership in a real underlying asset or project and pay returns from the profits or rentals of that asset.
+
+Types of Sukuk commonly used in Pakistan:
+Ijarah Sukuk: Based on a lease agreement. The Sukuk holder owns a portion of the leased asset and receives rental income.
+Musharakah Sukuk: Based on a partnership. Returns come from profit sharing.
+Murabaha Sukuk: Based on a cost-plus-profit sale arrangement.
+
+The Government of Pakistan issues Ijarah Sukuk which are considered Shariah-compliant by Pakistani scholars. These are listed on the Pakistan Stock Exchange.
+
+PAKISTAN STOCK EXCHANGE SHARIAH COMPLIANCE
+The Pakistan Stock Exchange (PSX) in collaboration with the Shariah Advisory Board provides a list of Shariah-compliant companies. This list is updated regularly. Companies on this list have been screened for both business activity and financial ratios.
+
+Investors can check the PSX website for the current list of Shariah-compliant stocks.
+
+SHARIAH SUPERVISORY BOARDS IN PAKISTAN
+All Islamic banks and Islamic fund managers in Pakistan are required to have a Shariah Supervisory Board (SSB) or Shariah Advisor approved by the State Bank of Pakistan or SECP. The SSB reviews all products and investments to ensure compliance. Prominent Shariah scholars on Pakistani SSBs include Mufti Taqi Usmani, Mufti Muhammad Rafi Usmani, and Dr. Imran Usmani.
+
+RED FLAGS IN INVESTMENT MARKETING
+Be cautious of:
+- Products claiming to be Islamic but offering guaranteed fixed returns (this resembles Riba)
+- Investments without a named Shariah Advisor or Supervisory Board
+- Companies using the word Islamic or Halal in their name without Shariah certification
+- Unusually high guaranteed profit rates (may indicate interest-based structure)
+- Lack of transparency about how profits are generated
+
+COMMONLY ASKED QUESTIONS ABOUT HALAL INVESTING
+
+Is investing in PSX stocks halal?
+It depends on the company. Investing in Shariah-compliant stocks listed on the PSX Shariah-compliant list is generally considered halal. Investing in conventional banks, insurance companies, or companies with haram activities is not permissible.
+
+Are National Savings Certificates halal?
+Conventional National Savings Certificates pay interest and are generally considered haram. The government of Pakistan offers Shariah-compliant alternatives called Bahbood Savings Certificates and Pensioners' Benefit Account for senior citizens, and Islamic Naya Pakistan Certificates for overseas Pakistanis.
+
+Is investing in real estate halal?
+Generally yes, investing in real estate is halal as it involves a real asset. Rental income from real estate is also halal. However, financing real estate through a conventional mortgage with interest is not permissible. Islamic banks in Pakistan offer Diminishing Musharakah home financing as a Shariah-compliant alternative.
+
+Is life insurance halal?
+Conventional life insurance contains elements of Gharar (uncertainty) and Riba (interest) and is considered haram by most scholars. Takaful (Islamic insurance) is the Shariah-compliant alternative. Pakistan has several Takaful companies licensed by SECP.
+
+What about cryptocurrency?
+Scholars differ significantly on cryptocurrency. Some consider Bitcoin and similar cryptocurrencies permissible as a medium of exchange. Others consider them haram due to excessive speculation (Gharar), lack of intrinsic value, and use in illegal activities. There is no consensus. Pakistani investors should consult a qualified scholar before investing in cryptocurrency.

@@ -1,0 +1,592 @@
+[
+  {
+    "text": "ISLAMIC FINANCE CONCEPTS AND CONTRACTS\n=======================================",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 0
+  },
+  {
+    "text": "RIBA (Interest / Usury)\nRiba literally means increase or addition. In Islamic finance, Riba refers to any predetermined, guaranteed increase on a loan or deposit regardless of the outcome of the underlying transaction. This is the most fundamental prohibition in Islamic finance.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 1
+  },
+  {
+    "text": "There are two types of Riba:\nRiba al-Nasiah: Interest on loans - charging extra money for lending. This is what conventional banks charge on loans and credit cards.\nRiba al-Fadl: Unequal exchange of the same commodity - for example exchanging 1 kg of gold for 1.1 kg of gold.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 2
+  },
+  {
+    "text": "The Quran forbids Riba in multiple verses including Al-Baqarah 2:275-279 and Al-Imran 3:130.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 3
+  },
+  {
+    "text": "GHARAR (Excessive Uncertainty)\nGharar means uncertainty, hazard, or risk in a contract. Islamic finance prohibits contracts with excessive uncertainty about the subject matter, price, or terms. Minor uncertainty is acceptable in commerce, but major uncertainty that could lead to dispute or unfair outcomes is prohibited.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 4
+  },
+  {
+    "text": "Examples of Gharar include:\n- Selling fish in the sea that you have not yet caught\n- Conventional insurance where the benefit is uncertain\n- Speculative derivatives and futures contracts\n- Selling goods you do not own or have not yet produced",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 5
+  },
+  {
+    "text": "MAYSIR (Gambling)\nMaysir refers to games of chance where one party gains at the direct expense of another without any productive economic activity. This includes casino gambling, lotteries, and purely speculative financial transactions.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 6
+  },
+  {
+    "text": "MUDARABAH (Profit-Sharing Partnership)\nMudarabah is a partnership where one party (Rabb ul Maal, the investor) provides capital and the other party (Mudarib, the entrepreneur or manager) provides skills and management.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 7
+  },
+  {
+    "text": "Key features:\n- Profit is shared between investor and manager at a pre-agreed ratio (e.g., 60-40 or 70-30)\n- Loss of capital is borne entirely by the investor\n- The manager loses their time, effort, and potential profit but not capital\n- The profit-sharing ratio must be agreed before the contract begins\n- No party may claim a fixed lump sum as profit",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 8
+  },
+  {
+    "text": "Applications in Pakistan:\n- Islamic bank savings and investment accounts (bank acts as Mudarib)\n- Islamic mutual funds\n- Modaraba companies listed on Pakistan Stock Exchange",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 9
+  },
+  {
+    "text": "MUSHARAKAH (Partnership / Joint Venture)\nMusharakah means sharing or partnership. Both parties contribute capital and share profit and loss according to their capital contribution or an agreed ratio.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 10
+  },
+  {
+    "text": "Types of Musharakah:\nShirkat ul Milk: Joint ownership of an asset\nShirkat ul Aqd: Contractual partnership for a business venture",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 11
+  },
+  {
+    "text": "Diminishing Musharakah (Musharakah Mutanaqisah):\nUsed by Islamic banks for home financing. The bank and customer co-own the property. The customer gradually buys out the bank's share through monthly payments while paying rent on the bank's remaining share. Eventually the customer owns the property completely.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 12
+  },
+  {
+    "text": "MURABAHA (Cost-Plus Sale)\nMurabaha is a sale where the seller discloses the cost of the item and adds an agreed profit margin. It is not a loan - it is a genuine sale transaction.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 13
+  },
+  {
+    "text": "How it works in Islamic banking:\n1. Customer wants to buy a car\n2. Bank purchases the car from the dealer\n3. Bank sells the car to the customer at cost plus agreed profit\n4. Customer pays in installments\n5. The profit is fixed at the time of sale and cannot increase if payment is delayed",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 14
+  },
+  {
+    "text": "Important: The bank must actually own the item before selling it to the customer. A bank cannot charge Murabaha profit on something it does not own.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 15
+  },
+  {
+    "text": "Applications: Car financing, home appliance financing, working capital for businesses, trade finance.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 16
+  },
+  {
+    "text": "IJARAH (Lease)\nIjarah means lease or rent. The owner of an asset leases it to another party for an agreed rental and period.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 17
+  },
+  {
+    "text": "Key features:\n- The lessor (owner) remains responsible for major maintenance\n- Rental must be for a lawful purpose\n- The asset itself must be halal",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 18
+  },
+  {
+    "text": "Ijarah wa Iqtina (Lease ending in ownership):\nA lease where the customer gradually acquires ownership of the asset. Used for vehicle and equipment financing in Islamic banks. At the end of the lease period, the asset is transferred to the customer through a gift or sale at a nominal price.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 19
+  },
+  {
+    "text": "ISTISNA (Manufacturing Contract)\nA contract to manufacture or construct an asset with specified features at an agreed price. Used for project financing, construction, and custom manufacturing. Payment may be made in installments during construction.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 20
+  },
+  {
+    "text": "SALAM (Forward Sale)\nA contract where full payment is made in advance for goods to be delivered at a future date. The price, quantity, quality, and delivery date must all be specified precisely. Used in agricultural financing to help farmers.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 21
+  },
+  {
+    "text": "TAWARRUQ (Commodity Murabaha)\nA three-party sale transaction used to generate liquidity. Widely used in Islamic banking for personal financing and liquidity management. Its permissibility is debated among scholars - it is permitted by most Pakistani scholars but considered controversial by some.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 22
+  },
+  {
+    "text": "WAKALAH (Agency)\nA contract where one party (the principal) appoints another (the agent) to perform a specific task. Used in Takaful (Islamic insurance) and Islamic fund management. The agent may charge a fee for their services.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 23
+  },
+  {
+    "text": "TAKAFUL (Islamic Insurance)\nTakaful is the Shariah-compliant alternative to conventional insurance. It is based on mutual cooperation and solidarity among participants.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 24
+  },
+  {
+    "text": "How Takaful works:\n- Participants contribute to a common pool (Tabarru - donation)\n- The pool is used to compensate members who suffer losses\n- A Takaful operator manages the pool for a fee (Wakalah model) or profit share (Mudarabah model)\n- Surplus in the pool belongs to participants, not the operator\n- Funds are invested only in Shariah-compliant instruments",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 25
+  },
+  {
+    "text": "Types of Takaful in Pakistan:\n- General Takaful: Covers property, motor, health, travel\n- Family Takaful: Equivalent to life insurance",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 26
+  },
+  {
+    "text": "WAQF (Endowment)\nAn inalienable charitable endowment under Islamic law. A person may dedicate property or assets permanently for a charitable purpose. The asset cannot be sold or transferred. Income from the Waqf is used for the designated charitable purpose. Many mosques, Islamic schools, and hospitals are run as Waqf.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 27
+  },
+  {
+    "text": "SUKUK (Islamic Bonds)\nSukuk are certificates representing proportional ownership in an underlying tangible asset, pool of assets, or a project. Unlike conventional bonds, Sukuk holders own a share of the asset and receive returns from the asset's performance, not interest.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 28
+  },
+  {
+    "text": "Differences from conventional bonds:\n- Conventional bond: Debt instrument, pays interest, issuer owes a fixed amount\n- Sukuk: Ownership certificate, pays profit from asset performance, holder owns part of an asset",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 29
+  },
+  {
+    "text": "Pakistan Sukuk:\nThe Government of Pakistan regularly issues Ijarah Sukuk backed by government buildings and infrastructure. Islamic banks are major investors in these Sukuk. The National Highway Authority and other entities have also issued Sukuk.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 30
+  },
+  {
+    "text": "ISLAMIC BANKING IN PAKISTAN\nPakistan's State Bank regulates Islamic banking through the Islamic Banking Department. As of 2024, Islamic banking in Pakistan has grown to represent approximately 20 percent of the total banking sector.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 31
+  },
+  {
+    "text": "Major Islamic banks in Pakistan:\n- Meezan Bank (largest standalone Islamic bank)\n- Bank Islami Pakistan\n- Dubai Islamic Bank Pakistan\n- Al Baraka Bank Pakistan\n- MCB Islamic Bank",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 32
+  },
+  {
+    "text": "Conventional banks with Islamic banking windows:\n- HBL Islamic\n- UBL Ameen\n- NBP Tezraftaar\n- Standard Chartered Saadiq\n- Habib Metropolitan Sirat",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 33
+  },
+  {
+    "text": "All Islamic banks in Pakistan must be certified by their Shariah Supervisory Board and comply with State Bank of Pakistan's Shariah Governance Framework.",
+    "source": "islamic_finance_concepts.txt",
+    "chunk_id": 34
+  },
+  {
+    "text": "PAKISTAN ISLAMIC FINANCE - FREQUENTLY ASKED QUESTIONS\n=====================================================",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 0
+  },
+  {
+    "text": "Q: How does government Zakat deduction work in Pakistan?\nA: Under the Zakat and Ushr Ordinance 1980, the government automatically deducts Zakat from savings accounts, profit and loss sharing accounts, and similar accounts on the first of Ramadan each year if the balance is equal to or above the Nisab threshold. The deducted Zakat is sent to the Central Zakat Fund and distributed through Local Zakat Committees to deserving recipients. Sunni Muslims are subject to this deduction by default. A Muslim who wishes to pay Zakat directly may file a declaration (CZ-50 form) with their bank claiming exemption from compulsory deduction. Shia Muslims are automatically exempt.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 1
+  },
+  {
+    "text": "Q: Is Zakat deducted from salary accounts in Pakistan?\nA: No. Zakat is only deducted from savings accounts and similar accounts, not from current accounts or salary accounts. If you receive your salary in a current account, no automatic Zakat deduction occurs.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 2
+  },
+  {
+    "text": "Q: What is the Nisab value in Pakistan this year?\nA: The Nisab is announced by the Central Zakat Administration at the start of Ramadan each year based on the prevailing gold and silver prices. You can check the current Nisab on the Ministry of Religious Affairs website or through your Islamic bank. Our app fetches the current gold and silver prices to show you the most up to date Nisab value.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 3
+  },
+  {
+    "text": "Q: Can I give Zakat to my poor relatives in Pakistan?\nA: Yes, you can give Zakat to qualifying relatives such as siblings, cousins, aunts, uncles, and their families who are below the Nisab threshold. Giving Zakat to relatives has double reward in Islam - both fulfilling the obligation and maintaining family ties. However, you cannot give Zakat to your parents, children, spouse, or any person you are legally obligated to support financially.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 4
+  },
+  {
+    "text": "Q: Which charities in Pakistan are trusted for Zakat?\nA: The most widely trusted Zakat-eligible organizations in Pakistan include:\n- Edhi Foundation: Pakistan's largest welfare organization, runs orphanages, ambulances, and shelter homes\n- Akhuwat Foundation: Provides interest-free microfinance to poor families\n- Shaukat Khanum Memorial Cancer Hospital: Provides free cancer treatment to deserving patients\n- The Citizens Foundation (TCF): Builds and runs schools in underserved areas\n- Sundas Foundation: Blood-related diseases and thalassemia treatment\n- Saylani Welfare Trust: Food, education, and medical support\n- JDC Foundation: Multiple welfare programs\n- Al-Khidmat Foundation: Jamaat-e-Islami affiliated welfare organization",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 5
+  },
+  {
+    "text": "Always verify an organization's legitimacy before donating. Look for organizations registered with SECP as an NGO and with transparent annual reports.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 6
+  },
+  {
+    "text": "Q: Is Zakat due on Prize Bonds in Pakistan?\nA: Prize bonds are conventional government savings instruments that pay prizes through a lottery draw. Most Pakistani scholars consider conventional prize bonds to be problematic because they contain elements of Gharar and Maysir (gambling). If a person holds prize bonds, Zakat is due on their face value. The prize money received is considered a windfall and should be given to charity entirely according to many scholars, or at minimum Zakat should be paid on it.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 7
+  },
+  {
+    "text": "Q: Is Meezan Bank fully halal?\nA: Meezan Bank is Pakistan's largest dedicated Islamic bank and operates under strict Shariah supervision by a board of respected scholars including members from the Darul Uloom Karachi. Its products and operations are reviewed and certified by its Shariah Supervisory Board. It is generally considered Shariah-compliant by Pakistani scholars and is widely used by Muslims seeking halal banking. However, like any institution, individual transactions should be reviewed if in doubt.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 8
+  },
+  {
+    "text": "Q: Is keeping money in a conventional bank account haram in Pakistan?\nA: Keeping money in a current account (no interest) at a conventional bank is generally considered permissible out of necessity, as it is needed for day-to-day transactions. However, keeping money in an interest-bearing savings account at a conventional bank is considered haram as it involves Riba. Muslims should use Islamic bank accounts or declare their savings account profit as charity (not personal income) if they must use a conventional bank.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 9
+  },
+  {
+    "text": "Q: What is the difference between Islamic bank profit and conventional bank interest?\nA: In a conventional bank savings account, the bank pays a fixed predetermined interest rate on your deposit regardless of what the bank does with your money. In an Islamic bank profit and loss sharing account, the bank invests your money in halal activities and shares the actual profit earned with you at a profit-sharing ratio agreed in advance. The profit rate may vary each month based on actual earnings. The key difference is that Islamic bank returns are tied to real economic activity while conventional interest is a predetermined guaranteed increase, which is Riba.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 10
+  },
+  {
+    "text": "Q: Is Easypaisa and JazzCash halal?\nA: Mobile wallets like Easypaisa and JazzCash are mobile money transfer and payment services. Using them for payments and transfers is generally permissible. However, their savings wallet features that pay profit may be from conventional interest-based structures and should be investigated. Easypaisa is run by Telenor Microfinance Bank. Users concerned about Shariah compliance should check whether the profit on their wallet balance comes from an Islamic or conventional structure.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 11
+  },
+  {
+    "text": "Q: Is investing in Meezan Islamic Fund halal?\nA: Meezan Islamic Fund is managed by Al Meezan Investment Management, which operates under Shariah supervision. The fund invests only in Shariah-compliant equities screened by their Shariah Advisor. It is widely considered halal by Pakistani scholars. As with all investments, returns are not guaranteed.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 12
+  },
+  {
+    "text": "Q: Are Roshan Digital Accounts halal?\nA: Roshan Digital Accounts are offered by multiple banks for overseas Pakistanis. The halal status depends on the specific bank and account type. Islamic banks like Meezan Bank and Bank Islami offer Roshan Digital Accounts on Islamic terms using Mudarabah profit-sharing. Conventional banks offer interest-based Roshan Digital Accounts which would not be halal. Overseas Pakistanis should choose the Islamic bank version of this account.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 13
+  },
+  {
+    "text": "Q: Is the National Savings Bahbood Certificate halal?\nA: The regular Bahbood Savings Certificate from National Savings pays a fixed return which is considered Riba by most scholars and therefore haram. However, the government introduced Shariah-compliant alternatives. Muslims should look for the specifically labeled Islamic National Savings products or Shariah-compliant Ijarah Sukuk from the government as alternatives.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 14
+  },
+  {
+    "text": "Q: Is investing in PSX stocks halal?\nA: Investing in individual stocks on the Pakistan Stock Exchange can be halal if the company passes Shariah screening. The PSX in collaboration with Meezan Bank's Shariah Advisor publishes a list of Shariah-compliant stocks called the KMI (Karachi Meezan Index) 30 and KMI All Shares index. Stocks of conventional banks, insurance companies, tobacco companies, and alcohol companies are excluded. Before investing in any individual stock, check if it is on the Shariah-compliant list.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 15
+  },
+  {
+    "text": "Q: What is Modaraba and is it halal?\nA: A Modaraba is a Shariah-compliant financial institution unique to Pakistan, established under the Modarabas Companies and Modarabas Ordinance 1980. Modarabas raise funds from public investors and invest in Islamic financial activities. They are regulated by SECP and must have a Religious Board approval. Modarabas listed on the PSX include First Habib Modaraba, First Pak Modaraba, and others. Investing in a listed Modaraba is generally considered halal as it is specifically designed as an Islamic financial structure.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 16
+  },
+  {
+    "text": "Q: What profit rate should I expect from a Mudarabah account in Pakistan?\nA: Profit rates on Islamic bank Mudarabah deposits in Pakistan typically range from 10 percent to 18 percent per annum depending on the amount deposited, the term, and the bank's performance. Larger amounts and longer terms generally earn higher profit rates. These rates vary monthly based on the bank's actual earnings from its investments. They are not guaranteed and may be higher or lower than the announced rate.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 17
+  },
+  {
+    "text": "Q: What is the typical profit-sharing ratio in Mudarabah accounts?\nA: Pakistani Islamic banks typically offer profit-sharing ratios between 50-50 and 70-30 (investor to bank) depending on the deposit amount and tenure. For example, a one-year term deposit might offer a 65-35 ratio where the investor gets 65 percent of profits and the bank keeps 35 percent as the Mudarib's share. Higher deposit amounts often qualify for better ratios. The ratio is fixed at the time of opening the account and cannot be changed during the term.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 18
+  },
+  {
+    "text": "Q: What happens if the Islamic bank makes a loss on my Mudarabah deposit?\nA: In a genuine Mudarabah contract, if the bank makes a loss due to the normal risks of business (not due to negligence or misconduct), the investor bears the financial loss while the bank loses its effort and management without compensation. However, in practice, Pakistani Islamic banks have never passed losses to depositors as their diversified investment portfolios have always generated profits. In case of bank failure, deposits are protected up to Rs. 500,000 per depositor by the Deposit Protection Corporation of Pakistan.",
+    "source": "pakistan_islamic_finance_faqs.txt",
+    "chunk_id": 19
+  },
+  {
+    "text": "SHARIAH SCREENING CRITERIA FOR HALAL INVESTMENTS\n=================================================",
+    "source": "shariah_screening.txt",
+    "chunk_id": 0
+  },
+  {
+    "text": "INTRODUCTION TO HALAL INVESTING\nHalal investing means putting money into businesses and financial instruments that comply with Islamic law (Shariah). The core prohibition is Riba (interest), but Shariah screening covers much more than just avoiding interest. A fully Shariah-compliant investment must avoid haram business activities, maintain acceptable financial ratios, and operate with ethical business practices.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 1
+  },
+  {
+    "text": "BUSINESS ACTIVITY SCREENING - PRIMARY SCREEN\nThe first and most important screen is the nature of the company's business. A company is considered haram if its primary or significant business involves any of the following:",
+    "source": "shariah_screening.txt",
+    "chunk_id": 2
+  },
+  {
+    "text": "ABSOLUTELY PROHIBITED INDUSTRIES (any involvement = automatic exclusion):\n- Alcohol production, distribution, retail, or promotion\n- Pork and pork-related products (processing, distribution, restaurants serving pork)\n- Conventional banking and financial institutions that deal in interest (Riba)\n- Conventional insurance companies based on interest and gambling elements\n- Weapons manufacturing for use against civilians, weapons of mass destruction\n- Gambling, casinos, betting, lotteries, and games of chance\n- Pornography, adult entertainment, and obscene content\n- Tobacco and cigarette manufacturing and distribution",
+    "source": "shariah_screening.txt",
+    "chunk_id": 3
+  },
+  {
+    "text": "GENERALLY PROHIBITED (significant involvement = exclusion):\n- Conventional banks even if they have Islamic windows (unless Islamic banking is the primary business)\n- Interest-bearing financial products and derivatives\n- Short selling and speculative trading (Gharar - excessive uncertainty)\n- Companies with significant revenues from haram sources (threshold varies by standard)",
+    "source": "shariah_screening.txt",
+    "chunk_id": 4
+  },
+  {
+    "text": "TOLERANCE THRESHOLDS FOR MIXED BUSINESSES\nMany companies have small incidental revenues from impermissible sources. Different Shariah standards have different tolerance thresholds:",
+    "source": "shariah_screening.txt",
+    "chunk_id": 5
+  },
+  {
+    "text": "AAOIFI Standard (used in Gulf countries and Pakistan):\n- Impermissible revenue must be less than 5 percent of total revenue\n- Interest income must be less than 5 percent of total revenue",
+    "source": "shariah_screening.txt",
+    "chunk_id": 6
+  },
+  {
+    "text": "MSCI and Dow Jones Islamic Index Standard:\n- Impermissible revenue less than 5 percent of total revenue\n- Interest income less than 5 percent of total revenue",
+    "source": "shariah_screening.txt",
+    "chunk_id": 7
+  },
+  {
+    "text": "S&P Shariah Indices Standard:\n- Impermissible revenue less than 5 percent of total revenue",
+    "source": "shariah_screening.txt",
+    "chunk_id": 8
+  },
+  {
+    "text": "If a company has impermissible revenue below the threshold, an investor may still invest but must purify their returns by donating the proportional impermissible portion to charity. This is called income purification.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 9
+  },
+  {
+    "text": "FINANCIAL RATIO SCREENING - SECONDARY SCREEN\nEven if a company passes the business activity screen, it must also pass financial ratio screens to ensure it does not rely excessively on debt or interest-based financing.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 10
+  },
+  {
+    "text": "DEBT RATIO (Leverage Screen):\nThe ratio of total debt to total assets must be below 33 percent according to most Shariah standards. Some standards use total market capitalization as the denominator instead of total assets.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 11
+  },
+  {
+    "text": "This ensures the company is not primarily financed through interest-bearing loans.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 12
+  },
+  {
+    "text": "INTEREST INCOME RATIO:\nInterest and non-operating income must be less than 5 percent of total revenue.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 13
+  },
+  {
+    "text": "Formula: (Interest Income + Non-operating Income) / Total Revenue < 5%",
+    "source": "shariah_screening.txt",
+    "chunk_id": 14
+  },
+  {
+    "text": "ACCOUNTS RECEIVABLE RATIO:\nSome standards require that accounts receivable and cash are less than 67 percent or 49 percent of total assets. This ensures the company has real productive assets.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 15
+  },
+  {
+    "text": "Formula: (Accounts Receivable + Cash) / Total Assets < 67% (or 49% by stricter standards)",
+    "source": "shariah_screening.txt",
+    "chunk_id": 16
+  },
+  {
+    "text": "Islamic Mutual Funds in Pakistan:\nThe following types of Islamic mutual funds are available in Pakistan through SECP-licensed Asset Management Companies:",
+    "source": "shariah_screening.txt",
+    "chunk_id": 17
+  },
+  {
+    "text": "Islamic Equity Funds: Invest in Shariah-screened stocks listed on the Pakistan Stock Exchange. All holdings are reviewed by a Shariah Supervisory Board. Examples include Meezan Islamic Fund, Al-Ameen Islamic Aggressive Income Fund, and NBP Islamic Equity Fund.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 18
+  },
+  {
+    "text": "Islamic Income Funds: Invest in Shariah-compliant fixed-income instruments such as Sukuk (Islamic bonds) and government Islamic securities. No conventional interest-bearing bonds are held.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 19
+  },
+  {
+    "text": "Islamic Money Market Funds: Invest in short-term Shariah-compliant instruments. Used as a halal alternative to conventional savings accounts.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 20
+  },
+  {
+    "text": "Islamic Balanced Funds: Mix of Shariah-compliant equity and income instruments.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 21
+  },
+  {
+    "text": "Islamic Fund of Funds: Invest in units of other Islamic mutual funds.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 22
+  },
+  {
+    "text": "SUKUK - ISLAMIC BONDS\nSukuk are Shariah-compliant alternatives to conventional bonds. Instead of paying interest, Sukuk represent ownership in a real underlying asset or project and pay returns from the profits or rentals of that asset.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 23
+  },
+  {
+    "text": "Types of Sukuk commonly used in Pakistan:\nIjarah Sukuk: Based on a lease agreement. The Sukuk holder owns a portion of the leased asset and receives rental income.\nMusharakah Sukuk: Based on a partnership. Returns come from profit sharing.\nMurabaha Sukuk: Based on a cost-plus-profit sale arrangement.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 24
+  },
+  {
+    "text": "The Government of Pakistan issues Ijarah Sukuk which are considered Shariah-compliant by Pakistani scholars. These are listed on the Pakistan Stock Exchange.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 25
+  },
+  {
+    "text": "PAKISTAN STOCK EXCHANGE SHARIAH COMPLIANCE\nThe Pakistan Stock Exchange (PSX) in collaboration with the Shariah Advisory Board provides a list of Shariah-compliant companies. This list is updated regularly. Companies on this list have been screened for both business activity and financial ratios.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 26
+  },
+  {
+    "text": "Investors can check the PSX website for the current list of Shariah-compliant stocks.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 27
+  },
+  {
+    "text": "SHARIAH SUPERVISORY BOARDS IN PAKISTAN\nAll Islamic banks and Islamic fund managers in Pakistan are required to have a Shariah Supervisory Board (SSB) or Shariah Advisor approved by the State Bank of Pakistan or SECP. The SSB reviews all products and investments to ensure compliance. Prominent Shariah scholars on Pakistani SSBs include Mufti Taqi Usmani, Mufti Muhammad Rafi Usmani, and Dr. Imran Usmani.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 28
+  },
+  {
+    "text": "RED FLAGS IN INVESTMENT MARKETING\nBe cautious of:\n- Products claiming to be Islamic but offering guaranteed fixed returns (this resembles Riba)\n- Investments without a named Shariah Advisor or Supervisory Board\n- Companies using the word Islamic or Halal in their name without Shariah certification\n- Unusually high guaranteed profit rates (may indicate interest-based structure)\n- Lack of transparency about how profits are generated",
+    "source": "shariah_screening.txt",
+    "chunk_id": 29
+  },
+  {
+    "text": "Is investing in PSX stocks halal?\nIt depends on the company. Investing in Shariah-compliant stocks listed on the PSX Shariah-compliant list is generally considered halal. Investing in conventional banks, insurance companies, or companies with haram activities is not permissible.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 30
+  },
+  {
+    "text": "Are National Savings Certificates halal?\nConventional National Savings Certificates pay interest and are generally considered haram. The government of Pakistan offers Shariah-compliant alternatives called Bahbood Savings Certificates and Pensioners' Benefit Account for senior citizens, and Islamic Naya Pakistan Certificates for overseas Pakistanis.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 31
+  },
+  {
+    "text": "Is investing in real estate halal?\nGenerally yes, investing in real estate is halal as it involves a real asset. Rental income from real estate is also halal. However, financing real estate through a conventional mortgage with interest is not permissible. Islamic banks in Pakistan offer Diminishing Musharakah home financing as a Shariah-compliant alternative.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 32
+  },
+  {
+    "text": "Is life insurance halal?\nConventional life insurance contains elements of Gharar (uncertainty) and Riba (interest) and is considered haram by most scholars. Takaful (Islamic insurance) is the Shariah-compliant alternative. Pakistan has several Takaful companies licensed by SECP.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 33
+  },
+  {
+    "text": "What about cryptocurrency?\nScholars differ significantly on cryptocurrency. Some consider Bitcoin and similar cryptocurrencies permissible as a medium of exchange. Others consider them haram due to excessive speculation (Gharar), lack of intrinsic value, and use in illegal activities. There is no consensus. Pakistani investors should consult a qualified scholar before investing in cryptocurrency.",
+    "source": "shariah_screening.txt",
+    "chunk_id": 34
+  },
+  {
+    "text": "ZAKAT RULES AND REGULATIONS IN ISLAM\n=====================================",
+    "source": "zakat_rules.txt",
+    "chunk_id": 0
+  },
+  {
+    "text": "DEFINITION OF ZAKAT\nZakat is one of the Five Pillars of Islam. It is an obligatory annual payment made by eligible Muslims on their accumulated wealth above a minimum threshold called Nisab. The word Zakat means purification and growth in Arabic. By paying Zakat, a Muslim purifies their remaining wealth and fulfills a religious duty to the poor and needy.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 1
+  },
+  {
+    "text": "NISAB THRESHOLD\nNisab is the minimum amount of wealth a Muslim must possess before Zakat becomes obligatory. There are two standards for calculating Nisab:",
+    "source": "zakat_rules.txt",
+    "chunk_id": 2
+  },
+  {
+    "text": "Gold Standard Nisab: equivalent to 7.5 tola or 87.48 grams of gold. This is the higher threshold and means fewer people are obligated to pay.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 3
+  },
+  {
+    "text": "Silver Standard Nisab: equivalent to 52.5 tola or 612.36 grams of silver. This is the lower threshold and is considered more conservative. Many scholars prefer the silver standard because it includes more people in the obligation and therefore benefits more poor people.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 4
+  },
+  {
+    "text": "In Pakistan, the silver standard Nisab is commonly used as it is more inclusive.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 5
+  },
+  {
+    "text": "HAWL - THE LUNAR YEAR CONDITION\nHawl means that a Muslim must have owned wealth above the Nisab threshold for one complete Islamic lunar year before Zakat becomes due. If wealth falls below Nisab at any point during the year, the Hawl resets. Newly acquired wealth during the year is added to the calculation at the end of the year, not from the date it was acquired.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 6
+  },
+  {
+    "text": "ZAKAT RATE\nThe Zakat rate is 2.5 percent of total zakatable wealth. This rate is fixed and agreed upon by all four major Sunni schools of Islamic law: Hanafi, Maliki, Shafi'i, and Hanbali.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 7
+  },
+  {
+    "text": "Cash and bank balances: All cash held at home or in bank accounts, including savings accounts, current accounts, and fixed deposits. The full balance is zakatable.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 8
+  },
+  {
+    "text": "Gold and silver: The market value of all gold and silver owned, regardless of whether it is jewelry, coins, bars, or any other form. However, scholars differ on personal use jewelry - see the jewelry section below.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 9
+  },
+  {
+    "text": "Business inventory: The market value of goods held for sale in a business. This does not include business equipment, machinery, or property used in running the business.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 10
+  },
+  {
+    "text": "Receivables and loans given: Money owed to you by others that you expect to receive. If you have lent money to someone and they are able to repay, that amount is zakatable. If the loan is unlikely to be recovered, scholars differ on whether Zakat is due.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 11
+  },
+  {
+    "text": "Investments and shares: The zakatable portion of shares in companies is calculated based on the company's zakatable assets per share. For listed companies, many scholars use a simplified approach of applying 25 percent to 30 percent of the share price as a proxy for the zakatable portion. Islamic mutual funds provide Zakat calculation statements to their investors.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 12
+  },
+  {
+    "text": "Agricultural produce: Zakat on agricultural produce is called Ushr and has different rules and rates. It is due at harvest time, not annually.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 13
+  },
+  {
+    "text": "GOLD JEWELRY - SCHOLARLY DIFFERENCE\nThere is a well-known scholarly difference of opinion regarding gold jewelry used personally by women:",
+    "source": "zakat_rules.txt",
+    "chunk_id": 14
+  },
+  {
+    "text": "Opinion 1 (Hanafi school): Gold jewelry is always zakatable regardless of whether it is worn regularly for personal use. This is the stricter opinion.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 15
+  },
+  {
+    "text": "Opinion 2 (Maliki, Shafi'i, and Hanbali schools): Gold jewelry that is regularly worn for personal use is exempt from Zakat. Only jewelry kept as savings or investment is zakatable.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 16
+  },
+  {
+    "text": "In Pakistan, many scholars follow the Hanafi opinion that jewelry is zakatable. Users should consult their local scholar for a personal ruling.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 17
+  },
+  {
+    "text": "NON-ZAKATABLE ASSETS\nThe following assets are NOT subject to Zakat:\n- Primary residence (the home you live in)\n- Personal vehicles used for daily transport\n- Household furniture and appliances\n- Business equipment, machinery, and tools\n- Land and property held for personal use (not for sale or investment)\n- Clothing and personal items",
+    "source": "zakat_rules.txt",
+    "chunk_id": 18
+  },
+  {
+    "text": "DEDUCTIONS ALLOWED\nThe following debts and liabilities can be deducted from zakatable wealth:\n- Short-term debts due within the current year\n- Unpaid bills and immediate expenses due\n- The current year's installment of a long-term loan (not the full loan amount)\n- Taxes due to the government",
+    "source": "zakat_rules.txt",
+    "chunk_id": 19
+  },
+  {
+    "text": "RECIPIENTS OF ZAKAT - EIGHT CATEGORIES\nThe Quran in Surah At-Tawbah (9:60) specifies eight categories of people eligible to receive Zakat:\n1. Al-Fuqara: The poor who have nothing or very little\n2. Al-Masakeen: The needy who have some income but not enough\n3. Al-Amileen: Workers and administrators of Zakat collection\n4. Al-Muallafat Qulubuhum: Those whose hearts are to be reconciled\n5. Ar-Riqab: For freeing slaves (historically applicable)\n6. Al-Gharimeen: Those in debt who cannot repay\n7. Fi Sabilillah: In the way of Allah, for Islamic causes and education\n8. Ibn As-Sabil: Travelers who are stranded and in need",
+    "source": "zakat_rules.txt",
+    "chunk_id": 20
+  },
+  {
+    "text": "ZAKAT ON PROPERTY FOR SALE\nIf a person owns property (land, apartment, commercial space) with the intention of selling it, that property is zakatable based on its current market value. Property held for personal use or as a long-term investment for rental income is generally not zakatable, though the rental income itself may be zakatable.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 21
+  },
+  {
+    "text": "ZAKAT IN PAKISTAN\nIn Pakistan, Zakat is collected by the government under the Zakat and Ushr Ordinance 1980 for Sunni Muslims. Banks automatically deduct Zakat from savings accounts on the first of Ramadan each year if the balance exceeds the Nisab threshold. However, Muslims may declare exemption if they wish to pay Zakat directly to recipients of their choice. Shia Muslims are exempt from the government Zakat deduction.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 22
+  },
+  {
+    "text": "Is Zakat due on a salary received just before Ramadan?\nIf the salary brings your total wealth above Nisab at the end of your Hawl, then yes Zakat is due on the full amount. If you received the salary and spent most of it before your Hawl date, only what remains is zakatable.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 23
+  },
+  {
+    "text": "Can I pay Zakat in advance?\nYes, a Muslim may pay Zakat before the Hawl is complete if they are confident their wealth will remain above Nisab. This is called Taajeel al-Zakat.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 24
+  },
+  {
+    "text": "Can Zakat be paid to a family member?\nZakat cannot be paid to your parents, children, spouse, or anyone who you are financially responsible for. It can be paid to other relatives like siblings, cousins, uncles, and aunts if they are eligible.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 25
+  },
+  {
+    "text": "Can Zakat be paid in installments?\nYes, Zakat can be paid monthly or in installments throughout the year, as long as the full calculated amount is paid by the end of the year.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 26
+  },
+  {
+    "text": "Is Zakat due on a joint bank account?\nEach co-owner of a joint account pays Zakat on their proportional share of the balance.",
+    "source": "zakat_rules.txt",
+    "chunk_id": 27
+  }
+]
