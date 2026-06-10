@@ -5,7 +5,7 @@ RUN useradd -m -u 1000 appuser
 
 WORKDIR /app
 
-# System deps — gcc/g++ needed for FAISS, faster-whisper native libs
+# System deps
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python deps (separate layer for caching)
+# Install Python deps
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -25,12 +25,11 @@ RUN mkdir -p /data && chown appuser:appuser /data
 
 USER appuser
 
-# HF Spaces mandatory port
 EXPOSE 7860
 
-# Environment defaults (overridden by Space Variables/Secrets)
 ENV DATABASE_PATH=/data/shariahease.db
 ENV ENV=production
 ENV PYTHONUNBUFFERED=1
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Auto-build FAISS index if missing, then start app
+CMD ["sh", "-c", "if [ ! -f knowledge_base/index/faiss_index.bin ]; then echo 'Building FAISS index...' && python knowledge_base/build_index.py; fi && uvicorn main:app --host 0.0.0.0 --port 7860"]
