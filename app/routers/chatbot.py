@@ -11,7 +11,7 @@ from app.services.llm_client import get_chat_response, detect_language
 from app.services.tts_service import text_to_speech_bytes
 from app.services.metal_price import get_nisab_values
 from app.services.web_search import get_web_context
-from app.dependencies import get_current_user
+from app.dependencies import get_optional_user
 
 router = APIRouter(prefix="/chat", tags=["Chatbot"])
 
@@ -81,13 +81,16 @@ Note: Live prices temporarily unavailable. Figures are approximate.
 async def chat_message(
     request: ChatRequest,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    # Optional auth: logged-in users get saved history, guests can still chat.
+    current_user: models.User | None = Depends(get_optional_user),
 ):
+    # None for guests, user id for logged-in users
+    uid = current_user.id if current_user else None
 
-    save_message(db, request.session_id, "user", request.message, user_id=current_user.id)
+    save_message(db, request.session_id, "user", request.message, user_id=uid)
 
     # Fetch history after saving, exclude the just-saved user message
-    all_records     = get_chat_history(db, request.session_id, limit=13, user_id=current_user.id)
+    all_records     = get_chat_history(db, request.session_id, limit=13, user_id=uid)
     history_records = all_records[:-1]
     chat_history    = [
         {"role": r.role, "content": r.content}
@@ -143,7 +146,7 @@ async def chat_message(
             else:
                 answer = "⚠️ AI service error. Please try again in a moment."
 
-    save_message(db, request.session_id, "assistant", answer, user_id=current_user.id)
+    save_message(db, request.session_id, "assistant", answer, user_id=uid)
 
     # ── TTS — generate audio for every assistant response ─────────────────
     # Detect language from the answer (more reliable than request language)
@@ -171,8 +174,12 @@ async def chat_message(
 async def get_history(
     session_id: str,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User | None = Depends(get_optional_user),
 ):
+    # Guests have no saved history
+    if not current_user:
+        return []
+
     # Only return messages belonging to this user's session
     records = get_chat_history(db, session_id, limit=50, user_id=current_user.id)
     return [
@@ -186,13 +193,17 @@ async def get_history(
 async def clear_history(
     session_id: str,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User | None = Depends(get_optional_user),
 ):
     from app.database.models import ChatMessage
-    # Only delete messages owned by this user — prevents clearing another user's history
-    db.query(ChatMessage).filter(
-        ChatMessage.session_id == session_id,
-        ChatMessage.user_id == current_user.id,
-    ).delete()
+
+    q = db.query(ChatMessage).filter(ChatMessage.session_id == session_id)
+    if current_user:
+        # Only delete messages owned by this user
+        q = q.filter(ChatMessage.user_id == current_user.id)
+    else:
+        # Guests can only clear guest (user_id NULL) messages
+        q = q.filter(ChatMessage.user_id.is_(None))
+    q.delete(synchronize_session=False)
     db.commit()
     return {"cleared": True}
