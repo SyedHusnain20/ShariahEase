@@ -16,6 +16,12 @@ import logging
 import re
 from enum import Enum
 
+from app.services.stock_price import (
+    format_quotes_context,
+    get_quotes_for_text,
+    mentions_global_company,
+)
+
 logger  = logging.getLogger(__name__)
 TIMEOUT = 10.0
 
@@ -254,6 +260,9 @@ def classify_for_search(text: str) -> SearchCategory:
     company, _ = lookup_shariah_status(text)
     if company:
         return SearchCategory.STOCK_PRICE
+    # A well-known foreign company or a $TICKER ("Is Apple halal?", "$TSLA")
+    if mentions_global_company(text):
+        return SearchCategory.STOCK_PRICE
     for s in _FINANCE_NEWS_SIGNALS:
         if s in lower: return SearchCategory.FINANCE_NEWS
     return SearchCategory.NONE
@@ -433,15 +442,19 @@ async def _extract_hadith_topic(user_message: str) -> str:
 # MAIN ENTRY POINT
 # ═══════════════════════════════════════════════════════════════════════════════
 
-async def get_web_context(user_message: str) -> tuple[str, bool]:
+async def get_web_context(user_message: str, include_quotes: bool = True) -> tuple[str, bool]:
     """
-    Called by chatbot router.
+    Called by the chatbot and the screener.
     Returns (context_string, did_search).
 
     For stock queries:
       1. Instantly returns Shariah status from local KMI database (no network)
-      2. Fetches live price from DDG in parallel
+      2. Fetches the live price from the price APIs (app/services/stock_price.py);
+         only if none answers does it fall back to scraping a web search.
       Both are merged into one context block.
+
+    include_quotes=False keeps the old web-search price lookup. The screener
+    uses it because it attaches the price to its result itself.
     """
     context_parts = []
 
@@ -469,17 +482,24 @@ async def get_web_context(user_message: str) -> tuple[str, bool]:
                 context_parts.append(web_ctx)
 
         else:
-            if search_cat == SearchCategory.STOCK_PRICE:
-                query = _build_price_query(user_message, company)
-            elif search_cat == SearchCategory.GOLD_SILVER:
-                query = "gold silver price Pakistan PKR today sarafa 2025"
-            else:
-                query = f"{user_message.strip()} Pakistan Islamic finance 2025"
+            quote_context = ""
+            if search_cat == SearchCategory.STOCK_PRICE and include_quotes:
+                quote_context = format_quotes_context(await get_quotes_for_text(user_message))
+                if quote_context:
+                    context_parts.append(quote_context)
 
-            results     = await web_search(query, max_results=4)
-            web_context = format_web_results(results, search_cat)
-            if web_context:
-                context_parts.append(web_context)
+            if not quote_context:    # no price API answered (or not a price question)
+                if search_cat == SearchCategory.STOCK_PRICE:
+                    query = _build_price_query(user_message, company)
+                elif search_cat == SearchCategory.GOLD_SILVER:
+                    query = "gold silver price Pakistan PKR today sarafa 2025"
+                else:
+                    query = f"{user_message.strip()} Pakistan Islamic finance 2025"
+
+                results     = await web_search(query, max_results=4)
+                web_context = format_web_results(results, search_cat)
+                if web_context:
+                    context_parts.append(web_context)
 
     full_context = "\n\n".join(context_parts)
     return full_context, bool(full_context)

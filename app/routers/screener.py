@@ -64,10 +64,15 @@ async def check_investment(
         explanation = parsed["reason"],
         user_id     = current_user.id,
     )
+    # The live price is shown with the result but not saved: it would be stale
+    # the next time the user opens their screening history.
+    explanation = parsed["reason"]
+    if parsed.get("price_line"):
+        explanation = f"{explanation} {parsed['price_line']}"
     return ScreenerResponse(
         query       = request.query,
         verdict     = parsed["verdict"],
-        explanation = parsed["reason"],
+        explanation = explanation,
         confidence  = parsed["confidence"],
     )
 

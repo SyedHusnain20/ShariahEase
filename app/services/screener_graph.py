@@ -4,16 +4,19 @@ ShariahEase — Investment screener as a LangGraph graph.
     START
       │
       ▼
-  kmi_lookup ──(HALAL / HARAM entry)──────────► rag ──┐
-      │                                               │
-      └─(no entry, or DOUBTFUL)──┬─► rag ────────────►├──► classify ─► enforce ─► END
-                                 └─► web ────────────►┘
+  kmi_lookup ──(HALAL / HARAM entry)──────────► rag ───┬─ quote ─┐
+      │                                                  │         │
+      └─(no entry, or DOUBTFUL)──┬─► rag ───────────────►├─ quote ─┼─► classify ─► enforce ─► END
+                                 └─► web ───────────────►┘         │
 
   kmi_lookup  local KMI database, instant, no network
   rag         FAISS knowledge-base context
   web         live web search (skipped when the KMI database already gives a
               definite HALAL/HARAM answer — the verdict can't change, and the
               search only added latency)
+  quote       live share price from the price APIs (PSX or foreign stocks).
+              Runs every time; it never affects the verdict, it is only shown
+              next to it.
   classify    one LLM call that writes the verdict, confidence and reason
   enforce     deterministic guard: a definite KMI entry always wins over the LLM
 
@@ -26,6 +29,7 @@ from typing import TypedDict
 
 from langgraph.graph import StateGraph, START, END
 
+from app.services.stock_price import format_price_line, get_quotes_for_query
 from app.services.web_search import lookup_shariah_status, format_shariah_context
 
 logger = logging.getLogger(__name__)
@@ -40,6 +44,7 @@ class ScreenerState(TypedDict, total=False):
     kmi_context: str
     rag_context: str
     web_context: str
+    quotes: list
     parsed: dict
 
 
@@ -54,7 +59,10 @@ def _build_rag_context(query: str) -> str:
 
 async def _get_web_context(query: str) -> str:
     from app.services.web_search import get_web_context
-    context, _ = await get_web_context(f"{query} halal shariah compliant investment")
+    # include_quotes=False: the price is added by the "quote" node instead.
+    context, _ = await get_web_context(
+        f"{query} halal shariah compliant investment", include_quotes=False
+    )
     return context
 
 
@@ -125,7 +133,7 @@ async def kmi_lookup(state: ScreenerState) -> dict:
 
 def route_after_kmi(state: ScreenerState) -> list[str]:
     # Returning two node names runs both of them in parallel.
-    return ["rag"] if is_definite(state.get("kmi_data")) else ["rag", "web"]
+    return ["rag", "quote"] if is_definite(state.get("kmi_data")) else ["rag", "web", "quote"]
 
 
 async def rag(state: ScreenerState) -> dict:
@@ -140,6 +148,15 @@ async def web(state: ScreenerState) -> dict:
         logger.warning("Screener web search failed: %s", exc)
         context = ""
     return {"web_context": context}
+
+
+async def quote(state: ScreenerState) -> dict:
+    try:
+        quotes = await get_quotes_for_query(state["query"])
+    except Exception as exc:  # a price is a nice-to-have, never a reason to fail
+        logger.warning("Screener quote lookup failed: %s", exc)
+        quotes = []
+    return {"quotes": quotes}
 
 
 async def classify(state: ScreenerState) -> dict:
@@ -163,6 +180,8 @@ async def enforce(state: ScreenerState) -> dict:
     parsed = enforce_kmi_verdict(
         state["parsed"], state.get("kmi_name"), state.get("kmi_data")
     )
+    quotes = state.get("quotes") or []
+    parsed = dict(parsed, price_line=format_price_line(quotes[0]) if quotes else "")
     return {"parsed": parsed}
 
 
@@ -173,15 +192,17 @@ def build_graph():
     g.add_node("kmi_lookup", kmi_lookup)
     g.add_node("rag", rag)
     g.add_node("web", web)
+    g.add_node("quote", quote)
     g.add_node("classify", classify)
     g.add_node("enforce", enforce)
 
     g.add_edge(START, "kmi_lookup")
-    g.add_conditional_edges("kmi_lookup", route_after_kmi, ["rag", "web"])
+    g.add_conditional_edges("kmi_lookup", route_after_kmi, ["rag", "web", "quote"])
     # Two separate edges (not a list): "classify" must also run when only
     # "rag" ran, which is the case for a definite KMI entry.
     g.add_edge("rag", "classify")
     g.add_edge("web", "classify")
+    g.add_edge("quote", "classify")
     g.add_edge("classify", "enforce")
     g.add_edge("enforce", END)
     return g.compile()
