@@ -17,6 +17,10 @@ groq==0.11.0
 openai==1.30.5
 PyMuPDF==1.24.11
 
+# Orchestration + tracing
+langgraph==1.2.16
+langsmith==0.14.12
+
 # Numerical / Charts data
 numpy==1.26.4
 pandas==2.2.3

@@ -5,9 +5,7 @@ from app.database.db import get_db
 from app.database.crud import save_screener_result, get_screener_history
 from app.database import models
 from app.models.schemas import ScreenerRequest, ScreenerResponse
-from app.services.rag_service import rag_service
-from app.services.llm_client import screen_investment
-from app.services.web_search import get_web_context, lookup_shariah_status, format_shariah_context
+from app.services.screener_graph import run_screener
 from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/screener", tags=["Screener"])
@@ -55,28 +53,9 @@ async def check_investment(
             confidence  = "N/A",
         )
 
-    # ── Layer 1: Instant local KMI database lookup ────────────────────────────
-    company, shariah_data = lookup_shariah_status(request.query)
-    kmi_context = ""
-    if shariah_data:
-        kmi_context = format_shariah_context(company, shariah_data)
-
-    # ── Layer 2: RAG knowledge base ───────────────────────────────────────────
-    rag_context = rag_service.build_context(
-        f"halal haram shariah screening {request.query}",
-        top_k=5,
-    )
-
-    # ── Layer 3: Live web search (PSX price, crypto status, news) ────────────
-    # Augment query with investment intent so classify_for_search triggers
-    augmented_query = f"{request.query} halal shariah compliant investment"
-    web_context, did_search = await get_web_context(augmented_query)
-
-    # ── Merge all context: KMI db (highest priority) > web > RAG ─────────────
-    context_parts = [p for p in [kmi_context, web_context, rag_context] if p]
-    full_context  = "\n\n".join(context_parts)
-
-    parsed = screen_investment(request.query, full_context, has_kmi_data=bool(shariah_data))
+    # KMI lookup, RAG, live web search, the LLM call and the KMI verdict guard
+    # all live in app/services/screener_graph.py.
+    parsed = await run_screener(request.query)
 
     save_screener_result(
         db,

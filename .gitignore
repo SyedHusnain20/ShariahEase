@@ -1,5 +1,6 @@
 # Virtual environment
 venv/
+brag-output/
 
 # Environment variables (never push API keys)
 .env
@@ -21,3 +22,5 @@ certificates/*.pdf
 # OS files
 .DS_Store
 Thumbs.db
+
+.agents/

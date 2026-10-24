@@ -109,19 +109,54 @@ KMI_SHARIAH_DB: dict[str, dict] = {
 }
 
 
+# Bank and insurer keys name a *listed company*. If the query is really about a
+# product (an Islamic fund, a sukuk, a savings account), matching the issuer's
+# name would return the issuer's verdict for the wrong thing — e.g. "MCB Islamic
+# Fund" must not be answered with the verdict for MCB Bank. Those queries fall
+# through to the RAG + LLM path instead.
+_ISSUER_SECTORS = {"Banking", "Insurance"}
+_PRODUCT_WORDS = {
+    "fund", "funds", "islamic", "etf", "sukuk", "takaful", "certificate",
+    "certificates", "account", "accounts", "bond", "bonds", "saving",
+    "savings", "scheme",
+}
+
+_TERM_RE_CACHE: dict[str, "re.Pattern[str]"] = {}
+
+
+def _whole_word(term: str) -> "re.Pattern[str]":
+    """Compiled pattern matching `term` only when not embedded in a longer word."""
+    pat = _TERM_RE_CACHE.get(term)
+    if pat is None:
+        pat = re.compile(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])")
+        _TERM_RE_CACHE[term] = pat
+    return pat
+
+
 def lookup_shariah_status(text: str) -> tuple[str | None, dict | None]:
     """
-    Look up company in KMI database.
+    Look up a company in the KMI database.
     Returns (matched_name, data_dict) or (None, None).
+
+    Matching rules:
+      - whole words only, so "abl" does not match "reliable" and "ppl" does not
+        match "apple"
+      - company names and ticker symbols both count (e.g. "lucky cement", "LUCK")
+      - when several entries match, the longest matched term wins
+      - bank/insurer entries are skipped for product queries (see _PRODUCT_WORDS)
     """
     lower = text.lower()
+    is_product_query = bool(set(re.findall(r"[a-z0-9]+", lower)) & _PRODUCT_WORDS)
+
+    best: tuple[int, str, dict] | None = None
     for name, data in KMI_SHARIAH_DB.items():
-        if name in lower:
-            return name, data
-        # Also match by ticker symbol (e.g. "LUCK", "OGDC")
-        if data["ticker"].lower() in lower.split():
-            return name, data
-    return None, None
+        if is_product_query and data["sector"] in _ISSUER_SECTORS:
+            continue
+        for term in (name, data["ticker"].lower()):
+            if _whole_word(term).search(lower) and (best is None or len(term) > best[0]):
+                best = (len(term), name, data)
+
+    return (best[1], best[2]) if best else (None, None)
 
 
 def format_shariah_context(company_name: str, data: dict) -> str:

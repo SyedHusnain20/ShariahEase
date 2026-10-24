@@ -16,6 +16,7 @@ import logging
 from groq import Groq, APIConnectionError, RateLimitError, APIStatusError
 from dotenv import load_dotenv
 from app.services.urdu_filter import filter_response
+from app.services.tracing import traceable
 
 # ── Logging ────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
@@ -497,6 +498,7 @@ def _is_nisab_question(text: str) -> bool:
 # MAIN CHAT FUNCTION
 # ═══════════════════════════════════════════════════════════════════════════
 
+@traceable(name="get_chat_response", run_type="chain", tags=["chat"])
 def get_chat_response(
     user_message: str,
     context: str = "",
@@ -655,6 +657,7 @@ def _error_message(error: Exception, lang: str) -> str:
 # INVESTMENT SCREENER
 # ═══════════════════════════════════════════════════════════════════════════
 
+@traceable(name="screen_investment", run_type="chain", tags=["screener"])
 def screen_investment(query: str, context: str, has_kmi_data: bool = False) -> dict:
     """
     Shariah compliance screener.
