@@ -6,76 +6,12 @@ from app.database.db import get_db
 from app.database.crud import save_message, get_chat_history
 from app.database import models
 from app.models.schemas import ChatRequest, ChatResponse
-from app.services.rag_service import rag_service
-from app.services.llm_client import get_chat_response, detect_language
+from app.services.chat_graph import run_chat
+from app.services.llm_client import detect_language
 from app.services.tts_service import text_to_speech_bytes
-from app.services.metal_price import get_nisab_values
-from app.services.web_search import get_web_context
 from app.dependencies import get_optional_user
 
 router = APIRouter(prefix="/chat", tags=["Chatbot"])
-
-# ── Nisab detection ────────────────────────────────────────────────────────
-# Only queries specifically about thresholds/prices trigger live Nisab injection.
-# General "zakat" questions must NOT be in this list — they get answered from RAG.
-NISAB_KEYWORDS = [
-    "نصاب", "nisab", "nisaab",
-    "سونے کا نصاب", "چاندی کا نصاب",
-    "gold nisab", "silver nisab",
-    "sone ka nisab", "chandi ka nisab",
-    "زکوٰۃ کی حد", "zakat limit", "zakat threshold",
-    "how much gold", "how much silver",
-    "تولہ", "tola",
-]
-
-
-def is_nisab_question(text: str) -> bool:
-    t = text.lower()
-    return any(k.lower() in t for k in NISAB_KEYWORDS)
-
-
-async def get_live_nisab_block() -> tuple[str, dict]:
-    """Returns (formatted context string, raw data dict)"""
-    try:
-        data         = await get_nisab_values()
-        gold_nisab   = int(data["gold_nisab_pkr"])
-        silver_nisab = int(data["silver_nisab_pkr"])
-        gold_gram    = int(data["gold_per_gram_pkr"])
-        silver_gram  = int(data["silver_per_gram_pkr"])
-
-        block = f"""
-=== CURRENT LIVE NISAB DATA — USE THESE EXACT NUMBERS IN YOUR ANSWER ===
-Gold price today     : PKR {gold_gram:,} per gram
-Silver price today   : PKR {silver_gram:,} per gram
-
-Gold Nisab  (7.5 tola = 87.48 grams) : PKR {gold_nisab:,}
-Silver Nisab (52.5 tola = 612.36 grams): PKR {silver_nisab:,}
-
-Zakat rate  : 2.5% of all zakatable wealth above Nisab
-Data source : {data.get("source", "fallback")}
-
-INSTRUCTION: Structure your answer as:
-1. Brief definition of Nisab (1-2 sentences)
-2. Gold Nisab: 7.5 tola = 87.48 grams = PKR {gold_nisab:,} TODAY
-3. Silver Nisab: 52.5 tola = 612.36 grams = PKR {silver_nisab:,} TODAY
-4. Zakat rate: 2.5%
-5. One-line disclaimer that prices change daily
-DO NOT say "check another website" — all data is provided above.
-=== END LIVE NISAB DATA ===
-""".strip()
-        return block, data
-
-    except Exception:
-        block = """
-=== NISAB DATA (APPROXIMATE — LIVE PRICE UNAVAILABLE) ===
-Gold Nisab  (7.5 tola = 87.48 grams) : approximately PKR 18,00,000 to PKR 20,00,000
-Silver Nisab (52.5 tola = 612.36 grams): approximately PKR 1,50,000 to PKR 2,00,000
-Zakat rate: 2.5%
-Note: Live prices temporarily unavailable. Figures are approximate.
-=== END NISAB DATA ===
-""".strip()
-        return block, {}
-
 
 @router.post("/message", response_model=ChatResponse)
 async def chat_message(
@@ -97,54 +33,11 @@ async def chat_message(
         for r in history_records
     ]
 
-    rag_context = rag_service.build_context(request.message, top_k=5)
-
-    # ── Web search agent ───────────────────────────────────────────────────
-    # Runs in parallel with RAG. Triggered for: Quran/Hadith queries,
-    # PSX stock data, Islamic finance news, live gold/silver prices.
-    # Returns empty string if the query doesn't need live data.
-    web_context, did_search = await get_web_context(request.message)
-
-    # ── Context assembly ───────────────────────────────────────────────────
-    # Priority: Live Nisab > Web search results > RAG knowledge base
-    context_parts = []
-
-    if is_nisab_question(request.message):
-        nisab_block, _ = await get_live_nisab_block()
-        context_parts.append(nisab_block)
-
-    if web_context:
-        context_parts.append(web_context)
-
-    context_parts.append(rag_context)
-    full_context = "\n\n".join(filter(None, context_parts))
-
-    sources = rag_service.search(request.message, top_k=3)
-    source_names = list({
-        s["source"].replace("_", " ").replace(".txt", "").title()
-        for s in sources
-    })
-
-    if not rag_service.is_ready:
-        answer = "Knowledge base not loaded. Please run: python knowledge_base/build_index.py"
-    else:
-        try:
-            answer = get_chat_response(
-                user_message     = request.message,
-                context          = full_context,
-                chat_history     = chat_history,
-                is_nisab_related = is_nisab_question(request.message),
-            )
-        except Exception as e:
-            err = str(e).lower()
-            if "connection" in err or "network" in err:
-                answer = "⚠️ Could not reach the AI server. Please check your internet connection."
-            elif "401" in err or "authentication" in err:
-                answer = "⚠️ API key is invalid. Please check your .env file."
-            elif "429" in err or "rate_limit" in err:
-                answer = "⚠️ Too many requests. Please wait 30 seconds and try again."
-            else:
-                answer = "⚠️ AI service error. Please try again in a moment."
+    # Language guard, retrieval (RAG + web + live Nisab), generation and the
+    # answer checks all live in app/services/chat_graph.py.
+    result       = await run_chat(request.message, chat_history)
+    answer       = result["answer"]
+    source_names = result["sources"]
 
     save_message(db, request.session_id, "assistant", answer, user_id=uid)
 

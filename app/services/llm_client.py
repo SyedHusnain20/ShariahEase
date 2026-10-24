@@ -498,12 +498,35 @@ def _is_nisab_question(text: str) -> bool:
 # MAIN CHAT FUNCTION
 # ═══════════════════════════════════════════════════════════════════════════
 
+def should_refuse(user_message: str, chat_history: list | None = None) -> bool:
+    """
+    True when the message is off-topic and should get the standard refusal.
+
+    A message that looks off-topic on its own is still allowed when the recent
+    assistant replies were about Islamic finance — "Give me the verses with
+    English translation" is a follow-up, not a new topic.
+    """
+    if not is_off_topic(user_message):
+        return False
+    recent_context = " ".join(
+        msg.get("content", "")
+        for msg in (chat_history or [])[-6:]
+        if msg.get("role") == "assistant"
+    )
+    if recent_context and not is_off_topic(recent_context):
+        logger.info("Follow-up allowed based on conversation context")
+        return False
+    logger.info("Off-topic question blocked: %s", user_message[:80])
+    return True
+
+
 @traceable(name="get_chat_response", run_type="chain", tags=["chat"])
 def get_chat_response(
     user_message: str,
     context: str = "",
     chat_history: list = None,
     is_nisab_related: bool = False,
+    correction: str = "",
 ) -> str:
     """
     Core chat function.
@@ -532,19 +555,8 @@ def get_chat_response(
     # recent conversation was about an Islamic finance topic.
     # "Give me the verses with English translation" is a follow-up
     # to the previous Quran/Zakat answer — it should never be blocked.
-    if is_off_topic(user_message):
-        # Check last 3 assistant messages for Islamic finance content
-        recent_context = " ".join(
-            msg.get("content", "")
-            for msg in chat_history[-6:]
-            if msg.get("role") == "assistant"
-        )
-        # If recent conversation had Islamic finance content, allow follow-up
-        if recent_context and not is_off_topic(recent_context):
-            logger.info("Follow-up allowed based on conversation context")
-        else:
-            logger.info("Off-topic question blocked: %s", user_message[:80])
-            return off_topic_refusal(lang)
+    if should_refuse(user_message, chat_history):
+        return off_topic_refusal(lang)
 
     # ── Per-query instruction (injected into user turn) ────
     instruction = _build_language_instruction(lang, nisab_flag)
@@ -557,7 +569,8 @@ def get_chat_response(
         f"{context}\n"
         f"--- END CONTEXT ---\n\n"
         f"{instruction}\n\n"
-        f"Question: {user_message}"
+        + (f"CORRECTION: {correction}\n\n" if correction else "")
+        + f"Question: {user_message}"
     )
 
     # ── Message list ───────────────────────────────────────
@@ -695,8 +708,17 @@ def screen_investment(query: str, context: str, has_kmi_data: bool = False) -> d
         "- For cryptocurrency: Bitcoin/Ethereum are DOUBTFUL (scholarly debate exists); "
         "  meme coins and gambling tokens are HARAM\n"
         "- For mutual funds: Islamic funds with Shariah supervisory board = HALAL; conventional = HARAM\n"
-        "- For PSX stocks not in KMI: screen by sector (tobacco/alcohol/conventional banking = HARAM, "
-        "  manufacturing/tech/pharma = likely HALAL pending debt ratio check)\n"
+        "- For any stock NOT in the KMI database (PSX or foreign, e.g. Apple): a sector check alone "
+        "  can never make a stock HALAL, because Shariah screening also depends on debt, "
+        "  interest-income and liquidity ratios that you do not have. "
+        "  If the core business is prohibited (tobacco, alcohol, conventional banking or insurance, "
+        "  gambling, adult content) the verdict is HARAM. "
+        "  Otherwise the verdict is DOUBTFUL: say the business activity appears permissible, that the "
+        "  financial ratios could not be verified, and what to check (the KMI list for PSX stocks, a "
+        "  recognised Shariah screening authority for foreign stocks). "
+        "  CONFIDENCE for these must be MEDIUM or LOW, never HIGH. "
+        "  Only give HALAL for such a stock if the context contains an explicit Shariah-compliance "
+        "  statement from an authoritative source for that specific company.\n"
         "- NEVER say 'check another website' or 'I cannot determine' when context provides data\n\n"
         "Respond in this EXACT format with no extra text:\n"
         "VERDICT: [HALAL / HARAM / DOUBTFUL]\n"

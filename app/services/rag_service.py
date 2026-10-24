@@ -62,8 +62,9 @@ class RAGService:
             })
         return results
 
-    def build_context(self, query: str, top_k: int = 5) -> str:
-        chunks = self.search(query, top_k=top_k)
+    @staticmethod
+    def format_context(chunks: list) -> str:
+        """Turn search() results into the context block given to the LLM."""
         if not chunks:
             return "No relevant information found in the knowledge base."
         parts = []
@@ -71,6 +72,9 @@ class RAGService:
             source = chunk["source"].replace("_", " ").replace(".txt", "")
             parts.append(f"[Source {i}: {source}]\n{chunk['text']}")
         return "\n\n".join(parts)
+
+    def build_context(self, query: str, top_k: int = 5) -> str:
+        return self.format_context(self.search(query, top_k=top_k))
 
     @property
     def is_ready(self) -> bool:
