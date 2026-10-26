@@ -4,8 +4,12 @@ ShariahEase — live stock prices from free sources.
 No single free API covers both PSX and foreign stocks, so each market gets a
 chain of sources and the first one that answers wins:
 
-    PSX     1. PSX's own data portal   dps.psx.com.pk   (no key)
-            2. Yahoo Finance chart     "<SYMBOL>.KA"     (no key)
+    PSX     1. PSX's own trading board dps.psx.com.pk   (no key; needs the
+                                                         X-Req-Id token PSX
+                                                         embeds in its homepage)
+            2. Yahoo Finance chart     "<SYMBOL>.KA"     (no key; its PSX data
+                                                         is often months old,
+                                                         so old quotes are dropped)
     GLOBAL  1. Finnhub                 only if FINNHUB_API_KEY is set; free
                                        plan covers US-listed stocks only
             2. Yahoo Finance chart     (no key)
@@ -14,7 +18,11 @@ Things to know before relying on this:
   * Yahoo's endpoint is unofficial. It works without a key but is sometimes
     rate-limited (HTTP 429), especially from shared cloud IPs such as
     Hugging Face Spaces. A free Finnhub key makes US quotes much more reliable.
-  * The PSX portal is PSX's public website data, not a documented API.
+  * The PSX trading board is PSX's public website data, not a documented API.
+    Since 24 Sep 2026 PSX refuses data requests that lack the X-Req-Id token
+    (details found in the open-source psxdata project, issue #161).
+  * A price older than MAX_AGE_DAYS is never used: Yahoo has served a
+    15-month-old "current" price for Pakistani stocks.
   * Free sources are for personal / non-commercial use; check each provider's
     terms before using the data in a paid product.
   * Prices can be delayed and the market may be closed, so every quote
@@ -35,7 +43,8 @@ import os
 import re
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from html import unescape
 from urllib.parse import quote as _urlquote
 
 import httpx
@@ -46,6 +55,13 @@ TIMEOUT      = 6.0    # seconds per provider call
 QUOTE_TTL    = 60     # seconds a good quote is reused (protects free-tier limits)
 FAIL_TTL     = 30     # seconds before retrying a symbol every provider failed on
 MAX_SYMBOLS  = 3      # quotes fetched for one message
+MAX_AGE      = timedelta(days=10)   # longer than any PSX holiday closure + weekends
+
+PSX_BASE         = "https://dps.psx.com.pk"
+PSX_TOKEN_HEADER = "X-Req-Id"
+PSX_TOKEN_TTL    = 240    # PSX rotates the token about every 5 minutes
+PSX_TOKEN_RETRY  = 60     # seconds before trying again after a failed token fetch
+PSX_BOARD_TTL    = 60     # the whole board is fetched once and shared by all symbols
 
 PSX    = "PSX"
 GLOBAL = "GLOBAL"
@@ -126,30 +142,77 @@ def _utc(epoch) -> datetime | None:
 # PARSERS  (pure functions — unit-tested without a network)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def parse_psx_timeseries(payload, symbol: str) -> Quote | None:
-    """
-    dps.psx.com.pk/timeseries/int/<SYMBOL>
-        {"status": 1, "message": "", "data": [[<epoch>, <price>, <volume>], ...]}
-    Order is not assumed: the row with the latest timestamp is the quote.
-    """
-    rows = payload.get("data") if isinstance(payload, dict) else None
-    if not isinstance(rows, list):
-        return None
+_ROW_RE   = re.compile(r"<tr[^>]*>(.*?)</tr>", re.S | re.I)
+_HEAD_RE  = re.compile(r"<th[^>]*>(.*?)</th>", re.S | re.I)
+_CELL_RE  = re.compile(r"<td([^>]*)>(.*?)</td>", re.S | re.I)
+_ORDER_RE = re.compile(r'data-order="([^"]*)"')
+_TAG_RE   = re.compile(r"<[^>]+>")
 
-    latest: tuple[float, float] | None = None
-    for row in rows:
-        if not isinstance(row, (list, tuple)) or len(row) < 2:
+
+def _cell_text(attrs: str, inner: str) -> str:
+    """A cell's raw value: PSX puts the unformatted number in data-order."""
+    match = _ORDER_RE.search(attrs)
+    if match:
+        return unescape(match.group(1)).strip()
+    return unescape(_TAG_RE.sub("", inner)).strip()
+
+
+def parse_psx_trading_board(html) -> dict[str, Quote]:
+    """
+    dps.psx.com.pk/trading-board/REG/main  ->  an HTML table of every listed stock:
+
+        SYMBOL | NAME | BID VOL. | BID PRICE | OFFER VOL. | OFFER PRICE | LDCP | CHANGE | VOLUME
+
+    The board has no "current price" column. CHANGE is signed and measured from
+    LDCP (last day's closing price), so the latest price is LDCP + CHANGE
+    (checked against real rows, e.g. LUCK 382.12 + 38.21 = 420.33, the 10% upper
+    limit). If PSX ever adds a CURRENT column, that is used instead.
+    Columns are found by header name, not position. The table carries no
+    timestamp, so as_of is None.
+    """
+    if not isinstance(html, str):
+        return {}
+
+    columns: dict[str, int] = {}
+    quotes: dict[str, Quote] = {}
+    for row in _ROW_RE.findall(html):
+        headers = [unescape(_TAG_RE.sub("", h)).strip().lower() for h in _HEAD_RE.findall(row)]
+        if headers:
+            columns = {h.rstrip("."): i for i, h in enumerate(headers)}
             continue
-        stamp, price = _num(row[0]), _num(row[1])
-        if stamp and price and price > 0 and (latest is None or stamp > latest[0]):
-            latest = (stamp, price)
-    if latest is None:
-        return None
+        if "symbol" not in columns:
+            continue    # a row before any header: not our table
 
-    return Quote(
-        symbol=symbol, market=PSX, price=latest[1], currency="PKR",
-        source="PSX data portal", as_of=_utc(latest[0]),
-    )
+        cells = [_cell_text(a, i) for a, i in _CELL_RE.findall(row)]
+        try:
+            symbol = cells[columns["symbol"]].upper()
+        except IndexError:
+            continue
+        if not _SYMBOL_RE.match(symbol):
+            continue
+
+        price = change = ldcp = None
+        if "current" in columns and columns["current"] < len(cells):
+            price = _num(cells[columns["current"]].replace(",", ""))
+        if "ldcp" in columns and columns["ldcp"] < len(cells):
+            ldcp = _num(cells[columns["ldcp"]].replace(",", ""))
+        if "change" in columns and columns["change"] < len(cells):
+            change = _num(cells[columns["change"]].replace(",", ""))
+        if price is None and ldcp is not None and change is not None:
+            price = round(ldcp + change, 2)
+        if not price or price <= 0:
+            continue
+
+        name = ""
+        if "name" in columns and columns["name"] < len(cells):
+            name = cells[columns["name"]]
+        pct = change / ldcp * 100 if (change is not None and ldcp) else None
+        quotes[symbol] = Quote(
+            symbol=symbol, market=PSX, price=price, currency="PKR",
+            source="PSX trading board", as_of=None,
+            change=change, change_pct=pct, name=name,
+        )
+    return quotes
 
 
 def parse_yahoo_chart(payload, symbol: str, market: str) -> Quote | None:
@@ -205,18 +268,90 @@ def parse_finnhub_quote(payload, symbol: str) -> Quote | None:
 # PROVIDERS  (each returns a Quote or None, never raises)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-async def _psx_portal(symbol: str) -> Quote | None:
+# PSX's data requests need an X-Req-Id token that is embedded in its homepage as
+#   window.__ps = {"lc":"en","tz":"Asia/Karachi","_k":"<token>","rv":"1"};
+_PS_SCRIPT_RE = re.compile(r"window\.__ps\s*=\s*(\{.*?\})\s*(?:;|</script>)", re.S)
+_PS_TOKEN_RE  = re.compile(r"^[A-Za-z0-9_-]{16,}$")
+
+_psx_token: tuple[str, float] | None = None     # (token, fetched at monotonic time)
+_psx_token_failed_at: float | None = None
+_psx_board: tuple[float, dict[str, Quote]] | None = None   # (expires at, quotes)
+
+
+def extract_psx_token(html) -> str | None:
+    """The window.__ps._k token from a PSX HTML page, or None."""
+    import json
+    match = _PS_SCRIPT_RE.search(html) if isinstance(html, str) else None
+    if not match:
+        return None
     try:
-        payload = await _get_json(
-            f"https://dps.psx.com.pk/timeseries/int/{_urlquote(symbol)}",
-            headers={"Referer": "https://dps.psx.com.pk/"},
-        )
-        quote = parse_psx_timeseries(payload, symbol)
+        payload = json.loads(match.group(1))
+    except ValueError:
+        return None
+    token = payload.get("_k") if isinstance(payload, dict) else None
+    return token if isinstance(token, str) and _PS_TOKEN_RE.fullmatch(token) else None
+
+
+async def _get_psx_token(force: bool = False) -> str | None:
+    """A current token, or None (then requests are sent without it, as psxdata does)."""
+    global _psx_token, _psx_token_failed_at
+    now = time.monotonic()
+    if not force and _psx_token and now - _psx_token[1] < PSX_TOKEN_TTL:
+        return _psx_token[0]
+    if _psx_token_failed_at is not None and now - _psx_token_failed_at < PSX_TOKEN_RETRY:
+        return None
+    try:
+        async with _client() as client:
+            response = await client.get(PSX_BASE + "/", headers={"Accept": "text/html,*/*"})
+        response.raise_for_status()
+        token = extract_psx_token(response.text)
+    except Exception as exc:
+        logger.warning("PSX token fetch failed: %s", _describe(exc))
+        token = None
+    if token:
+        _psx_token, _psx_token_failed_at = (token, time.monotonic()), None
+        return token
+    if token is None:
+        logger.warning("PSX homepage had no usable X-Req-Id token")
+    _psx_token_failed_at = time.monotonic()
+    return None
+
+
+async def _fetch_psx_board() -> dict[str, Quote]:
+    """The whole PSX trading board (one request serves every PSX symbol)."""
+    global _psx_token
+    url = f"{PSX_BASE}/trading-board/REG/main"
+    for attempt in (1, 2):
+        headers = {"Referer": PSX_BASE + "/", "X-Requested-With": "XMLHttpRequest",
+                   "Accept": "text/html,*/*"}
+        token = await _get_psx_token(force=(attempt == 2))
+        if token:
+            headers[PSX_TOKEN_HEADER] = token
+        async with _client() as client:
+            response = await client.get(url, headers=headers)
+        if response.status_code == 403 and attempt == 1:
+            _psx_token = None            # rejected: fetch a fresh token and retry once
+            continue
+        response.raise_for_status()
+        return parse_psx_trading_board(response.text)
+    return {}
+
+
+async def _psx_portal(symbol: str) -> Quote | None:
+    global _psx_board
+    try:
+        if _psx_board is None or _psx_board[0] <= time.monotonic():
+            board = await _fetch_psx_board()
+            if not board:
+                logger.warning("PSX trading board: no rows parsed (page format changed?)")
+                return None
+            _psx_board = (time.monotonic() + PSX_BOARD_TTL, board)
+        quote = _psx_board[1].get(symbol)
         if quote is None:
-            logger.warning("PSX portal: no usable price for %s (format changed or symbol unknown)", symbol)
+            logger.warning("PSX trading board: %s not found", symbol)
         return quote
     except Exception as exc:
-        logger.warning("PSX portal failed for %s: %s", symbol, _describe(exc))
+        logger.warning("PSX trading board failed for %s: %s", symbol, _describe(exc))
         return None
 
 
@@ -267,6 +402,10 @@ def _chain(market: str):
 _cache: dict[tuple[str, str], tuple[float, Quote | None]] = {}
 
 
+def _is_stale(quote: Quote) -> bool:
+    return quote.as_of is not None and datetime.now(timezone.utc) - quote.as_of > MAX_AGE
+
+
 async def get_quote(symbol: str, market: str) -> Quote | None:
     symbol = symbol.strip().upper()
     if not _SYMBOL_RE.match(symbol):
@@ -279,6 +418,12 @@ async def get_quote(symbol: str, market: str) -> Quote | None:
 
     for provider in _chain(market):
         quote = await provider(symbol)
+        if quote and _is_stale(quote):
+            logger.warning(
+                "%s price for %s is from %s, too old to call current; ignoring it",
+                quote.source, symbol, quote.as_of.strftime("%Y-%m-%d"),
+            )
+            continue
         if quote:
             _cache[key] = (time.monotonic() + QUOTE_TTL, quote)
             return quote
@@ -416,7 +561,13 @@ async def get_quotes_for_query(query: str) -> list[Quote]:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _when(quote: Quote) -> str:
-    return quote.as_of.strftime("%d %b %Y %H:%M UTC") if quote.as_of else "time not available"
+    """When the price is from, as a phrase that reads on its own."""
+    if quote.as_of is None:
+        return "latest traded price, time not provided by the source"
+    text = "as of " + quote.as_of.strftime("%d %b %Y %H:%M UTC")
+    if datetime.now(timezone.utc) - quote.as_of > timedelta(days=2):
+        text += " (last available price; the market has been closed since)"
+    return text
 
 
 def _move(quote: Quote) -> str:
@@ -435,7 +586,7 @@ def format_quotes_context(quotes: list[Quote]) -> str:
         parts = [f"{label}: {q.currency} {q.price:,.2f}"]
         if _move(q):
             parts.append(f"change {_move(q)}")
-        parts.append(f"as of {_when(q)}")
+        parts.append(_when(q))
         parts.append(f"source: {q.source}")
         lines.append(" | ".join(parts))
     lines += [
@@ -453,7 +604,7 @@ def format_price_line(quote: Quote) -> str:
     move = f", {_move(quote)}" if _move(quote) else ""
     return (
         f"Latest price: {quote.symbol} {quote.currency} {quote.price:,.2f}{move} "
-        f"(as of {_when(quote)}, {quote.source}; may be delayed)."
+        f"({_when(quote)}; {quote.source}; may be delayed)."
     )
 
 

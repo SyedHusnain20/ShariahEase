@@ -28,6 +28,12 @@ def no_real_price_requests(monkeypatch):
         lambda: httpx.AsyncClient(transport=httpx.MockTransport(offline)),
     )
     monkeypatch.delenv("FINNHUB_API_KEY", raising=False)
-    stock_price._cache.clear()
+    def reset():
+        stock_price._cache.clear()
+        stock_price._psx_token = None
+        stock_price._psx_token_failed_at = None
+        stock_price._psx_board = None
+
+    reset()
     yield
-    stock_price._cache.clear()
+    reset()

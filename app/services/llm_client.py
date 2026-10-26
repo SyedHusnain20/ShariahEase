@@ -11,11 +11,13 @@ Enforces:
 """
 
 import os
+import re
 import time
 import logging
 from groq import Groq, APIConnectionError, RateLimitError, APIStatusError
 from dotenv import load_dotenv
 from app.services.urdu_filter import filter_response
+from app.services.stock_price import resolve_symbols
 from app.services.tracing import traceable
 
 # ── Logging ────────────────────────────────────────────────
@@ -92,6 +94,10 @@ You ONLY answer questions about:
   • Sadaqah, Waqf, and other Islamic charitable giving
   • Financial rulings from Islamic jurisprudence (fiqh al-muamalat)
   • Pakistani financial markets evaluated through a Shariah lens
+  • The current price of a listed company (PSX or foreign) when a LIVE STOCK QUOTES
+    block is in the context: state the price exactly with its currency, time and
+    source, then give the company's Shariah status if the context has one;
+    otherwise say its Shariah compliance has not been verified here.
 
 If the user asks ANYTHING outside these topics — science, history, medicine,
 technology, general knowledge, coding, sports, entertainment, politics,
@@ -329,16 +335,12 @@ _CAPABILITY_SIGNALS = {
     "تم کیا", "آپ کیا", "کیا آپ", "search kar", "internet par",
 }
 
-# ── Short follow-up phrases — continuation of prior Islamic topic ──────────────
-# These alone are ambiguous, but when very short (≤ 5 words) they are almost
-# always follow-ups to the previous message in a chat context.
-_FOLLOWUP_SIGNALS = {
-    "give me", "show me", "tell me", "explain", "more", "details",
-    "with translation", "in english", "in urdu", "in roman urdu",
-    "translate", "again", "yes", "ok", "okay", "sure", "please",
-    "continue", "go on", "next", "and", "also", "what about",
-    "batao", "bata do", "aur", "theek hai", "haan", "ji haan",
-}
+# Words that, together with a recognised company, make a message a price question.
+# "prize" is here because it is a very common misspelling of "price".
+_STOCK_WORDS = frozenset({
+    "price", "prices", "prize", "stock", "stocks", "share", "shares",
+    "quote", "trading", "worth", "rate", "value",
+})
 
 
 def is_off_topic(text: str) -> bool:
@@ -349,14 +351,13 @@ def is_off_topic(text: str) -> bool:
     - Urdu/Arabic script  → assumed Islamic context
     - Greeting words      → LLM handles with scoped welcome
     - Capability/meta Qs → LLM explains what it can do
-    - Short follow-ups    → continuation of prior conversation
+    - A price question about a recognised company
     - Islamic finance signal words present
     """
     if not text or not text.strip():
         return False
 
     lower = text.lower().strip()
-    words = lower.split()
 
     # 1. Urdu/Arabic script — let through
     urdu_chars = sum(1 for c in text if '؀' <= c <= 'ۿ')
@@ -373,17 +374,19 @@ def is_off_topic(text: str) -> bool:
         if sig in lower:
             return False
 
-    # 4. Short follow-up messages (≤6 words) — let through
-    # These are continuations of a prior Islamic-finance topic in chat context
-    if len(words) <= 6:
-        for sig in _FOLLOWUP_SIGNALS:
-            if sig in lower:
-                return False
+    # (Short follow-ups such as "give me more details" are not passed here: on
+    #  their own they say nothing about the topic. should_refuse() allows them
+    #  when the conversation so far really was about Islamic finance.)
 
     # 5. Islamic finance signal words — let through
     for signal in _ISLAMIC_FINANCE_SIGNALS:
         if signal in lower:
             return False
+
+    # 6. A price question about an identifiable company ("price of Apple stock",
+    #    "Lucky Cement share price") — answered from the live quote in context.
+    if _STOCK_WORDS & set(re.findall(r"[a-z0-9]+", lower)) and resolve_symbols(text):
+        return False
 
     logger.info("Off-topic guard blocked: %s", text[:100])
     return True
@@ -498,6 +501,21 @@ def _is_nisab_question(text: str) -> bool:
 # MAIN CHAT FUNCTION
 # ═══════════════════════════════════════════════════════════════════════════
 
+# The refusal itself mentions "Zakat" and "Islamic banking", so it would pass the
+# topic check and unlock every later question ("explain photosynthesis" right
+# after a refusal got through). Refusals and error messages never count.
+_REFUSAL_MARKERS = (
+    "i can only assist with islamic finance",
+    "میں صرف اسلامی مالیات",
+    "main sirf islamic finance",
+)
+
+
+def _is_refusal_or_error(content: str) -> bool:
+    text = (content or "").strip().lower()
+    return text.startswith("⚠️") or any(marker in text for marker in _REFUSAL_MARKERS)
+
+
 def should_refuse(user_message: str, chat_history: list | None = None) -> bool:
     """
     True when the message is off-topic and should get the standard refusal.
@@ -511,7 +529,7 @@ def should_refuse(user_message: str, chat_history: list | None = None) -> bool:
     recent_context = " ".join(
         msg.get("content", "")
         for msg in (chat_history or [])[-6:]
-        if msg.get("role") == "assistant"
+        if msg.get("role") == "assistant" and not _is_refusal_or_error(msg.get("content", ""))
     )
     if recent_context and not is_off_topic(recent_context):
         logger.info("Follow-up allowed based on conversation context")
