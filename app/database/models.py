@@ -1,4 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean, ForeignKey
+from sqlalchemy import (
+    Column, Integer, BigInteger, String, Float, DateTime, Text, Boolean, ForeignKey,
+    JSON, Uuid, UniqueConstraint, CheckConstraint, text,
+)
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database.db import Base
@@ -14,6 +18,13 @@ class User(Base):
     language         = Column(String(10), default="en")
     created_at       = Column(DateTime(timezone=True), server_default=func.now())
 
+    # Added in Phase 0 (see alembic/versions/0002_phase0_platform.py)
+    timezone            = Column(String, nullable=False, server_default="Asia/Karachi")
+    token_version       = Column(Integer, nullable=False, server_default="0")   # bump = "log out everywhere"
+    is_admin            = Column(Boolean, nullable=False, server_default=text("false"))
+    email_verified_at   = Column(DateTime(timezone=True), nullable=True)
+    privacy_accepted_at = Column(DateTime(timezone=True), nullable=True)
+
     zakat_records    = relationship("ZakatRecord",     back_populates="user", cascade="all, delete-orphan")
     screener_history = relationship("ScreenerHistory", back_populates="user", cascade="all, delete-orphan")
     chat_messages    = relationship("ChatMessage",     back_populates="user", cascade="all, delete-orphan")
@@ -26,7 +37,7 @@ class ZakatRecord(Base):
     __tablename__ = "zakat_records"
 
     id              = Column(Integer, primary_key=True, index=True)
-    user_id         = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    user_id         = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     user_name       = Column(String(100), nullable=False)
 
     # Assets
@@ -62,7 +73,7 @@ class ScreenerHistory(Base):
     __tablename__ = "screener_history"
 
     id          = Column(Integer, primary_key=True, index=True)
-    user_id     = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    user_id     = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     query       = Column(String(300), nullable=False)
     verdict     = Column(String(20), nullable=False)
     explanation = Column(Text, nullable=True)
@@ -78,7 +89,7 @@ class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
     id         = Column(Integer, primary_key=True, index=True)
-    user_id    = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    user_id    = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     session_id = Column(String(100), nullable=False, index=True)
     role       = Column(String(20), nullable=False)
     content    = Column(Text, nullable=False)
@@ -86,3 +97,54 @@ class ChatMessage(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="chat_messages")
+
+
+# Primary key type that is BIGINT on Postgres but still autoincrements on SQLite
+# (a plain BigInteger primary key does not autoincrement on SQLite).
+BigPK = BigInteger().with_variant(Integer, "sqlite")
+
+
+class RefreshToken(Base):
+    """
+    One row per issued refresh token. Only the SHA-256 of the token is stored.
+    One login = one family. Presenting an already-rotated token revokes the family.
+    """
+    __tablename__ = "refresh_tokens"
+
+    id          = Column(BigPK, primary_key=True, autoincrement=True)
+    user_id     = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    family_id   = Column(Uuid, nullable=False, index=True)
+    token_hash  = Column(String(64), nullable=False, unique=True)
+    issued_at   = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    expires_at  = Column(DateTime(timezone=True), nullable=False)
+    revoked_at  = Column(DateTime(timezone=True), nullable=True)
+    replaced_by = Column(BigInteger, ForeignKey("refresh_tokens.id", ondelete="SET NULL"), nullable=True)
+
+
+class WebhookEvent(Base):
+    """Webhook intake and replay protection (WhatsApp now, billing later)."""
+    __tablename__ = "webhook_events"
+    __table_args__ = (
+        UniqueConstraint("provider", "event_id", name="uq_webhook_provider_event"),
+        CheckConstraint("status IN ('received','processed','failed','ignored')", name="ck_webhook_status"),
+    )
+
+    id              = Column(BigPK, primary_key=True, autoincrement=True)
+    provider        = Column(String, nullable=False)
+    event_id        = Column(String, nullable=False)
+    event_type      = Column(String, nullable=True)
+    signature_valid = Column(Boolean, nullable=False)
+    status          = Column(String, nullable=False, server_default="received")
+    payload         = Column(JSON().with_variant(JSONB, "postgresql"), nullable=True)      # stays NULL for WhatsApp: message text is personal data
+    attempts        = Column(Integer, nullable=False, server_default="0")
+    error           = Column(Text, nullable=True)
+    received_at     = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    processed_at    = Column(DateTime(timezone=True), nullable=True)
+
+
+class MaintenanceRun(Base):
+    """Throttle for opportunistic cleanup (there is no scheduler on a free host)."""
+    __tablename__ = "maintenance_runs"
+
+    name        = Column(String, primary_key=True)
+    last_run_at = Column(DateTime(timezone=True), nullable=False)

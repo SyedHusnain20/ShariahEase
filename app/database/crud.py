@@ -72,7 +72,13 @@ def get_screener_history(db: Session, user_id: int, limit: int = 10):
 # ── CHAT MESSAGES ─────────────────────────────────────────
 
 def save_message(db: Session, session_id: str, role: str, content: str, language: str = "en", user_id: int = None):
-    """Save a single chat message."""
+    """
+    Save a single chat message for a LOGGED-IN user.
+    Guest messages are never written to the database (user_id None is a no-op that returns None);
+    guests get short-lived in-memory context instead, see app/services/guest_memory.py.
+    """
+    if user_id is None:
+        return None
     msg = models.ChatMessage(
         user_id    = user_id,
         session_id = session_id,
@@ -89,12 +95,18 @@ def save_message(db: Session, session_id: str, role: str, content: str, language
 def get_chat_history(db: Session, session_id: str, limit: int = 20, user_id: int = None):
     """
     Get conversation history for a session — oldest first.
-    user_id is required in authenticated contexts to prevent session_id
-    enumeration (User A reading User B's chat by guessing their session_id).
+
+    History is ALWAYS scoped to the logged-in caller. Guests (user_id None) have no stored history,
+    so they get an empty list. Before the fix a guest call applied no user filter, so anyone who knew
+    or guessed a session_id could read a logged-in user's messages (they were also fed to the LLM).
     """
-    q = db.query(models.ChatMessage).filter(
-        models.ChatMessage.session_id == session_id
+    if user_id is None:
+        return []
+    owner = models.ChatMessage.user_id == user_id
+    return (
+        db.query(models.ChatMessage)
+        .filter(models.ChatMessage.session_id == session_id, owner)
+        .order_by(models.ChatMessage.created_at.asc(), models.ChatMessage.id.asc())
+        .limit(limit)
+        .all()
     )
-    if user_id is not None:
-        q = q.filter(models.ChatMessage.user_id == user_id)
-    return q.order_by(models.ChatMessage.created_at.asc()).limit(limit).all()

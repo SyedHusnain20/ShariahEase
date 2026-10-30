@@ -4,6 +4,7 @@ brag-output/
 
 # Environment variables (never push API keys)
 .env
+.env.example
 
 # Python cache
 __pycache__/

@@ -37,3 +37,81 @@ def no_real_price_requests(monkeypatch):
     reset()
     yield
     reset()
+
+
+# ── Phase 0: database and HTTP fixtures (offline: in-memory SQLite) ────────────
+
+@pytest.fixture
+def db_engine():
+    """In-memory SQLite built by the real Alembic migrations, foreign keys ON (like Postgres)."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.pool import StaticPool
+    from app.database.db import enable_sqlite_foreign_keys
+    from app.database.migrate import upgrade_to_head
+
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    enable_sqlite_foreign_keys(engine)
+    upgrade_to_head(engine)
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture
+def db_session(db_engine):
+    from sqlalchemy.orm import sessionmaker
+    session = sessionmaker(bind=db_engine, autoflush=False, autocommit=False)()
+    yield session
+    session.close()
+
+
+@pytest.fixture
+def client(db_engine):
+    """A FastAPI app with the auth, chat and webhook routers on the test database."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from sqlalchemy.orm import sessionmaker
+    from app.database.db import get_db
+    from app.routers import auth, chatbot, webhook
+
+    app = FastAPI()
+    for r in (auth.router, chatbot.router, webhook.router):
+        app.include_router(r)
+    Session = sessionmaker(bind=db_engine, autoflush=False, autocommit=False)
+
+    def _get_db():
+        db = Session()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = _get_db
+    with TestClient(app) as c:
+        c.session_factory = Session
+        yield c
+
+
+def signup(client, email="a@example.com", name="Amina", password="secret123"):
+    r = client.post("/auth/signup", json={"name": name, "email": email, "password": password})
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+@pytest.fixture
+def pg_test_url():
+    """
+    URL of a THROWAWAY Postgres database for the `pg` tests (DATABASE_URL_TEST).
+    These tests wipe the public schema, so the database name must contain "test":
+    this stops a copy-paste of the production URL from erasing real data.
+    """
+    import os
+    from sqlalchemy.engine import make_url
+    raw = os.getenv("DATABASE_URL_TEST")
+    if not raw:
+        pytest.skip("DATABASE_URL_TEST not set")
+    if raw.startswith(("postgres://", "postgresql://")):
+        raw = "postgresql+psycopg://" + raw.split("://", 1)[1]
+    name = (make_url(raw).database or "").lower()
+    if "test" not in name:
+        pytest.fail(f"Refusing to wipe database {name!r}: DATABASE_URL_TEST must name a throwaway database containing 'test'.")
+    return raw

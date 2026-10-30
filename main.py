@@ -1,10 +1,10 @@
-from fastapi import FastAPI, Query, Request, HTTPException
-from fastapi.responses import PlainTextResponse, JSONResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
 from dotenv import load_dotenv
-import os, time, logging, hmac, hashlib
+import os, time, logging
 from collections import defaultdict
 
 load_dotenv()
@@ -19,7 +19,6 @@ logging.getLogger("uvicorn.access").addFilter(
     })()
 )
 
-VERIFY_TOKEN  = os.getenv("VERIFY_TOKEN", "shariahease-CHANGE-ME")
 IS_PRODUCTION = os.getenv("ENV", "development") == "production"
 
 # ── FastAPI — hide docs in production ────────────────────────────────────────
@@ -133,9 +132,18 @@ app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 templates = Jinja2Templates(directory="frontend/templates")
 
 # ── DB init ───────────────────────────────────────────────────────────────────
-from app.database.db import engine, Base
+# Schema changes are Alembic migrations (alembic/versions). Set AUTO_MIGRATE=false to run
+# `python -m app.database.migrate` yourself instead of on every start.
+from app.database.db import engine, IS_SQLITE
 from app.database import models
-Base.metadata.create_all(bind=engine)
+from app.database.migrate import upgrade_to_head, should_auto_migrate
+if should_auto_migrate():
+    upgrade_to_head(engine)
+if IS_PRODUCTION and IS_SQLITE:
+    logger.warning(
+        "Running on SQLite in production: the free Space disk is ephemeral, so accounts and "
+        "history can be lost on restart. Set DATABASE_URL to a hosted Postgres."
+    )
 
 from app.services.rag_service import rag_service
 
@@ -146,7 +154,7 @@ async def startup_event():
     preload_model()
 
 # ── Routers ───────────────────────────────────────────────────────────────────
-from app.routers import pages, zakat, mudarabah, chatbot, screener, certificate, charities, auth
+from app.routers import pages, zakat, mudarabah, chatbot, screener, certificate, charities, auth, webhook
 app.include_router(auth.router)
 app.include_router(pages.router)
 app.include_router(zakat.router)
@@ -155,52 +163,7 @@ app.include_router(chatbot.router)
 app.include_router(screener.router)
 app.include_router(certificate.router)
 app.include_router(charities.router)
-
-# ── WhatsApp Webhook ──────────────────────────────────────────────────────────
-@app.get("/webhook")
-async def verify(
-    hub_mode: str          = Query(alias="hub.mode"),
-    hub_challenge: str     = Query(alias="hub.challenge"),
-    hub_verify_token: str  = Query(alias="hub.verify_token"),
-):
-    if hub_verify_token == VERIFY_TOKEN:
-        return PlainTextResponse(hub_challenge)
-    logger.warning("Invalid webhook verify token received")
-    return PlainTextResponse("Forbidden", status_code=403)
-
-@app.post("/webhook")
-async def receive(request: Request):
-    # Validate Meta signature in production
-    if IS_PRODUCTION:
-        secret = os.getenv("WHATSAPP_APP_SECRET", "")
-        sig_header = request.headers.get("X-Hub-Signature-256", "")
-        if secret and sig_header:
-            body = await request.body()
-            expected = "sha256=" + hmac.HMAC(
-                key=secret.encode(), msg=body, digestmod=hashlib.sha256
-            ).hexdigest()
-            if not hmac.compare_digest(expected, sig_header):
-                logger.warning("Invalid WhatsApp webhook signature")
-                raise HTTPException(status_code=403, detail="Invalid signature")
-            # Re-parse body since we already consumed it
-            import json
-            data = json.loads(body)
-        else:
-            data = await request.json()
-    else:
-        data = await request.json()
-
-    logger.info("WhatsApp webhook received")
-    try:
-        msg          = data["entry"][0]["changes"][0]["value"]["messages"][0]
-        sender       = msg["from"]
-        message_type = msg.get("type", "text")
-        logger.info("Message from %s type=%s", sender, message_type)
-        from app.services.whatsapp_service import handle_message
-        await handle_message(sender, message_type, msg)
-    except (KeyError, IndexError):
-        pass  # not a message event (e.g. delivery receipt, status update)
-    return JSONResponse({"status": "ok"})
+app.include_router(webhook.router)
 
 # ── Health ────────────────────────────────────────────────────────────────────
 @app.get("/health")

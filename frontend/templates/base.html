@@ -387,6 +387,59 @@
 
   <script src="/static/js/main.js"></script>
   <script>
+    // ── Silent token refresh ────────────────────────────
+    // Access tokens last 15 minutes. Before a request, and after a 401, swap the
+    // refresh cookie (httpOnly, sent only to /auth/*) for a fresh access token.
+    (function () {
+      const origFetch = window.fetch.bind(window);
+      let refreshing = null;
+
+      function tokenExpiry(token) {
+        try {
+          const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+          return JSON.parse(atob(b64)).exp * 1000;
+        } catch (e) { return 0; }
+      }
+
+      function refreshSession() {
+        if (!refreshing) {
+          refreshing = origFetch('/auth/refresh', { method: 'POST', credentials: 'same-origin' })
+            .then(async (r) => {
+              if (!r.ok) return null;
+              const d = await r.json();
+              localStorage.setItem('se_token', d.access_token);
+              return d.access_token;
+            })
+            .catch(() => null)
+            .finally(() => { refreshing = null; });
+        }
+        return refreshing;
+      }
+
+      function withToken(init, token) {
+        const headers = new Headers((init && init.headers) || {});
+        headers.set('Authorization', 'Bearer ' + token);
+        return Object.assign({}, init || {}, { headers });
+      }
+
+      window.fetch = async function (input, init) {
+        // Only our own relative URLs given as strings; leave everything else untouched.
+        if (typeof input !== 'string' || !input.startsWith('/') || input.startsWith('/auth/') || input.startsWith('/static/')) {
+          return origFetch(input, init);
+        }
+        let token = localStorage.getItem('se_token');
+        if (token && tokenExpiry(token) - Date.now() < 60000) {
+          token = (await refreshSession()) || token;
+        }
+        const hadAuth = !!(init && init.headers && new Headers(init.headers).has('Authorization'));
+        const res = await origFetch(input, hadAuth && token ? withToken(init, token) : init);
+        if (res.status !== 401 || !token) return res;
+        const fresh = await refreshSession();
+        if (!fresh) return res;
+        return origFetch(input, withToken(init, fresh));
+      };
+    })();
+
     // ── Auth state init ─────────────────────────────────
     (function () {
       const token = localStorage.getItem('se_token');

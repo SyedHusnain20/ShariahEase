@@ -5,7 +5,11 @@ from pydantic import BaseModel, EmailStr, Field
 
 from app.database.db import get_db
 from app.database import models
-from app.services.auth_service import hash_password, verify_password, create_access_token
+from app.services.auth_service import (
+    hash_password, verify_password, create_access_token,
+    ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS,
+)
+from app.services import refresh_tokens
 from app.dependencies import get_current_user
 import os
 
@@ -33,6 +37,29 @@ class TokenResponse(BaseModel):
     user_id:      int
     name:         str
     email:        str
+
+
+# ── Session helpers ───────────────────────────────────────────────────────────
+
+def _start_session(response: Response, db: Session, user: models.User, family_id=None, refresh_raw: str | None = None) -> str:
+    """Issue an access token (15 min) and a refresh token (rotating, httpOnly cookie)."""
+    access = create_access_token({"sub": str(user.id), "tv": user.token_version})
+    if refresh_raw is None:
+        refresh_raw = refresh_tokens.issue_refresh_token(db, user.id, family_id)
+    response.set_cookie(
+        "access_token", access, httponly=True, samesite="lax",
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60, secure=_IS_PRODUCTION,
+    )
+    response.set_cookie(
+        "refresh_token", refresh_raw, httponly=True, samesite="lax", path="/auth",
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600, secure=_IS_PRODUCTION,
+    )
+    return access
+
+
+def _clear_session(response: Response) -> None:
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token", path="/auth")
 
 
 # ── HTML pages ────────────────────────────────────────────────────────────────
@@ -65,10 +92,8 @@ def signup(body: SignupRequest, response: Response, db: Session = Depends(get_db
     db.commit()
     db.refresh(user)
 
-    token = create_access_token({"sub": str(user.id)})
-
-    # Also set cookie so Jinja2 page loads work
-    response.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=60*60*24*7, secure=_IS_PRODUCTION)
+    # Also sets cookies so Jinja2 page loads work
+    token = _start_session(response, db, user)
 
     return TokenResponse(
         access_token = token,
@@ -84,8 +109,7 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    token = create_access_token({"sub": str(user.id)})
-    response.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=60*60*24*7, secure=_IS_PRODUCTION)
+    token = _start_session(response, db, user)
 
     return TokenResponse(
         access_token = token,
@@ -95,10 +119,40 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
     )
 
 
+@router.post("/refresh", response_model=TokenResponse)
+def refresh(request: Request, response: Response, db: Session = Depends(get_db)):
+    """Swap the refresh cookie for a new access token and a new refresh cookie (rotation)."""
+    raw = request.cookies.get("refresh_token")
+    try:
+        user_id, new_raw = refresh_tokens.rotate_refresh_token(db, raw)
+    except refresh_tokens.InvalidRefreshToken:
+        _clear_session(response)
+        raise HTTPException(status_code=401, detail="Session expired. Please log in again.")
+
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    token = _start_session(response, db, user, refresh_raw=new_raw)
+    return TokenResponse(access_token=token, user_id=user.id, name=user.name, email=user.email)
+
+
 @router.post("/logout")
-def logout(response: Response):
-    response.delete_cookie("access_token")
+def logout(request: Request, response: Response, db: Session = Depends(get_db)):
+    refresh_tokens.revoke_presented_token(db, request.cookies.get("refresh_token"))
+    _clear_session(response)
     return {"detail": "Logged out"}
+
+
+@router.post("/logout-all")
+def logout_all(response: Response, db: Session = Depends(get_db),
+               current_user: models.User = Depends(get_current_user)):
+    """Log out everywhere: old access tokens stop working and every refresh token is revoked."""
+    current_user.token_version += 1
+    db.commit()
+    refresh_tokens.revoke_all_for_user(db, current_user.id)
+    _clear_session(response)
+    return {"detail": "Logged out on all devices"}
 
 
 @router.get("/me")
