@@ -97,6 +97,50 @@ def signup(client, email="a@example.com", name="Amina", password="secret123"):
     return r.json()
 
 
+# ── Phase 1: expense fixtures ─────────────────────────────────────────────────
+
+import itertools
+import uuid
+from datetime import date, datetime, timezone
+
+_user_counter = itertools.count(1)
+
+
+@pytest.fixture
+def make_user(db_session):
+    """Creates a user row and returns its id. timezone defaults to the app default."""
+    from app.database.models import User
+
+    def _make(timezone="Asia/Karachi", email=None):
+        n = next(_user_counter)
+        u = User(name=f"User {n}", email=email or f"user{n}@example.com", hashed_password="x", timezone=timezone)
+        db_session.add(u)
+        db_session.commit()
+        return u.id
+    return _make
+
+
+@pytest.fixture
+def clock(monkeypatch):
+    """Freezes the expense service's clock. Change clock['now'] inside a test to move time."""
+    from app.services import expense_service
+    state = {"now": datetime(2026, 10, 31, 7, 0, tzinfo=timezone.utc)}      # 12:00 on 2026-10-31 in Karachi
+    monkeypatch.setattr(expense_service, "_utcnow", lambda: state["now"])
+    return state
+
+
+_UNSET = object()
+
+
+def exp(amount=10000, on=date(2026, 10, 30), sub=_UNSET, **kw):
+    """One valid expense input (a dict). Override any field with keyword arguments."""
+    if sub is _UNSET:                                         # default subcategory, unless a category was chosen
+        sub = None if "category_slug" in kw else "food.groceries"
+    data = dict(client_id=uuid.uuid4(), amount_paisa=amount, occurred_on=on, subcategory_slug=sub)
+    data.update(kw)
+    return data
+
+
 @pytest.fixture
 def pg_test_url():
     """

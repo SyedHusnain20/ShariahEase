@@ -20,7 +20,7 @@ def test_upgrade_is_idempotent(db_engine):
     upgrade_to_head(db_engine)
     upgrade_to_head(db_engine)
     with db_engine.connect() as c:
-        assert c.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0003"
+        assert c.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0004"
 
 
 def test_legacy_database_is_stamped_and_keeps_its_data():
@@ -37,7 +37,7 @@ def test_legacy_database_is_stamped_and_keeps_its_data():
     with engine.connect() as c:
         row = c.execute(text("SELECT name, timezone, token_version, is_admin FROM users WHERE id = 1")).one()
         assert tuple(row) == ("Old", "Asia/Karachi", 0, 0)
-        assert c.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0003"
+        assert c.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0004"
 
 
 def test_migration_0003_deletes_guest_messages_only():
