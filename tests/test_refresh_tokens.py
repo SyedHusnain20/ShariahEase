@@ -123,6 +123,7 @@ def test_refresh_endpoint_rotates_and_the_old_cookie_stops_working(client):
         for row in db.query(models.RefreshToken).filter(models.RefreshToken.revoked_at.isnot(None)):
             row.revoked_at = row.revoked_at - timedelta(minutes=5)
         db.commit()
+    client.cookies.clear()                                               # one cookie only: two with the same name are sent in an unspecified order
     client.cookies.set("refresh_token", old_refresh, path="/auth")
     assert client.post("/auth/refresh").status_code == 401
     with client.session_factory() as db:                                  # theft response: family revoked
@@ -137,6 +138,7 @@ def test_logout_revokes_the_refresh_token(client):
     signup(client)
     old_refresh = client.cookies.get("refresh_token")
     assert client.post("/auth/logout").status_code == 200
+    client.cookies.clear()                                               # one cookie only: two with the same name are sent in an unspecified order
     client.cookies.set("refresh_token", old_refresh, path="/auth")
     assert client.post("/auth/refresh").status_code == 401
 
