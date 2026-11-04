@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Expenses | ShariahEase{% endblock %}
+{% block page_title %}Expenses{% endblock %}
+{# Chart.js is self-hosted and pinned on this page (see static/vendor/chartjs/README.md). #}
+{% block chart_js %}<script src="/static/vendor/chartjs/chart.umd.js"></script>{% endblock %}
+
+{% macro fields(m, e, p) %}
+  {# m = the form object, e = its error object, p = id prefix (so labels point at the right input) #}
+  <div>
+    <label for="{{ p }}-amount" class="block text-label-md font-label-md text-on-surface-variant mb-1" x-text="t('amount')"></label>
+    <input id="{{ p }}-amount" type="text" inputmode="decimal" autocomplete="off" dir="ltr" placeholder="0" maxlength="20"
+           x-model="{{ m }}.amount" :aria-invalid="!!{{ e }}.amount" :aria-describedby="{{ e }}.amount ? '{{ p }}-amount-err' : null"
+           class="w-full min-h-[48px] rounded-lg bg-surface-container-lowest border border-outline-variant px-3 text-xl font-semibold text-on-surface focus:border-primary focus:ring-1 focus:ring-primary"
+           :class="{{ e }}.amount ? 'border-error' : ''"/>
+    <p id="{{ p }}-amount-err" x-show="{{ e }}.amount" x-text="{{ e }}.amount" class="mt-1 text-label-md text-error" role="alert"></p>
+  </div>
+  <div class="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
+    <div>
+      <label for="{{ p }}-date" class="block text-label-md font-label-md text-on-surface-variant mb-1" x-text="t('date')"></label>
+      <input id="{{ p }}-date" type="date" x-model="{{ m }}.occurred_on" :max="maxDate" dir="ltr"
+             class="w-full min-h-[44px] rounded-lg bg-surface-container-lowest border border-outline-variant px-3 text-base text-on-surface focus:border-primary focus:ring-1 focus:ring-primary"
+             :class="{{ e }}.occurred_on ? 'border-error' : ''"/>
+      <p x-show="{{ e }}.occurred_on" x-text="{{ e }}.occurred_on" class="mt-1 text-label-md text-error" role="alert"></p>
+    </div>
+    <div>
+      <label for="{{ p }}-pay" class="block text-label-md font-label-md text-on-surface-variant mb-1" x-text="t('payment')"></label>
+      <select id="{{ p }}-pay" x-model="{{ m }}.payment_method"
+              class="w-full min-h-[44px] rounded-lg bg-surface-container-lowest border border-outline-variant px-3 text-base text-on-surface focus:border-primary focus:ring-1 focus:ring-primary">
+        <template x-for="pm in paymentMethods" :key="pm"><option :value="pm" x-text="t('pm_' + pm)"></option></template>
+      </select>
+    </div>
+  </div>
+  <div>
+    <label for="{{ p }}-cat" class="block text-label-md font-label-md text-on-surface-variant mb-1" x-text="t('category')"></label>
+    <select id="{{ p }}-cat" x-model="{{ m }}.cat"
+            class="w-full min-h-[44px] rounded-lg bg-surface-container-lowest border border-outline-variant px-3 text-base text-on-surface focus:border-primary focus:ring-1 focus:ring-primary"
+            :class="{{ e }}.category ? 'border-error' : ''">
+      <option value="" x-text="t('choose_category')"></option>
+      <template x-for="c in categories" :key="c.slug">
+        <optgroup :label="catName(c)">
+          <option :value="'c:' + c.slug" x-text="catName(c) + ' · ' + t('general')"></option>
+          <template x-for="s in c.subcategories" :key="s.slug"><option :value="'s:' + s.slug" x-text="catName(s)"></option></template>
+        </optgroup>
+      </template>
+    </select>
+    <p x-show="{{ e }}.category" x-text="{{ e }}.category" class="mt-1 text-label-md text-error" role="alert"></p>
+  </div>
+  <div>
+    <label for="{{ p }}-note" class="block text-label-md font-label-md text-on-surface-variant mb-1" x-text="t('note')"></label>
+    <textarea id="{{ p }}-note" rows="2" maxlength="500" x-model="{{ m }}.note"
+              class="w-full rounded-lg bg-surface-container-lowest border border-outline-variant px-3 py-2 text-base text-on-surface focus:border-primary focus:ring-1 focus:ring-primary"
+              :class="{{ e }}.note ? 'border-error' : ''"></textarea>
+    <p x-show="{{ e }}.note" x-text="{{ e }}.note" class="mt-1 text-label-md text-error" role="alert"></p>
+  </div>
+{% endmacro %}
+
+{% block content %}
+<div x-data="expenseApp()" x-init="init()" :dir="dir" :class="lang === 'ur' ? 'font-urdu-body' : ''"
+     class="max-w-xl mx-auto w-full pb-28 space-y-4" x-cloak>
+
+  <!-- Logged out -->
+  <section x-show="!authed" class="bg-surface-container rounded-xl border border-outline-variant p-5 text-center space-y-3" style="display:none">
+    <p class="text-body-lg text-on-surface" x-text="t('login_needed')"></p>
+    <a href="/auth/login" class="inline-flex items-center justify-center min-h-[44px] px-5 rounded-lg bg-primary text-on-primary font-semibold" x-text="t('login')"></a>
+  </section>
+
+  <div x-show="authed" class="space-y-4" style="display:none">
+
+    <!-- Month and language -->
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-1">
+        <button type="button" @click="shiftMonth(-1)" :aria-label="t('prev_month')"
+                class="w-[44px] min-h-[44px] overflow-hidden rounded-lg text-on-surface hover:bg-surface-container-high flex items-center justify-center">
+          <span class="material-symbols-outlined" :class="dir === 'rtl' ? 'rotate-180' : ''">chevron_left</span>
+        </button>
+        <h3 class="text-body-lg font-semibold text-on-surface min-w-[7.5rem] text-center" x-text="monthLabel()" aria-live="polite"></h3>
+        <button type="button" @click="shiftMonth(1)" :disabled="month >= thisMonth" :aria-label="t('next_month')"
+                class="w-[44px] min-h-[44px] overflow-hidden rounded-lg text-on-surface hover:bg-surface-container-high flex items-center justify-center disabled:opacity-30">
+          <span class="material-symbols-outlined" :class="dir === 'rtl' ? 'rotate-180' : ''">chevron_right</span>
+        </button>
+      </div>
+      <div class="flex rounded-lg border border-outline-variant overflow-hidden" role="group" aria-label="Language">
+        <button type="button" @click="setLang('en')" :aria-pressed="lang === 'en'"
+                class="min-h-[44px] min-w-[44px] px-3 text-label-md" :class="lang === 'en' ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant'">EN</button>
+        <button type="button" @click="setLang('ur')" :aria-pressed="lang === 'ur'" lang="ur"
+                class="min-h-[44px] min-w-[44px] px-3 text-label-md" :class="lang === 'ur' ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant'">اردو</button>
+      </div>
+    </div>
+
+    <!-- Monthly total -->
+    <section class="bg-surface-container rounded-xl border border-outline-variant p-4" aria-labelledby="total-label">
+      <p id="total-label" class="text-label-md text-on-surface-variant" x-text="t('month_total')"></p>
+      <p class="text-3xl font-bold text-on-surface mt-1" dir="ltr" :class="dir === 'rtl' ? 'text-right' : ''" x-text="summary ? fmt(summary.total_paisa) : '—'" data-testid="month-total"></p>
+      <p class="text-label-md text-on-surface-variant mt-1" x-show="summary" x-text="summary ? summary.count + ' ' + t('entries') : ''"></p>
+    </section>
+
+    <!-- Add form -->
+    <section class="bg-surface-container rounded-xl border border-outline-variant p-4" aria-labelledby="add-h">
+      <h3 id="add-h" class="text-body-lg font-semibold text-on-surface mb-3" x-text="t('add')"></h3>
+      <form @submit.prevent="submitAdd()" novalidate class="space-y-3">
+        {{ fields('form', 'formErrors', 'add') }}
+        <p x-show="formMessage" x-text="formMessage" class="text-body-md text-error" role="alert"></p>
+        <button type="submit" :disabled="saving"
+                class="w-full min-h-[48px] rounded-lg bg-primary text-on-primary font-semibold disabled:opacity-60">
+          <span x-text="saving ? t('saving') : t('save')"></span>
+        </button>
+      </form>
+    </section>
+
+    <!-- Category chart -->
+    <section class="bg-surface-container rounded-xl border border-outline-variant p-4" aria-labelledby="chart-h" x-show="summary && summary.count > 0">
+      <h3 id="chart-h" class="text-body-lg font-semibold text-on-surface mb-3" x-text="t('by_category')"></h3>
+      <div :style="'height:' + chartHeight + 'px'" class="relative">
+        <canvas id="cat-chart" role="img" :aria-label="t('by_category')"></canvas>
+      </div>
+      <ul class="mt-3 divide-y divide-outline-variant/40" data-testid="category-list">
+        <template x-for="g in chartGroups" :key="g.key">
+          <li class="flex items-center justify-between gap-3 py-2 text-body-md">
+            <span class="text-on-surface truncate" x-text="lang === 'ur' ? g.ur : g.en"></span>
+            <span class="text-on-surface-variant shrink-0" dir="ltr" x-text="fmt(g.total_paisa)"></span>
+          </li>
+        </template>
+      </ul>
+    </section>
+
+    <!-- List -->
+    <section aria-labelledby="list-h" class="space-y-2">
+      <h3 id="list-h" class="text-body-lg font-semibold text-on-surface" x-text="t('this_month_list')"></h3>
+      <p x-show="loading" class="text-on-surface-variant text-body-md" x-text="t('loading')"></p>
+      <div x-show="loadError" class="bg-surface-container rounded-xl border border-outline-variant p-4 space-y-2" style="display:none">
+        <p class="text-error text-body-md" x-text="t('load_failed')" role="alert"></p>
+        <button type="button" @click="reload()" class="min-h-[44px] px-4 rounded-lg border border-outline text-on-surface" x-text="t('retry')"></button>
+      </div>
+      <p x-show="!loading && !loadError && items.length === 0" class="text-on-surface-variant text-body-md py-6 text-center" x-text="t('empty')"></p>
+
+      <template x-for="day in days" :key="day.date">
+        <div>
+          <h4 class="text-label-md text-on-surface-variant mt-3 mb-1" x-text="dayLabel(day.date)"></h4>
+          <ul class="bg-surface-container rounded-xl border border-outline-variant divide-y divide-outline-variant/40">
+            <template x-for="x in day.items" :key="x.id">
+              <li class="flex items-stretch" data-testid="expense-row">
+                <button type="button" @click="openEdit(x)" class="flex-1 min-w-0 text-start px-4 py-3 min-h-[56px]">
+                  <span class="flex items-baseline justify-between gap-3">
+                    <span class="text-body-md font-medium text-on-surface truncate" x-text="rowTitle(x)"></span>
+                    <span class="text-body-md font-semibold text-on-surface shrink-0" dir="ltr" x-text="fmt(x.amount_paisa)"></span>
+                  </span>
+                  <span class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
+                    <span class="text-label-md text-on-surface-variant truncate max-w-full" x-show="x.note" x-text="x.note"></span>
+                    <span x-show="isCharity(x)" class="text-label-md px-2 rounded-full bg-primary-container text-on-primary-container" x-text="t('charity_badge')"></span>
+                    <span x-show="x.shariah_flag && !x.shariah_flag_dismissed" class="text-label-md px-2 rounded-full border border-error text-error"
+                          x-text="x.shariah_flag === 'riba' ? t('flag_riba') : t('flag_doubtful')"></span>
+                  </span>
+                </button>
+                <button type="button" @click="remove(x)" :aria-label="t('delete') + ': ' + rowTitle(x)"
+                        class="w-[48px] shrink-0 overflow-hidden flex items-center justify-center text-on-surface-variant hover:text-error">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </template>
+
+      <button type="button" x-show="nextBefore" @click="loadMore()" :disabled="loadingMore"
+              class="w-full min-h-[44px] rounded-lg border border-outline text-on-surface disabled:opacity-60" x-text="t('load_more')"></button>
+
+      <p x-show="items.some(x => x.shariah_flag && !x.shariah_flag_dismissed)" class="text-label-md text-on-surface-variant pt-2" x-text="t('flag_note')"></p>
+      <p class="pt-2"><a href="/zakat" class="text-primary underline min-h-[44px] inline-flex items-center" x-text="t('zakat_link')"></a></p>
+    </section>
+  </div>
+
+  <!-- Edit sheet -->
+  <div x-show="editing" style="display:none" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60"
+       @keydown.escape.window="closeEdit()" @click.self="closeEdit()">
+    <div role="dialog" aria-modal="true" aria-labelledby="edit-h" :dir="dir"
+         class="w-full sm:max-w-md max-h-[92vh] overflow-y-auto bg-surface-container rounded-t-2xl sm:rounded-2xl border border-outline-variant p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 id="edit-h" class="text-body-lg font-semibold text-on-surface" x-text="t('edit')"></h3>
+        <button type="button" @click="closeEdit()" :aria-label="t('cancel')" class="w-[44px] min-h-[44px] overflow-hidden flex items-center justify-center text-on-surface-variant">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form @submit.prevent="submitEdit()" novalidate class="space-y-3" x-show="editing">
+        {{ fields('edit', 'editErrors', 'edit') }}
+        <p x-show="editMessage" x-text="editMessage" class="text-body-md text-error" role="alert"></p>
+        <div class="flex gap-3 pt-1">
+          <button type="button" @click="closeEdit()" class="flex-1 min-h-[48px] rounded-lg border border-outline text-on-surface" x-text="t('cancel')"></button>
+          <button type="submit" :disabled="saving" class="flex-1 min-h-[48px] rounded-lg bg-primary text-on-primary font-semibold disabled:opacity-60"
+                  x-text="saving ? t('saving') : t('save')"></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast (also the undo bar) -->
+  <div class="fixed left-0 right-0 bottom-4 z-[60] flex justify-center px-4 pointer-events-none" aria-live="polite" role="status">
+    <div x-show="toast.text" style="display:none" class="pointer-events-auto flex items-center gap-3 max-w-md w-full bg-inverse-surface text-inverse-on-surface rounded-lg shadow-lg px-4 py-2">
+      <span class="flex-1 text-body-md" x-text="toast.text"></span>
+      <button type="button" x-show="toast.undoId" @click="undo()" class="min-h-[44px] px-2 font-semibold text-inverse-primary" x-text="t('undo')"></button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>[x-cloak]{display:none !important}</style>
+<script src="/static/js/expenses.js"></script>
+{% endblock %}

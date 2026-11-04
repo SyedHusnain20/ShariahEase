@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12131a">
+<title>Offline | ShariahEase</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+         background: #12131a; color: #e2e1eb; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 22rem; padding: 24px 16px; text-align: center; }
+  h1 { font-size: 1.25rem; margin: 0 0 8px; }
+  p { margin: 0 0 12px; line-height: 1.5; color: #c3c2b7; }
+  p[lang="ur"] { direction: rtl; font-size: 1.05rem; line-height: 2; }
+  button { min-height: 44px; padding: 0 20px; border: 0; border-radius: 8px; background: #4edea3; color: #003824;
+           font-size: 1rem; font-weight: 600; cursor: pointer; }
+</style>
+</head>
+<body>
+<main>
+  <h1>You are offline</h1>
+  <p>Expenses are saved on the server, so adding, editing or deleting needs an internet connection. Nothing you typed was saved.</p>
+  <!-- REVIEW (Urdu): native-speaker review needed -->
+  <p lang="ur">آپ آف لائن ہیں۔ اخراجات سرور پر محفوظ ہوتے ہیں، اس لیے شامل کرنے، تبدیل کرنے یا حذف کرنے کے لیے انٹرنیٹ ضروری ہے۔</p>
+  <button type="button" onclick="location.reload()">Try again</button>
+</main>
+</body>
+</html>

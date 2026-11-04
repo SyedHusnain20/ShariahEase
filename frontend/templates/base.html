@@ -5,12 +5,15 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>{% block title %}ShariahEase | Islamic Finance, Simplified{% endblock %}</title>
   <link rel="icon" type="image/png" href="/static/images/favicon.png"/>
+  <link rel="manifest" href="/manifest.webmanifest"/>
+  <meta name="theme-color" content="#12131a"/>
+  <link rel="apple-touch-icon" href="/static/icons/icon-180.png"/>
   <meta name="description" content="ShariahEase — AI-powered Islamic finance assistant for Zakat calculation, halal investing, Mudarabah simulation and more."/>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  {% block chart_js %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
   <link rel="stylesheet" href="/static/css/main.css"/>
   <script id="tailwind-config">
     tailwind.config = {
@@ -117,6 +120,12 @@
         {% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}">
         <span class="material-symbols-outlined" data-icon="payments">payments</span>
         <span class="font-body-md text-body-md">Zakat</span>
+      </a>
+      <a href="/expenses" class="flex items-center gap-3 px-3 py-2 rounded-lg group transition-colors
+        {% if active_page == 'expenses' %}bg-primary-container text-on-primary-container border-r-2 border-primary
+        {% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}">
+        <span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+        <span class="font-body-md text-body-md">Expenses</span>
       </a>
       <a href="/screener" class="flex items-center gap-3 px-3 py-2 rounded-lg group transition-colors
         {% if active_page == 'screener' %}bg-primary-container text-on-primary-container border-r-2 border-primary
