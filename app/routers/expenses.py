@@ -4,6 +4,7 @@ REST API for the expense tracker (Phase 1b).
     GET    /api/expenses/categories
     GET    /api/expenses            ?month=YYYY-MM | ?date_from&date_to  &category &limit &before_date &before_id
     GET    /api/expenses/summary    ?month=YYYY-MM | ?date_from&date_to  &group_by
+    GET    /api/expenses/export     ?format=json|csv   every row the user still has (data export)
     POST   /api/expenses
     PATCH  /api/expenses/{id}       body carries the `version` the client last saw
     DELETE /api/expenses/{id}       soft delete
@@ -16,6 +17,7 @@ Rules this file enforces (the service layer enforces the rest):
   * writes are limited per user (429 + Retry-After), and need an `X-Requested-With` header so a forged
     cross-site form post cannot ride on the login cookie
   * money arrives as rupees text/whole rupees and is turned into integer paisa by services/money.py
+  * the export contains only the caller's rows, is never cached, and is limited per user (429 + Retry-After)
 """
 import re
 import uuid
@@ -23,7 +25,7 @@ from datetime import date
 from typing import Optional, Union
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, StrictInt, StrictStr
 from sqlalchemy.orm import Session
 
@@ -31,6 +33,7 @@ from app.database import models
 from app.database.db import get_db
 from app.dependencies import get_current_user
 from app.services import expense_service as svc
+from app.services import export_format
 from app.services.money import MoneyError, parse_rupees_to_paisa
 from app.services.rate_limit import SlidingWindowLimiter
 
@@ -38,6 +41,10 @@ router = APIRouter(prefix="/api/expenses", tags=["expenses"])
 
 WRITES_PER_MINUTE = 60
 write_limiter = SlidingWindowLimiter(WRITES_PER_MINUTE, 60)
+
+EXPORTS_PER_WINDOW = 10                      # an export reads the whole history: keep a loop from hammering the database
+EXPORT_WINDOW_SECONDS = 600
+export_limiter = SlidingWindowLimiter(EXPORTS_PER_WINDOW, EXPORT_WINDOW_SECONDS)
 
 REQUIRED_HEADER_VALUE = "ShariahEase"
 _MONTH = re.compile(r"^(\d{4})-(0[1-9]|1[0-2])$", re.ASCII)
@@ -167,6 +174,7 @@ def list_expenses(
     db: Session = Depends(get_db),
 ):
     start, end = _window(month, date_from, date_to)
+    svc.run_maintenance(db)          # at most once a day (throttled in maintenance_runs); never raises
     if (before_date is None) != (before_id is None):
         raise _fail(svc.InvalidInput([{"field": "before_date", "problem": "send before_date and before_id together"}]))
     before = (before_date, before_id) if before_date is not None else None
@@ -179,6 +187,31 @@ def list_expenses(
     nxt = data.pop("next_before")
     data["next_before"] = None if nxt is None else {"date": nxt[0], "id": nxt[1]}
     return data
+
+
+@router.get("/export")
+def export_expenses(
+    fmt: str = Query(default="json", alias="format"),
+    user: models.User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    if fmt not in ("json", "csv"):
+        raise _fail(svc.InvalidInput([{"field": "format", "problem": "expected json or csv"}]))
+    wait = export_limiter.check(user.id)
+    if wait > 0:
+        raise HTTPException(status_code=429, detail={"code": "rate_limited", "retry_after": int(wait) + 1},
+                            headers={"Retry-After": str(int(wait) + 1)})
+    rows = list(svc.export_expenses(db, user.id))               # the user's own rows only (see the service)
+    now = svc._utcnow()
+    if fmt == "csv":
+        body, media = export_format.to_csv(rows), "text/csv; charset=utf-8"
+    else:
+        body, media = export_format.to_json(rows, now), "application/json; charset=utf-8"
+    headers = {
+        "Content-Disposition": f'attachment; filename="shariahease-expenses-{now.date().isoformat()}.{fmt}"',
+        "Cache-Control": "no-store",                            # personal data: no browser or proxy may keep a copy
+    }
+    return Response(content=body.encode("utf-8"), media_type=media, headers=headers)
 
 
 @router.post("")

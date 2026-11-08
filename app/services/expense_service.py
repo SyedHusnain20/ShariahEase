@@ -6,6 +6,12 @@ REST routes, the chatbot, WhatsApp and any future app all call these seven funct
     add_expenses, update_expense, delete_expenses, restore_expenses,
     get_expenses, summarize, list_categories
 
+Two more functions serve the data-rights and housekeeping needs (Path step 2):
+
+    export_expenses            every row the user still has in the database, for the data export
+    purge_deleted_expenses     (system) really deletes rows that were soft-deleted more than 30 days ago
+    run_maintenance            (system) runs the purge at most once a day, started by normal traffic
+
 Rules every function follows
   * `user_id` is the first argument and comes from the authenticated session, never from a request
     body, model output or message text. No input schema below has a `user_id` field (extra fields are
@@ -28,10 +34,10 @@ from typing import Iterable, Literal, Optional, Sequence
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, ValidationError, field_validator
-from sqlalchemy import BigInteger, Integer, and_, cast, func, or_, select, update
+from sqlalchemy import BigInteger, Integer, and_, cast, delete, func, or_, select, update
 
 from app.database.models import (
-    AuditLog, Category, Expense, Subcategory, User, MAX_AMOUNT_PAISA, MAX_NOTE_CHARS,
+    AuditLog, Category, Expense, MaintenanceRun, Subcategory, User, MAX_AMOUNT_PAISA, MAX_NOTE_CHARS,
 )
 
 log = logging.getLogger(__name__)
@@ -42,6 +48,10 @@ MAX_IDS_PER_CALL = 100
 MAX_PAGE_SIZE = 200
 DEFAULT_PAGE_SIZE = 50
 MAX_FUTURE_DAYS = 1            # an expense may be dated at most one day ahead of the user's local today
+PURGE_AFTER_DAYS = 30          # a soft-deleted expense can be undone for this long, then it is really deleted
+MAINTENANCE_INTERVAL = timedelta(hours=24)
+MAINTENANCE_PURGE = "purge_deleted_expenses"     # name of the row in maintenance_runs
+EXPORT_BATCH = 1000
 
 PaymentMethod = Literal["cash", "bank_transfer", "card", "wallet", "other"]
 Source = Literal["manual", "ai_chat", "whatsapp", "pwa_sync"]
@@ -234,6 +244,28 @@ class CategoryOut(BaseModel):
     name_ur: str
     is_charity: bool
     subcategories: list[SubcategoryOut]
+
+
+class ExportRow(BaseModel):
+    """One row of the user's data export. Includes soft-deleted rows that are not purged yet (deleted_at is set)."""
+    id: int
+    client_id: uuid.UUID
+    occurred_on: date
+    amount_paisa: int
+    currency: str
+    category_slug: str
+    category_name_en: str
+    subcategory_slug: Optional[str]
+    subcategory_name_en: Optional[str]
+    note: Optional[str]
+    payment_method: str
+    source: str
+    shariah_flag: Optional[str]
+    shariah_flag_dismissed: bool
+    version: int
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: Optional[datetime]
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────────────────────────
@@ -665,3 +697,108 @@ def list_categories(db) -> list[CategoryOut]:
                     subcategories=subs.get(c.id, []))
         for c in db.execute(select(Category).order_by(Category.sort_order, Category.id)).scalars()
     ]
+
+
+# ── export (data rights) ─────────────────────────────────────────────────────────────────────────
+
+def export_expenses(db, user_id: int, *, batch_size: int = EXPORT_BATCH):
+    """
+    Yield EVERY expense row this user still has in the database, oldest first: live rows and soft-deleted rows
+    that are not purged yet (those carry `deleted_at`). Notes are included. Rows of other users are never read:
+    the query filters on user_id. Read in keyset batches so a big history does not need one huge query.
+    """
+    _check_user_id(user_id)
+    if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
+        raise _bad("batch_size", "must be a positive integer")
+    last = None
+    while True:
+        conditions = [Expense.user_id == user_id]
+        if last is not None:
+            conditions.append(or_(Expense.occurred_on > last[0],
+                                  and_(Expense.occurred_on == last[0], Expense.id > last[1])))
+        rows = db.execute(
+            select(Expense, Category.slug, Category.name_en, Subcategory.slug, Subcategory.name_en)
+            .join(Category, Category.id == Expense.category_id)
+            .outerjoin(Subcategory, Subcategory.id == Expense.subcategory_id)
+            .where(*conditions)
+            .order_by(Expense.occurred_on, Expense.id).limit(batch_size)
+        ).all()
+        for e, cat_slug, cat_name, sub_slug, sub_name in rows:
+            yield ExportRow(
+                id=e.id, client_id=e.client_id, occurred_on=e.occurred_on, amount_paisa=int(e.amount_paisa),
+                currency=e.currency, category_slug=cat_slug, category_name_en=cat_name,
+                subcategory_slug=sub_slug, subcategory_name_en=sub_name, note=e.note,
+                payment_method=e.payment_method, source=e.source, shariah_flag=e.shariah_flag,
+                shariah_flag_dismissed=bool(e.shariah_flag_dismissed), version=e.version,
+                created_at=_aware(e.created_at), updated_at=_aware(e.updated_at),
+                deleted_at=None if e.deleted_at is None else _aware(e.deleted_at),
+            )
+        if len(rows) < batch_size:
+            return
+        last = (rows[-1][0].occurred_on, rows[-1][0].id)
+
+
+# ── purge and maintenance (system functions: they act on all users, so they take no user_id) ──────
+
+def purge_deleted_expenses(db, *, retention_days: int = PURGE_AFTER_DAYS, commit: bool = True) -> int:
+    """
+    Really delete expenses that were soft-deleted MORE than `retention_days` days ago (strictly older: a row deleted
+    exactly 30 days ago can still be undone). Live rows are never touched. Returns how many rows were removed and,
+    if any, writes one audit row (actor system, a count only).
+    """
+    if isinstance(retention_days, bool) or not isinstance(retention_days, int) or retention_days < 1:
+        raise _bad("retention_days", "must be a whole number of days, at least 1")
+    cutoff = _utcnow() - timedelta(days=retention_days)
+    with _unit(db, commit):
+        result = db.execute(
+            delete(Expense).where(Expense.deleted_at.is_not(None), Expense.deleted_at < cutoff)
+            .execution_options(synchronize_session=False)
+        )
+        removed = result.rowcount or 0
+        if removed:
+            _audit(db, None, "system", "expense.purge", None, {"count": removed})
+    return removed
+
+
+def _insert_run_ignore(db):
+    name = db.get_bind().dialect.name
+    if name == "postgresql":
+        from sqlalchemy.dialects.postgresql import insert
+    elif name == "sqlite":
+        from sqlalchemy.dialects.sqlite import insert
+    else:
+        raise RuntimeError(f"unsupported database: {name}")
+    return insert(MaintenanceRun).on_conflict_do_nothing(index_elements=["name"])
+
+
+def run_maintenance(db) -> dict:
+    """
+    Run the purge at most once per MAINTENANCE_INTERVAL. There is no scheduler on a free host, so normal traffic
+    starts it. The "claim" is one atomic statement, so two workers or two requests at once purge only once. It never
+    raises: a failure is logged (no data in the message) and the next try is after the interval.
+    Returns {"ran": bool, "purged": int}.
+    """
+    try:
+        now = _utcnow()
+        last = db.execute(select(MaintenanceRun.last_run_at).where(MaintenanceRun.name == MAINTENANCE_PURGE)).scalar()
+        if last is not None and _aware(last) > now - MAINTENANCE_INTERVAL:
+            return {"ran": False, "purged": 0}
+        # The claim is decided by RETURNING (a row comes back only for the one statement that really changed or created
+        # the row); rowcount is not reliable for INSERT ... ON CONFLICT DO NOTHING.
+        claimed = db.execute(
+            update(MaintenanceRun)
+            .where(MaintenanceRun.name == MAINTENANCE_PURGE, MaintenanceRun.last_run_at <= now - MAINTENANCE_INTERVAL)
+            .values(last_run_at=now).returning(MaintenanceRun.name).execution_options(synchronize_session=False)
+        ).first() is not None
+        if not claimed:
+            claimed = db.execute(
+                _insert_run_ignore(db).values(name=MAINTENANCE_PURGE, last_run_at=now).returning(MaintenanceRun.name)
+            ).first() is not None
+        db.commit()
+        if not claimed:
+            return {"ran": False, "purged": 0}
+        return {"ran": True, "purged": purge_deleted_expenses(db)}
+    except Exception:                                    # housekeeping must never break a request
+        db.rollback()
+        log.warning("expense maintenance failed; it will be tried again after the interval", exc_info=False)
+        return {"ran": False, "purged": 0}

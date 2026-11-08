@@ -3,6 +3,8 @@ import logging
 import httpx
 from groq import AsyncGroq
 
+from app.services.greeting import contains_greeting
+
 logger = logging.getLogger(__name__)
 
 # ── Groq client ───────────────────────────────────────────────────────────────
@@ -44,6 +46,8 @@ _GREETING_RESPONSES = {
     "hi", "hello", "salam", "assalam", "hey", "helo", "slm", "aoa",
     "assalamualaikum", "assalam o alaikum", "walaikum",
 }
+# Greetings that start a word and may continue (assalamu, walaikumassalam ...)
+_GREETING_STEMS = {"assalam", "walaikum"}
 
 MAX_INPUT_CHARS = 1000
 
@@ -87,8 +91,8 @@ def _is_allowed(text: str) -> bool:
     """
     lower = text.lower().strip()
 
-    # Always allow greetings
-    if any(g in lower for g in _GREETING_RESPONSES):
+    # Always allow greetings (whole words only: "hi" must not match "machine")
+    if contains_greeting(lower, _GREETING_RESPONSES, _GREETING_STEMS):
         return True
 
     # Allow if any Islamic finance keyword found

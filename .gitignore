@@ -25,3 +25,6 @@ certificates/*.pdf
 Thumbs.db
 
 .agents/
+
+# Gate report output (aggregate counts from production, kept locally; see scripts/gate_report.py)
+gate_reports/

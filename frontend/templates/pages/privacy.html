@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Privacy | ShariahEase{% endblock %}
+{% block page_title %}Privacy{% endblock %}
+{% block chart_js %}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto pb-16 px-4 sm:px-6 lg:px-0 space-y-6" data-testid="privacy-page">
+
+  <header class="space-y-2">
+    <h1 class="text-2xl font-bold text-on-surface">What ShariahEase keeps about you</h1>
+    <p class="text-body-md text-on-surface-variant">Last updated: {{ privacy_updated }}. This page says what the app really stores and who else sees your words. It is in English for now.</p>
+  </header>
+
+  <section class="bg-surface-container rounded-xl border border-outline-variant p-4 sm:p-5 space-y-3" aria-labelledby="short-h">
+    <h2 id="short-h" class="text-body-lg font-semibold text-on-surface">The short version</h2>
+    <ul class="list-disc ps-5 space-y-2 text-body-md text-on-surface">
+      <li>We keep only what the features you use need.</li>
+      <li><strong>We never store card numbers, CVV codes or bank account numbers.</strong> The payment method on an expense is only a label (cash, card, bank transfer, wallet, other). Please do not type card numbers into notes.</li>
+      <li>Your expenses are not sent to any AI or search service, and they are never written to our logs. (The expense tracker has no AI feature yet. If that changes, this page changes first.)</li>
+      <li>You can download your expenses and delete your whole account yourself, any time, from <a class="text-primary underline" href="/settings">Settings</a>.</li>
+    </ul>
+  </section>
+
+  <section class="bg-surface-container rounded-xl border border-outline-variant p-4 sm:p-5 space-y-4" aria-labelledby="stored-h">
+    <h2 id="stored-h" class="text-body-lg font-semibold text-on-surface">What we store</h2>
+    <dl class="space-y-4 text-body-md">
+      <div>
+        <dt class="font-semibold text-on-surface">Your account</dt>
+        <dd class="text-on-surface-variant">Name, email, your language and time zone, when you joined, and your password in scrambled form (a bcrypt hash; we cannot read your password). Login cookies are marked HttpOnly, so scripts on the page cannot read them.</dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-on-surface">Login sessions</dt>
+        <dd class="text-on-surface-variant">So you stay logged in, we keep a hash of your refresh token (not the token itself) with its expiry. These are removed when you log out or delete your account.</dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-on-surface">Expenses (if you use the tracker)</dt>
+        <dd class="text-on-surface-variant">Amount, date, category, the payment-method label, an optional note you write, how the entry was made, and when it was added or changed. When you delete an entry it stays for 30 days so you can undo it, then it is removed for good.</dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-on-surface">Activity log</dt>
+        <dd class="text-on-surface-variant">A short record that an entry was added, changed or deleted, with its number and which fields changed. It never contains the text of your notes.</dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-on-surface">Zakat and screener history, chat history</dt>
+        <dd class="text-on-surface-variant">If you are logged in, we save your Zakat calculations, your halal-stock searches and your conversation with the assistant so you can see them again. If you are not logged in, the assistant keeps the last few messages only in memory for about 30 minutes and does not save them to the database.</dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-on-surface">In your browser</dt>
+        <dd class="text-on-surface-variant">A login token, your name and email for the page header, and your language choice, in your browser's local storage on your device. The installable app also keeps a copy of its own scripts, styles and images (never your expenses, and not the pages themselves) so it opens faster and can show an offline page.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="bg-surface-container rounded-xl border border-outline-variant p-4 sm:p-5 space-y-3" aria-labelledby="not-h">
+    <h2 id="not-h" class="text-body-lg font-semibold text-on-surface">What we do not store</h2>
+    <ul class="list-disc ps-5 space-y-2 text-body-md text-on-surface">
+      <li>Card numbers, CVV codes, bank account numbers or any payment credentials.</li>
+      <li>Your password in readable form.</li>
+      <li>Your location or contacts.</li>
+      <li>The text of WhatsApp messages. If you use our WhatsApp assistant, your number and the last few messages are kept only in the server's memory, and they are lost when the service restarts.</li>
+    </ul>
+  </section>
+
+  <section class="bg-surface-container rounded-xl border border-outline-variant p-4 sm:p-5 space-y-4" aria-labelledby="others-h">
+    <h2 id="others-h" class="text-body-lg font-semibold text-on-surface">Who else sees what</h2>
+    <dl class="space-y-4 text-body-md">
+      <div>
+        <dt class="font-semibold text-on-surface">Hosting and database</dt>
+        <dd class="text-on-surface-variant">The app runs on Hugging Face Spaces and its database is on Neon. Everything we store, as listed above, sits there.</dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-on-surface">The AI assistant (chat)</dt>
+        <dd class="text-on-surface-variant">When you ask the chatbot something, your question and the recent conversation are sent to Groq, which writes the answer. For some questions (prices, news, hadith) part of your question may also be sent to a web search (DuckDuckGo) or to sunnah.com to look things up. Your expenses are not part of this.</dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-on-surface">Developer tracing</dt>
+        <dd class="text-on-surface-variant">Chat traces can be sent to LangSmith while a developer is debugging. It is off unless the operator switches it on. It never receives your expenses.</dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-on-surface">Page resources</dt>
+        <dd class="text-on-surface-variant">Your browser loads some scripts and fonts from public servers (Tailwind, unpkg, Google Fonts, jsDelivr). Those servers see your IP address and browser details when they send you the files.</dd>
+      </div>
+      <div>
+        <dt class="font-semibold text-on-surface">WhatsApp</dt>
+        <dd class="text-on-surface-variant">If you message our WhatsApp assistant, Meta delivers your messages to us under its own terms.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="bg-surface-container rounded-xl border border-outline-variant p-4 sm:p-5 space-y-3" aria-labelledby="rights-h">
+    <h2 id="rights-h" class="text-body-lg font-semibold text-on-surface">Your choices</h2>
+    <ul class="list-disc ps-5 space-y-2 text-body-md text-on-surface">
+      <li><strong>Download your expenses.</strong> In <a class="text-primary underline" href="/settings">Settings</a>, choose JSON or CSV (CSV opens in Excel). The file has every expense you still have, notes included, plus deleted entries that are still within their 30 days. Your Zakat and chat history are not in this file; you can see them in the app.</li>
+      <li><strong>Delete your account.</strong> In <a class="text-primary underline" href="/settings">Settings</a>, enter your password and confirm. Your account and everything linked to it (expenses, activity log, Zakat history, screener history, chat history, login sessions) are deleted from our database at once and cannot be brought back.</li>
+      <li><strong>What deletion does not reach.</strong> Words already sent to Groq or a search service to answer a question are held by them under their own policies. Our database provider keeps a short history of the database, and we keep occasional backups for disaster recovery for a limited time (we aim for 30 days or less); deleted data can remain in those until they expire.</li>
+    </ul>
+  </section>
+
+  <section class="bg-surface-container rounded-xl border border-outline-variant p-4 sm:p-5 space-y-2" aria-labelledby="contact-h">
+    <h2 id="contact-h" class="text-body-lg font-semibold text-on-surface">Questions</h2>
+    {% if contact_email %}
+    <p class="text-body-md text-on-surface">Write to <a class="text-primary underline" href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
+    {% else %}
+    <p class="text-body-md text-on-surface">See the contact options on the <a class="text-primary underline" href="/about">About</a> page.</p>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}

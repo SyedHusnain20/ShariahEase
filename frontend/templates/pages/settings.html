@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Settings | ShariahEase{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block chart_js %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto pb-16 px-4 sm:px-6 lg:px-0 space-y-4" x-data="settingsApp()" x-init="init()" :dir="dir" data-testid="settings-page">
+
+  <!-- Title and language -->
+  <div class="flex items-center justify-between gap-2">
+    <h1 class="text-2xl font-bold text-on-surface" x-text="t('title')">Settings</h1>
+    <div class="flex rounded-lg border border-outline-variant overflow-hidden" role="group" aria-label="Language">
+      <button type="button" @click="setLang('en')" :aria-pressed="lang === 'en'"
+              class="min-h-[44px] min-w-[44px] px-3 text-label-md" :class="lang === 'en' ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant'">EN</button>
+      <button type="button" @click="setLang('ur')" :aria-pressed="lang === 'ur'" lang="ur"
+              class="min-h-[44px] min-w-[44px] px-3 text-label-md" :class="lang === 'ur' ? 'bg-primary-container text-on-primary-container' : 'text-on-surface-variant'">اردو</button>
+    </div>
+  </div>
+
+  <!-- Logged out -->
+  <section x-show="!authed" class="bg-surface-container rounded-xl border border-outline-variant p-5 text-center space-y-3" style="display:none">
+    <p class="text-body-lg text-on-surface" x-text="t('login_needed')"></p>
+    <a href="/auth/login" class="inline-flex items-center justify-center min-h-[44px] px-5 rounded-lg bg-primary text-on-primary font-semibold" x-text="t('login')"></a>
+  </section>
+
+  <div x-show="authed" class="space-y-4" style="display:none">
+
+    <!-- Export -->
+    <section class="bg-surface-container rounded-xl border border-outline-variant p-4 sm:p-5 space-y-3" aria-labelledby="data-h" id="export">
+      <h2 id="data-h" class="text-body-lg font-semibold text-on-surface" x-text="t('data_h')"></h2>
+      <p class="text-body-md text-on-surface-variant" x-text="t('data_p')"></p>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <button type="button" @click="download('json')" :disabled="!!busy" data-testid="download-json"
+                class="min-h-[48px] px-4 py-2 leading-relaxed rounded-lg border border-outline-variant text-on-surface font-semibold hover:bg-surface-container-high disabled:opacity-50">
+          <span x-text="busy === 'json' ? t('dl_busy') : t('dl_json')"></span>
+        </button>
+        <button type="button" @click="download('csv')" :disabled="!!busy" data-testid="download-csv"
+                class="min-h-[48px] px-4 py-2 leading-relaxed rounded-lg border border-outline-variant text-on-surface font-semibold hover:bg-surface-container-high disabled:opacity-50">
+          <span x-text="busy === 'csv' ? t('dl_busy') : t('dl_csv')"></span>
+        </button>
+      </div>
+      <p x-show="dlMsg" x-text="dlMsg" class="text-label-md text-primary" role="status" aria-live="polite" data-testid="download-ok"></p>
+      <p x-show="dlErr" class="text-label-md text-error" role="alert" data-testid="download-error">
+        <span x-text="dlErr"></span>
+        <a x-show="dlLoginAgain" href="/auth/login" class="underline" x-text="t('login')"></a>
+      </p>
+    </section>
+
+    <!-- Privacy -->
+    <section class="bg-surface-container rounded-xl border border-outline-variant p-4 sm:p-5 space-y-2" aria-labelledby="privacy-h">
+      <h2 id="privacy-h" class="text-body-lg font-semibold text-on-surface" x-text="t('privacy_h')"></h2>
+      <p class="text-body-md text-on-surface-variant" x-text="t('privacy_p')"></p>
+      <a href="/privacy" class="inline-flex items-center min-h-[44px] text-primary underline" x-text="t('privacy_link')"></a>
+    </section>
+
+    <!-- Delete account -->
+    <section class="bg-surface-container rounded-xl border border-error p-4 sm:p-5 space-y-3" aria-labelledby="del-h" id="delete">
+      <h2 id="del-h" class="text-body-lg font-semibold text-error" x-text="t('del_h')"></h2>
+
+      <div x-show="!deleted" class="space-y-3">
+        <p class="text-body-md text-on-surface" x-text="t('del_p1')"></p>
+        <p class="text-body-md text-on-surface-variant" x-text="t('del_p2')"></p>
+        <form @submit.prevent="deleteAccount()" novalidate class="space-y-3">
+          <div>
+            <label for="del-password" class="block text-label-md font-label-md text-on-surface-variant mb-1" x-text="t('pw')"></label>
+            <input id="del-password" type="password" autocomplete="current-password" dir="ltr" maxlength="128" x-model="password"
+                   :aria-invalid="!!delErr" :aria-describedby="delErr ? 'del-err' : null" data-testid="delete-password"
+                   class="w-full min-h-[48px] rounded-lg bg-surface-container-lowest border border-outline-variant px-3 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary"/>
+          </div>
+          <label class="flex items-start gap-3 min-h-[44px] text-body-md text-on-surface">
+            <input type="checkbox" x-model="understood" data-testid="delete-understand" class="mt-1 w-5 h-5 shrink-0"/>
+            <span x-text="t('understand')"></span>
+          </label>
+          <button type="submit" :disabled="!canDelete" data-testid="delete-submit"
+                  class="w-full min-h-[48px] px-4 py-2 leading-relaxed rounded-lg bg-error text-on-error font-semibold disabled:opacity-40">
+            <span x-text="deleting ? t('del_busy') : t('del_btn')"></span>
+          </button>
+          <p id="del-err" x-show="delErr" class="text-label-md text-error" role="alert" data-testid="delete-error">
+            <span x-text="delErr"></span>
+          </p>
+        </form>
+      </div>
+
+      <p x-show="deleted" x-text="t('deleted')" class="text-body-md text-on-surface" role="status" aria-live="polite" data-testid="delete-done"></p>
+    </section>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>[x-cloak]{display:none !important}</style>
+<script src="/static/js/settings.js"></script>
+{% endblock %}

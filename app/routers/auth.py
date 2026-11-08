@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, status, Response, Request
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.database.db import get_db
 from app.database import models
@@ -9,11 +9,23 @@ from app.services.auth_service import (
     hash_password, verify_password, create_access_token,
     ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS,
 )
-from app.services import refresh_tokens
+from app.services import account_service, refresh_tokens
+from app.services.rate_limit import SlidingWindowLimiter
 from app.dependencies import get_current_user
+import logging
 import os
+from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 _IS_PRODUCTION = os.getenv("ENV", "development") == "production"
+
+# Account deletion asks for the password again. A stolen session must not be able to guess it, so attempts are limited
+# per user (5 in 15 minutes, right or wrong), and the same anti-forgery header as the expense writes is required.
+DELETE_ATTEMPTS = 5
+DELETE_WINDOW_SECONDS = 900
+delete_limiter = SlidingWindowLimiter(DELETE_ATTEMPTS, DELETE_WINDOW_SECONDS)
+REQUIRED_HEADER = ("X-Requested-With", "ShariahEase")
 
 router    = APIRouter(prefix="/auth", tags=["Auth"])
 templates = Jinja2Templates(directory="frontend/templates")
@@ -30,6 +42,10 @@ class SignupRequest(BaseModel):
 class LoginRequest(BaseModel):
     email:    EmailStr
     password: str
+
+class DeleteAccountRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    password: str = Field(..., min_length=1, max_length=128)
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -164,3 +180,31 @@ def me(current_user: models.User = Depends(get_current_user)):
         "language":   current_user.language,
         "created_at": current_user.created_at,
     }
+
+
+@router.delete("/me")
+def delete_me(
+    body: DeleteAccountRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    x_requested_with: Optional[str] = Header(default=None),
+):
+    """
+    Permanently delete the logged-in user's account and ALL their data (see services/account_service.py).
+    Needs the password again, the anti-forgery header, and is limited to a few attempts.
+    """
+    if x_requested_with != REQUIRED_HEADER[1]:
+        raise HTTPException(status_code=403, detail={"code": "missing_header"})
+    wait = delete_limiter.check(current_user.id)
+    if wait > 0:
+        raise HTTPException(status_code=429, detail={"code": "rate_limited", "retry_after": int(wait) + 1},
+                            headers={"Retry-After": str(int(wait) + 1)})
+    if not verify_password(body.password, current_user.hashed_password):
+        raise HTTPException(status_code=403, detail={"code": "wrong_password"})
+    user_id = current_user.id
+    if not account_service.delete_account(db, user_id):
+        raise HTTPException(status_code=404, detail={"code": "not_found"})
+    _clear_session(response)
+    logger.info("account deleted (user id %s)", user_id)          # an id only: no name, email or data
+    return {"detail": "Account deleted"}

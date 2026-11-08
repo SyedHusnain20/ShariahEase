@@ -16,6 +16,7 @@ import time
 import logging
 from groq import Groq, APIConnectionError, RateLimitError, APIStatusError
 from dotenv import load_dotenv
+from app.services.greeting import contains_greeting
 from app.services.urdu_filter import filter_response
 from app.services.stock_price import resolve_symbols
 from app.services.tracing import traceable
@@ -325,6 +326,8 @@ _GREETINGS = {
     "aoa", "good morning", "good evening", "good afternoon", "good night",
     "السلام", "سلام", "آداب", "جی", "ہیلو",
 }
+# Words that start a greeting and may continue: assalam -> assalamu, assalamualaikum ...
+_GREETING_STEMS = {"assalam"}
 
 # ── Capability / meta questions — user asking what the bot CAN do ──────────────
 _CAPABILITY_SIGNALS = {
@@ -364,10 +367,9 @@ def is_off_topic(text: str) -> bool:
     if urdu_chars > 3:
         return False
 
-    # 2. Greetings — always let through
-    for g in _GREETINGS:
-        if g in lower:
-            return False
+    # 2. Greetings — always let through (whole words only: "hi" must not match "machine")
+    if contains_greeting(lower, _GREETINGS, _GREETING_STEMS):
+        return False
 
     # 3. Capability / meta questions — let through
     for sig in _CAPABILITY_SIGNALS:

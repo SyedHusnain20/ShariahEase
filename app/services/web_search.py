@@ -13,7 +13,9 @@ is down, and price data is fetched live when available.
 import httpx
 import asyncio
 import logging
+import os
 import re
+from datetime import datetime, timezone
 from enum import Enum
 
 from app.services.stock_price import (
@@ -24,6 +26,11 @@ from app.services.stock_price import (
 
 logger  = logging.getLogger(__name__)
 TIMEOUT = 10.0
+
+
+def _current_year() -> int:
+    """The year used in live-search queries (never hard-coded, so results do not go stale)."""
+    return datetime.now(timezone.utc).year
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -327,8 +334,8 @@ def _build_price_query(text: str, company: str | None) -> str:
     if company:
         ticker = KMI_SHARIAH_DB.get(company, {}).get("ticker", "")
         label  = f"{company.title()} {ticker}".strip()
-        return f"{label} share price PSX today 2025"
-    return f"{text.strip()} PSX share price 2025"
+        return f"{label} share price PSX today {_current_year()}"
+    return f"{text.strip()} PSX share price {_current_year()}"
 
 
 def format_web_results(results: list[dict], category: SearchCategory) -> str:
@@ -356,26 +363,52 @@ def format_web_results(results: list[dict], category: SearchCategory) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SUNNAH.COM API — Direct hadith search (free, no key required)
-# Much more reliable than scraping DDG for hadith text
+# SUNNAH.COM API — Direct hadith search (needs an API key: set SUNNAH_API_KEY)
+# Request a key by opening an issue at https://github.com/sunnah-com/api
 # ═══════════════════════════════════════════════════════════════════════════════
+
+_sunnah_key_warned = False
+
+_SUNNAH_UNAVAILABLE = (
+    "=== HADITH LOOKUP UNAVAILABLE ===\n"
+    "The sunnah.com lookup is not configured on this server, so no verified hadith text is available.\n"
+    "INSTRUCTION: Quote hadith wording only if it appears in the context provided. Otherwise say plainly "
+    "that you cannot verify the exact wording here, and point the user to sunnah.com.\n"
+    "=== END ==="
+)
+
+
+def _sunnah_api_key() -> str:
+    """Read at call time, like the other keys, so a rotated key needs no code change."""
+    return os.getenv("SUNNAH_API_KEY", "").strip()
+
 
 async def _search_sunnah_com(topic: str) -> str:
     """
-    Queries sunnah.com's public search endpoint for hadith on a topic.
+    Queries the sunnah.com API for hadith on a topic.
     Returns a formatted context block with up to 3 authentic narrations,
     or empty string if the request fails.
+    Without SUNNAH_API_KEY no request is made: the block returned says the lookup is
+    unavailable, so the model does not present unverified wording as verified.
     """
+    global _sunnah_key_warned
+    api_key = _sunnah_api_key()
+    if not api_key:
+        if not _sunnah_key_warned:
+            _sunnah_key_warned = True
+            logger.warning("SUNNAH_API_KEY is not set: hadith lookup from sunnah.com is disabled.")
+        return _SUNNAH_UNAVAILABLE
+
     try:
         async with httpx.AsyncClient(timeout=8.0, follow_redirects=True, headers={
             "User-Agent": "Mozilla/5.0 (compatible; ShariahEase/1.0)",
             "Accept": "application/json",
         }) as client:
-            # sunnah.com search API (public, no auth needed for basic search)
+            # sunnah.com API; the key comes from the SUNNAH_API_KEY environment variable
             res = await client.get(
                 "https://api.sunnah.com/v1/hadiths/search",
                 params={"q": topic, "limit": 5, "page": 1},
-                headers={"X-API-Key": "SqD712P3E82xnwOAEOkGd5JZH8s9wRR24TgV8yv"},
+                headers={"X-API-Key": api_key},
             )
             if res.status_code != 200:
                 raise ValueError(f"sunnah.com returned {res.status_code}")
@@ -492,9 +525,9 @@ async def get_web_context(user_message: str, include_quotes: bool = True) -> tup
                 if search_cat == SearchCategory.STOCK_PRICE:
                     query = _build_price_query(user_message, company)
                 elif search_cat == SearchCategory.GOLD_SILVER:
-                    query = "gold silver price Pakistan PKR today sarafa 2025"
+                    query = f"gold silver price Pakistan PKR today sarafa {_current_year()}"
                 else:
-                    query = f"{user_message.strip()} Pakistan Islamic finance 2025"
+                    query = f"{user_message.strip()} Pakistan Islamic finance {_current_year()}"
 
                 results     = await web_search(query, max_results=4)
                 web_context = format_web_results(results, search_cat)

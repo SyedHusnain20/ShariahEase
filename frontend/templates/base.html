@@ -163,6 +163,20 @@
         <span class="font-body-md text-body-md">About</span>
       </a>
 
+      <!-- Settings (export / delete your data) and Privacy -->
+      <a href="/settings"
+         class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
+                {% if active_page == 'settings' %}bg-primary-container text-on-primary-container{% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}">
+        <span class="material-symbols-outlined text-[20px]">settings</span>
+        <span class="font-body-md text-body-md">Settings</span>
+      </a>
+      <a href="/privacy"
+         class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
+                {% if active_page == 'privacy' %}bg-primary-container text-on-primary-container{% else %}text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface{% endif %}">
+        <span class="material-symbols-outlined text-[20px]">shield</span>
+        <span class="font-body-md text-body-md">Privacy</span>
+      </a>
+
       <!-- Auth links (logged out) -->
       <div id="sidebar-auth-links" class="hidden">
         <a href="/auth/login" class="flex items-center gap-3 px-3 py-2 text-primary hover:bg-surface-container-high rounded-lg transition-all">
@@ -256,6 +270,13 @@
                    class="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
                   <span class="material-symbols-outlined text-[18px]">history</span>
                   Calculation History
+                </a>
+              </li>
+              <li>
+                <a href="/settings"
+                   class="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
+                  <span class="material-symbols-outlined text-[18px]">settings</span>
+                  Settings
                 </a>
               </li>
               <li class="border-t border-[#262626] mt-1 pt-1">
