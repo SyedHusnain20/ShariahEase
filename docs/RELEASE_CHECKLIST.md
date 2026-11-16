@@ -7,7 +7,7 @@ Nothing here contains a secret: keys go in `.env` (local) and in the Hugging Fac
 
 - [ ] **Tests pass.** `python -m pytest -q` is green. With a throwaway Postgres: `$env:DATABASE_URL_TEST="postgresql://.../shariahease_test"; python -m pytest -q -m pg` is green (the database name must contain `test`).
 - [ ] **Urdu reviewed** by a native speaker, signed off in writing: `frontend/static/js/expenses.js`, `frontend/static/js/settings.js`, `frontend/static/offline.html`, the category and subcategory names added by migration 0004. The privacy page is English only: decide whether that is acceptable for launch.
-- [ ] **Real phone test** (Android Chrome, and an iPhone if you can): sign up, add an expense in Urdu and English, open the app offline (you should see the offline page), install it to the home screen, download the CSV and JSON from Settings and open them, delete the test account.
+- [ ] **Real phone test** (Android Chrome, and an iPhone if you can): sign up, add an expense in Urdu and English, open the app offline (you should see the offline page), install it to the home screen, download the CSV and JSON from Settings and open them (six columns only), delete the test account.
 - [ ] **Secrets and settings** on the Space (Settings, "Variables and secrets"). Secrets: `DATABASE_URL`, `SECRET_KEY` (32+ characters; the app refuses to start without it in production), `GROQ_API_KEY`, `SUNNAH_API_KEY` (a newly issued key), `FINNHUB_API_KEY`, `METAL_API_KEY`, and the WhatsApp ones only if the bot is on. Variables: `ENV=production`, `PRIVACY_CONTACT_EMAIL` (an address you read; if empty the privacy page points to About). `LANGSMITH_TRACING` stays off unless you are debugging.
 - [ ] **The previous sunnah.com key is revoked** and the new one is in use.
 - [ ] **Database region known.** Open the Neon console and note where the database lives (the privacy page names Neon and Hugging Face; Pakistan's data-protection bill is still a draft, see `risk_register.md`).
@@ -27,7 +27,7 @@ Nothing here contains a secret: keys go in `.env` (local) and in the Hugging Fac
   # /docs must NOT exist in production (expect 404):
   try { (Invoke-WebRequest -UseBasicParsing "$base/docs").StatusCode } catch { $_.Exception.Response.StatusCode.value__ }
   ```
-- [ ] **One real run-through as a new user:** sign up, add 3 expenses (one with an Urdu note), download JSON and CSV (the CSV should open in Excel with the Urdu text intact), delete an expense and undo it, then delete the account (a wrong password must be refused, the right one must work, and logging in again must fail).
+- [ ] **One real run-through as a new user:** sign up, add 3 expenses (one with an Urdu note), download CSV and JSON (the CSV opens in Excel with the columns ID, Date, Amount (Rs), Category, Sub-category, Source; the deleted expense and the notes must NOT be in it), delete an expense and undo it, then delete the account (a wrong password must be refused, the right one must work, and logging in again must fail).
 
 ## C. Launch day
 

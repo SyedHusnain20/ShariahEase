@@ -138,7 +138,8 @@
           <h4 class="text-label-md text-on-surface-variant mt-3 mb-1" x-text="dayLabel(day.date)"></h4>
           <ul class="bg-surface-container rounded-xl border border-outline-variant divide-y divide-outline-variant/40">
             <template x-for="x in day.items" :key="x.id">
-              <li class="flex items-stretch" data-testid="expense-row">
+              <li data-testid="expense-row">
+               <div class="flex items-stretch">
                 <button type="button" @click="openEdit(x)" class="flex-1 min-w-0 text-start px-4 py-3 min-h-[56px]">
                   <span class="flex items-baseline justify-between gap-3">
                     <span class="text-body-md font-medium text-on-surface truncate" x-text="rowTitle(x)"></span>
@@ -147,14 +148,22 @@
                   <span class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
                     <span class="text-label-md text-on-surface-variant truncate max-w-full" x-show="x.note" x-text="x.note"></span>
                     <span x-show="isCharity(x)" class="text-label-md px-2 rounded-full bg-primary-container text-on-primary-container" x-text="t('charity_badge')"></span>
-                    <span x-show="x.shariah_flag && !x.shariah_flag_dismissed" class="text-label-md px-2 rounded-full border border-error text-error"
-                          x-text="x.shariah_flag === 'riba' ? t('flag_riba') : t('flag_doubtful')"></span>
                   </span>
                 </button>
                 <button type="button" @click="remove(x)" :aria-label="t('delete') + ': ' + rowTitle(x)"
                         class="w-[48px] shrink-0 overflow-hidden flex items-center justify-center text-on-surface-variant hover:text-error">
                   <span class="material-symbols-outlined">delete</span>
                 </button>
+               </div>
+               <div x-show="hasLiveFlag(x)" style="display:none" class="flex items-center justify-between gap-3 px-4 pb-3 -mt-1" data-testid="flag-strip">
+                 <p class="text-label-md text-error min-w-0">
+                   <span class="font-semibold" x-text="flagText(x)"></span>
+                   <span x-text="' · ' + t('flag_verify')"></span>
+                 </p>
+                 <button type="button" @click="setDismissed(x, true)" :disabled="saving"
+                         class="shrink-0 min-h-[44px] px-3 rounded-lg border border-outline text-label-md text-on-surface disabled:opacity-60"
+                         x-text="t('flag_dismiss')" data-testid="flag-dismiss"></button>
+               </div>
               </li>
             </template>
           </ul>
@@ -164,8 +173,82 @@
       <button type="button" x-show="nextBefore" @click="loadMore()" :disabled="loadingMore"
               class="w-full min-h-[44px] rounded-lg border border-outline text-on-surface disabled:opacity-60" x-text="t('load_more')"></button>
 
-      <p x-show="items.some(x => x.shariah_flag && !x.shariah_flag_dismissed)" class="text-label-md text-on-surface-variant pt-2" x-text="t('flag_note')"></p>
+      <p x-show="items.some(x => hasLiveFlag(x))" class="text-label-md text-on-surface-variant pt-2" x-text="t('flag_note')"></p>
       <p class="pt-2"><a href="/zakat" class="text-primary underline min-h-[44px] inline-flex items-center" x-text="t('zakat_link')"></a></p>
+    </section>
+
+    <!-- Yearly Zakat and Sadaqah statement -->
+    <section class="bg-surface-container rounded-xl border border-outline-variant p-4 space-y-3" aria-labelledby="st-h" data-testid="statement">
+      <h3 id="st-h" class="text-body-lg font-semibold text-on-surface" x-text="t('st_title')"></h3>
+      <button type="button" @click="toggleStatement()" :aria-expanded="stOpen"
+              class="w-full min-h-[48px] rounded-lg border border-outline text-on-surface" x-text="stOpen ? t('st_hide') : t('st_open')" data-testid="statement-toggle"></button>
+
+      <div x-show="stOpen" style="display:none" class="space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <button type="button" @click="shiftYear(-1)" :aria-label="t('prev_year')"
+                  class="w-[44px] min-h-[44px] overflow-hidden rounded-lg text-on-surface hover:bg-surface-container-high flex items-center justify-center">
+            <span class="material-symbols-outlined" :class="dir === 'rtl' ? 'rotate-180' : ''">chevron_left</span>
+          </button>
+          <p class="text-body-lg font-semibold text-on-surface" dir="ltr" aria-live="polite"><span class="sr-only" x-text="t('st_year')"></span> <span x-text="stYear" data-testid="statement-year"></span></p>
+          <button type="button" @click="shiftYear(1)" :disabled="stYear >= thisYear" :aria-label="t('next_year')"
+                  class="w-[44px] min-h-[44px] overflow-hidden rounded-lg text-on-surface hover:bg-surface-container-high flex items-center justify-center disabled:opacity-30">
+            <span class="material-symbols-outlined" :class="dir === 'rtl' ? 'rotate-180' : ''">chevron_right</span>
+          </button>
+        </div>
+
+        <p x-show="stLoading" class="text-on-surface-variant text-body-md" x-text="t('loading')"></p>
+        <p x-show="stError" x-text="stError" class="text-error text-body-md" role="alert"></p>
+
+        <template x-if="stData">
+          <div class="space-y-3">
+            <div>
+              <p class="text-label-md text-on-surface-variant" x-text="t('st_total')"></p>
+              <p class="text-2xl font-bold text-on-surface" dir="ltr" :class="dir === 'rtl' ? 'text-right' : ''" x-text="fmt(stData.total_paisa)" data-testid="statement-total"></p>
+            </div>
+            <p x-show="stData.count === 0" class="text-on-surface-variant text-body-md" x-text="t('st_none')"></p>
+            <ul class="divide-y divide-outline-variant/40" x-show="stData.count > 0" data-testid="statement-types">
+              <template x-for="ty in stData.types" :key="ty.key">
+                <li class="flex items-center justify-between gap-3 py-2 text-body-md">
+                  <span class="text-on-surface" x-text="stTypeName(ty) + ' (' + ty.count + ')'"></span>
+                  <span class="text-on-surface-variant shrink-0" dir="ltr" x-text="fmt(ty.total_paisa)"></span>
+                </li>
+              </template>
+            </ul>
+
+            <div class="rounded-lg bg-surface-container-high p-3 space-y-1" data-testid="statement-check">
+              <p class="text-label-md font-semibold text-on-surface" x-text="t('st_calc_title')"></p>
+              <template x-if="stData.zakat_check">
+                <div class="space-y-1 text-body-md">
+                  <p class="text-on-surface" x-text="stCheckText()"></p>
+                  <p class="text-on-surface-variant" dir="ltr" :class="dir === 'rtl' ? 'text-right' : ''" x-text="fmt(stData.zakat_check.zakat_due_paisa)"></p>
+                  <p class="text-on-surface"><span x-text="t('st_paid') + ': '"></span><span dir="ltr" x-text="fmt(stData.zakat_check.zakat_paid_paisa)"></span></p>
+                  <p class="text-on-surface" x-show="stData.zakat_check.remaining_paisa > 0"><span x-text="t('st_left') + ': '"></span><span dir="ltr" x-text="fmt(stData.zakat_check.remaining_paisa)"></span></p>
+                  <p class="text-on-surface" x-show="stData.zakat_check.overpaid_paisa > 0"><span x-text="t('st_over') + ': '"></span><span dir="ltr" x-text="fmt(stData.zakat_check.overpaid_paisa)"></span></p>
+                  <p class="text-label-md text-on-surface-variant" x-text="t('st_calc_note')"></p>
+                </div>
+              </template>
+              <p x-show="!stData.zakat_check" class="text-body-md text-on-surface-variant" x-text="t('st_no_calc')"></p>
+              <a href="/zakat" class="text-primary underline min-h-[44px] inline-flex items-center" x-text="t('zakat_link')" data-testid="statement-zakat-link"></a>
+            </div>
+
+            <ul class="divide-y divide-outline-variant/40" x-show="stData.entries.length > 0" data-testid="statement-entries">
+              <template x-for="e in stData.entries" :key="e.id">
+                <li class="flex items-baseline justify-between gap-3 py-2 text-body-md">
+                  <span class="min-w-0 text-on-surface"><span dir="ltr" x-text="e.occurred_on"></span> · <span x-text="lang === 'ur' ? e.name_ur : e.name_en"></span></span>
+                  <span class="text-on-surface shrink-0" dir="ltr" x-text="fmt(e.amount_paisa)"></span>
+                </li>
+              </template>
+            </ul>
+            <p x-show="stData.entries_truncated" class="text-label-md text-on-surface-variant" x-text="t('st_truncated', { n: stData.entries.length })"></p>
+
+            <div class="grid grid-cols-1 gap-2">
+              <button type="button" @click="downloadPdf('en')" :disabled="!!stBusy" class="min-h-[48px] rounded-lg bg-primary text-on-primary font-semibold disabled:opacity-60" x-text="t('st_pdf_en')" data-testid="pdf-en"></button>
+              <button type="button" @click="downloadPdf('ur')" :disabled="!!stBusy" class="min-h-[48px] rounded-lg border border-primary text-primary font-semibold disabled:opacity-60" x-text="t('st_pdf_ur')" data-testid="pdf-ur"></button>
+            </div>
+            <p class="text-label-md text-on-surface-variant" x-text="t('st_note')"></p>
+          </div>
+        </template>
+      </div>
     </section>
   </div>
 
@@ -182,6 +265,16 @@
       </div>
       <form @submit.prevent="submitEdit()" novalidate class="space-y-3" x-show="editing">
         {{ fields('edit', 'editErrors', 'edit') }}
+        <div x-show="editing && editing.shariah_flag" style="display:none" class="rounded-lg border border-outline-variant p-3 space-y-2" data-testid="edit-flag">
+          <p class="text-label-md text-on-surface-variant">
+            <span class="font-semibold" x-text="editing ? flagText(editing) : ''"></span>
+            <span x-text="' · ' + t('flag_verify')"></span>
+          </p>
+          <button type="button" x-show="editing && editing.shariah_flag_dismissed" @click="setDismissed(editing, false)" :disabled="saving"
+                  class="min-h-[44px] px-3 rounded-lg border border-outline text-label-md text-on-surface disabled:opacity-60" x-text="t('flag_show')" data-testid="flag-show"></button>
+          <button type="button" x-show="editing && !editing.shariah_flag_dismissed" @click="setDismissed(editing, true)" :disabled="saving"
+                  class="min-h-[44px] px-3 rounded-lg border border-outline text-label-md text-on-surface disabled:opacity-60" x-text="t('flag_dismiss')"></button>
+        </div>
         <p x-show="editMessage" x-text="editMessage" class="text-body-md text-error" role="alert"></p>
         <div class="flex gap-3 pt-1">
           <button type="button" @click="closeEdit()" class="flex-1 min-h-[48px] rounded-lg border border-outline text-on-surface" x-text="t('cancel')"></button>

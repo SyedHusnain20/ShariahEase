@@ -13,7 +13,7 @@
     en: {
       title: 'Settings', login_needed: 'Log in to see your settings.', login: 'Log in',
       data_h: 'Your data',
-      data_p: 'Download every expense you still have, notes included. Deleted entries that are still inside their 30-day undo period are included too (they have a deleted_at date).',
+      data_p: 'Download your expenses as a file you can open in Excel (CSV), or as JSON. Each expense has six things: ID, date, amount in rupees, category, sub-category, and how it was added (manual or chatbot). Notes and deleted entries are not included.',
       dl_json: 'Download JSON', dl_csv: 'Download CSV (Excel)',
       dl_busy: 'Preparing your file...', dl_done: 'Your file was saved.',
       err_dl: 'The download did not work. Please try again.',
@@ -33,7 +33,7 @@
     ur: {
       title: 'ترتیبات', login_needed: 'ترتیبات دیکھنے کے لیے لاگ اِن کریں۔', login: 'لاگ اِن',
       data_h: 'میرا ڈیٹا',
-      data_p: 'اپنے سارے خرچ ڈاؤن لوڈ کریں، نوٹ سمیت۔ حذف کیے ہوئے وہ اندراجات بھی شامل ہیں جو ابھی 30 دن کی واپسی کی مدت میں ہیں (ان پر حذف کی تاریخ لکھی ہوگی)۔',
+      data_p: 'اپنے خرچ ایک فائل کی صورت میں ڈاؤن لوڈ کریں جو ایکسل (CSV) میں کھل جاتی ہے، یا JSON میں۔ ہر خرچ کے چھ حصے ہوتے ہیں: نمبر (ID)، تاریخ، رقم روپے میں، زمرہ، ذیلی زمرہ، اور یہ کہ اسے کیسے درج کیا گیا (manual یا chatbot)۔ نوٹ اور حذف شدہ اندراجات شامل نہیں ہوتے۔',
       dl_json: 'JSON ڈاؤن لوڈ کریں', dl_csv: 'CSV ڈاؤن لوڈ کریں (ایکسل)',
       dl_busy: 'آپ کی فائل تیار ہو رہی ہے...', dl_done: 'آپ کی فائل محفوظ ہو گئی۔',
       err_dl: 'ڈاؤن لوڈ نہیں ہو سکا۔ براہِ کرم دوبارہ کوشش کریں۔',

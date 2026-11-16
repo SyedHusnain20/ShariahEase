@@ -49,11 +49,20 @@ def add(f, old, new, label, tests, pg=False):
     M.append((f, old, new, label, tests, pg))
 
 # --- export: which rows --------------------------------------------------------------------------
-add(SVC, "        conditions = [Expense.user_id == user_id]\n", "        conditions = []\n", "export: not scoped to the user", EXPORT)
 add(SVC, "Expense.id > last[1]", "Expense.id >= last[1]", "export: a batch repeats its last row", EXPORT)
-add(SVC, "            .where(*conditions)\n            .order_by(Expense.occurred_on, Expense.id).limit(batch_size)", "            .where(*conditions, Expense.deleted_at.is_(None))\n            .order_by(Expense.occurred_on, Expense.id).limit(batch_size)", "export: drops soft-deleted rows", EXPORT)
-add(SVC, "deleted_at=None if e.deleted_at is None else _aware(e.deleted_at),", "deleted_at=None,", "export: hides deleted_at", EXPORT)
-add(SVC, "subcategory_slug=sub_slug, subcategory_name_en=sub_name, note=e.note,", "subcategory_slug=sub_slug, subcategory_name_en=sub_name, note=None,", "export: leaves out notes", EXPORT)
+add(SVC, "        conditions = [Expense.user_id == user_id, Expense.deleted_at.is_(None)]\n", "        conditions = [Expense.deleted_at.is_(None)]\n", "export: not scoped to the user", EXPORT)
+add(SVC, "        conditions = [Expense.user_id == user_id, Expense.deleted_at.is_(None)]\n", "        conditions = [Expense.user_id == user_id]\n", "export: includes deleted expenses", EXPORT)
+add(SVC, "sub_category=sub_category, source=source)", 'sub_category=sub_category, source="manual")', "export: every source shown as manual", EXPORT)
+add(SVC, "category=category,\n                            sub_category=sub_category", "category=sub_category,\n                            sub_category=category", "export: category and sub-category swapped", EXPORT)
+add(SVC, "    sub_category: Optional[str]\n    source: str\n", "    sub_category: Optional[str]\n    source: str\n    note: Optional[str] = None\n", "export: the row gains a note field", EXPORT)
+add(FMT, '"ai_chat": "chatbot",', '"ai_chat": "manual",', "export: chatbot entries shown as manual", EXPORT)
+add(FMT, '"whatsapp": "chatbot",', '"whatsapp": "manual",', "export: whatsapp entries shown as manual", EXPORT)
+add(FMT, '"pwa_sync": "manual",', '"pwa_sync": "chatbot",', "export: offline-synced entries shown as chatbot", EXPORT)
+add(FMT, '        raise ValueError(f"no export label for source {source!r}") from None', '        return "manual"', "export: an unknown source is silently called manual", EXPORT)
+add(FMT, 'CSV_HEADERS = ["ID", "Date", "Amount (Rs)",', 'CSV_HEADERS = ["ID", "Date", "Amount",', "export: CSV amount header loses (Rs)", EXPORT)
+add(FMT, 'JSON_KEYS = ["id", "date", "amount_rupees", "category", "sub_category", "source"]', 'JSON_KEYS = ["id", "date", "amount_rupees", "category", "subcategory", "source"]', "export: JSON key renamed", EXPORT)
+add(PRIV, "It does not include your notes or the payment method, and deleted entries are not in it.", "It includes your notes.", "privacy: wrong about what the export leaves out", PRIVT)
+add(SETJS, "Notes and deleted entries are not included.", "Notes are included.", "settings: wrong about what the export leaves out", PRIVT)
 # --- export: format ------------------------------------------------------------------------------
 for ch, name in (("=", "="), ("+", "+"), ("-", "-"), ("@", "@")):
     add(FMT, '_FORMULA_START = ("=", "+", "-", "@", "\\t", "\\r", "\\n")', '_FORMULA_START = (' + ", ".join(f'"{c}"' for c in ("=", "+", "-", "@") if c != ch) + ', "\\t", "\\r", "\\n")', f"csv: '{name}' is not neutralised", EXPORT)
@@ -62,7 +71,6 @@ add(FMT, '"@", "\\t", "\\r", "\\n")', '"@", "\\t", "\\n")', "csv: carriage retur
 add(FMT, "    probe = value.lstrip(\" \\u00a0\")\n", "    probe = value\n", "csv: a formula after leading spaces is not neutralised", EXPORT)
 add(FMT, 'BOM = "\\ufeff"', 'BOM = ""', "csv: no BOM (Excel garbles Urdu)", EXPORT)
 add(FMT, 'return f"{paisa // 100}.{paisa % 100:02d}"', 'return f"{paisa // 100}.{paisa % 100}"', "money: 5 paisa written as .5", EXPORT)
-add(FMT, 'cells.append("true" if value else "false")', 'cells.append("True" if value else "False")', "csv: booleans written differently from JSON", EXPORT)
 add(FMT, 'writer = csv.writer(out, lineterminator="\\r\\n")', 'writer = csv.writer(out, lineterminator="\\n")', "csv: LF instead of CRLF", EXPORT)
 # --- export: route -------------------------------------------------------------------------------
 add(ROUTER, "    wait = export_limiter.check(user.id)\n", "    wait = 0\n", "export route: no rate limit", EXPORT)

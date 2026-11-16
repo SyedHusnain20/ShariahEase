@@ -12,6 +12,10 @@ Two more functions serve the data-rights and housekeeping needs (Path step 2):
     purge_deleted_expenses     (system) really deletes rows that were soft-deleted more than 30 days ago
     run_maintenance            (system) runs the purge at most once a day, started by normal traffic
 
+One more serves the Shariah features (Path step 3):
+
+    charity_statement          the yearly (or any [from, to) window) Zakat / Sadaqah / Fitrana statement
+
 Rules every function follows
   * `user_id` is the first argument and comes from the authenticated session, never from a request
     body, model output or message text. No input schema below has a `user_id` field (extra fields are
@@ -26,19 +30,22 @@ Rules every function follows
 from __future__ import annotations
 
 import logging
+import math
 import unicodedata
 import uuid
 from contextlib import contextmanager
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Iterable, Literal, Optional, Sequence
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, ValidationError, field_validator
-from sqlalchemy import BigInteger, Integer, and_, cast, delete, func, or_, select, update
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, ValidationError, field_validator
+from sqlalchemy import BigInteger, Integer, and_, cast, delete, func, literal_column, or_, select, update
 
 from app.database.models import (
-    AuditLog, Category, Expense, MaintenanceRun, Subcategory, User, MAX_AMOUNT_PAISA, MAX_NOTE_CHARS,
+    AuditLog, Category, Expense, MaintenanceRun, Subcategory, User, ZakatRecord, MAX_AMOUNT_PAISA, MAX_NOTE_CHARS,
 )
+from app.services.shariah_flags import flag_for
 
 log = logging.getLogger(__name__)
 
@@ -167,6 +174,7 @@ class ExpenseUpdate(BaseModel):
     subcategory_slug: Optional[str] = None
     note: Optional[str] = None
     payment_method: Optional[PaymentMethod] = None
+    shariah_flag_dismissed: Optional[StrictBool] = None      # True = "I checked this, hide the reminder"; False = show it again
 
     @field_validator("occurred_on", mode="before")
     @classmethod
@@ -380,16 +388,19 @@ class _Taxonomy:
         return cat.id, None, None
 
 
-def _local_today(db, user_id: int, now: datetime) -> date:
+def _user_zone(db, user_id: int) -> ZoneInfo:
     tz_name = db.execute(select(User.timezone).where(User.id == user_id)).scalar()
     if tz_name is None:
         raise NotFound("user not found")
     try:
-        tz = ZoneInfo(tz_name)
+        return ZoneInfo(tz_name)
     except (ZoneInfoNotFoundError, ValueError):
         log.warning("unknown time zone on a user row; using %s", DEFAULT_TIMEZONE)
-        tz = ZoneInfo(DEFAULT_TIMEZONE)
-    return now.astimezone(tz).date()
+        return ZoneInfo(DEFAULT_TIMEZONE)
+
+
+def _local_today(db, user_id: int, now: datetime) -> date:
+    return now.astimezone(_user_zone(db, user_id)).date()
 
 
 def _check_not_future(value: date, today: date, field: str):
@@ -454,11 +465,11 @@ def add_expenses(db, user_id: int, items: Sequence[ExpenseIn | dict], *, source:
     rows = []
     for i, item in enumerate(parsed):
         _check_not_future(item.occurred_on, today, f"items[{i}].occurred_on")
-        category_id, sub_id, flag = tax.resolve(item.category_slug, item.subcategory_slug, f"items[{i}].")
+        category_id, sub_id, default_flag = tax.resolve(item.category_slug, item.subcategory_slug, f"items[{i}].")
         rows.append(dict(
             user_id=user_id, client_id=item.client_id, amount_paisa=item.amount_paisa, occurred_on=item.occurred_on,
             category_id=category_id, subcategory_id=sub_id, note=item.note, payment_method=item.payment_method,
-            source=source, shariah_flag=flag, created_at=now, updated_at=now,
+            source=source, shariah_flag=flag_for(default_flag, item.note), created_at=now, updated_at=now,
         ))
 
     actor = _ACTOR_FOR_SOURCE[source]
@@ -499,7 +510,7 @@ def update_expense(db, user_id: int, expense_id: int, expected_version: int, cha
     given = set(change.model_fields_set)
     if not given:
         raise _bad("changes", "nothing to change")
-    for name in ("amount_paisa", "occurred_on", "payment_method"):
+    for name in ("amount_paisa", "occurred_on", "payment_method", "shariah_flag_dismissed"):
         if name in given and getattr(change, name) is None:
             raise _bad(name, "cannot be cleared")
 
@@ -514,11 +525,39 @@ def update_expense(db, user_id: int, expense_id: int, expected_version: int, cha
     if "occurred_on" in given:
         _check_not_future(change.occurred_on, _local_today(db, user_id, now), "occurred_on")
         values["occurred_on"] = change.occurred_on
-    if given & {"category_slug", "subcategory_slug"}:
-        tax = _Taxonomy(db)
-        category_id, sub_id, flag = tax.resolve(change.category_slug, change.subcategory_slug, "")
-        # a new category/subcategory starts with that subcategory's default flag and an un-dismissed state
-        values.update(category_id=category_id, subcategory_id=sub_id, shariah_flag=flag, shariah_flag_dismissed=False)
+
+    # Shariah flag. It depends on the subcategory's default and on the note, so a change of either (or an explicit
+    # dismissal) needs the row as it is now. A stale version is refused here, before anything is worked out.
+    cat_changed = bool(given & {"category_slug", "subcategory_slug"})
+    note_changed = "note" in given
+    dismiss_given = "shariah_flag_dismissed" in given
+    if cat_changed or note_changed or dismiss_given:
+        current = db.execute(
+            select(Expense.note, Expense.subcategory_id, Expense.shariah_flag, Expense.version)
+            .where(Expense.id == expense_id, Expense.user_id == user_id, Expense.deleted_at.is_(None))
+        ).first()
+        if current is None:
+            raise NotFound("expense not found")
+        if current.version != expected_version:
+            raise VersionConflict(current.version)
+        flag_now = current.shariah_flag
+        if cat_changed:
+            category_id, sub_id, default_flag = _Taxonomy(db).resolve(change.category_slug, change.subcategory_slug, "")
+            flag_now = flag_for(default_flag, change.note if note_changed else current.note)
+            # a new category is a new classification: the earlier "I checked this" no longer applies
+            values.update(category_id=category_id, subcategory_id=sub_id, shariah_flag=flag_now, shariah_flag_dismissed=False)
+        elif note_changed:
+            default_flag = None
+            if current.subcategory_id is not None:
+                default_flag = db.execute(select(Subcategory.default_flag).where(Subcategory.id == current.subcategory_id)).scalar()
+            flag_now = flag_for(default_flag, change.note)
+            values["shariah_flag"] = flag_now
+            if flag_now != current.shariah_flag:        # a different reminder is a new finding: show it again
+                values["shariah_flag_dismissed"] = False
+        if dismiss_given:
+            if change.shariah_flag_dismissed and flag_now is None:
+                raise _bad("shariah_flag_dismissed", "there is no reminder to dismiss")
+            values["shariah_flag_dismissed"] = change.shariah_flag_dismissed
 
     values.update(updated_at=now, version=Expense.version + 1)
     with _unit(db, commit):
@@ -697,6 +736,167 @@ def list_categories(db) -> list[CategoryOut]:
                     subcategories=subs.get(c.id, []))
         for c in db.execute(select(Category).order_by(Category.sort_order, Category.id)).scalars()
     ]
+
+
+# ── charity statement (Zakat, Sadaqah, Fitrana) ──────────────────────────────────────────────────
+
+# (key, English name, Urdu name). The first four match the seeded subcategories; "unspecified" is an expense in the
+# Charity category whose type was not chosen. It is shown on its own line and is never counted as Zakat.
+# UR: the Urdu text awaits native-speaker review.
+CHARITY_TYPES = (
+    ("zakat", "Zakat", "زکوٰۃ"),
+    ("sadaqah", "Sadaqah", "صدقہ"),
+    ("fitrana", "Fitrana", "فطرانہ"),
+    ("other", "Other donations", "دیگر عطیات"),
+    ("unspecified", "Charity, type not chosen", "صدقہ و خیرات، قسم منتخب نہیں"),
+)
+_CHARITY_NAMES = {key: (en, ur) for key, en, ur in CHARITY_TYPES}
+STATEMENT_ENTRY_LIMIT = 2000                    # lines listed; the totals always cover every row
+STATEMENT_MIN_DATE = date(2000, 1, 1)
+STATEMENT_MAX_DATE = date(2200, 1, 1)
+
+
+class StatementType(BaseModel):
+    key: str
+    name_en: str
+    name_ur: str
+    total_paisa: int
+    count: int
+
+
+class StatementEntry(BaseModel):
+    id: int
+    occurred_on: date
+    type: str
+    name_en: str
+    name_ur: str
+    amount_paisa: int
+    payment_method: str
+    note: Optional[str]
+
+
+class ZakatCheck(BaseModel):
+    """The person's latest saved Zakat calculation made inside the window, set beside what they recorded as Zakat."""
+    calculated_on: date                  # local date of the calculation
+    is_zakat_due: bool
+    zakat_due_paisa: int
+    zakat_paid_paisa: int
+    remaining_paisa: int                 # due minus paid, never below zero
+    overpaid_paisa: int                  # paid minus due, never below zero
+
+
+class CharityStatement(BaseModel):
+    date_from: date                      # inclusive
+    date_to: date                        # exclusive
+    currency: str = "PKR"
+    total_paisa: int
+    count: int
+    types: list[StatementType]
+    entries: list[StatementEntry]        # oldest first
+    entries_truncated: bool
+    zakat_check: Optional[ZakatCheck] = None
+
+
+def float_rupees_to_paisa(value) -> int:
+    """
+    The one place a float amount from the Zakat calculator's table becomes money. The float is turned into a Decimal
+    through its shortest text form (so 1234.57 is 1234.57, not 1234.5699999...), then rounded half up to whole paisa.
+    Raises ValueError for anything that is not a finite, non-negative number within the money cap.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("not a number")
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError("not a finite number")
+    rupees = Decimal(str(value))
+    if rupees < 0 or rupees > Decimal(MAX_AMOUNT_PAISA) / 100:           # checked first: a huge value cannot be rounded
+        raise ValueError("out of range")
+    return int((rupees * 100).quantize(Decimal(1), rounding=ROUND_HALF_UP))
+
+
+def _latest_zakat_calculation(db, user_id: int, zone: ZoneInfo, date_from: date, date_to: date):
+    """(local date, zakat due in paisa, is_zakat_due) of the newest saved calculation made inside [date_from, date_to)."""
+    utc = timezone.utc
+    lo = datetime.combine(date_from - timedelta(days=1), time.min, tzinfo=utc)       # a day of slack each side, then
+    hi = datetime.combine(date_to + timedelta(days=1), time.min, tzinfo=utc)         # the local date decides
+    rows = db.execute(
+        select(ZakatRecord.calculated_at, ZakatRecord.zakat_due, ZakatRecord.is_zakat_due)
+        .where(ZakatRecord.user_id == user_id, ZakatRecord.calculated_at >= lo, ZakatRecord.calculated_at < hi)
+        .order_by(ZakatRecord.calculated_at.desc(), ZakatRecord.id.desc()).limit(50)
+    ).all()
+    for calculated_at, zakat_due, is_due in rows:
+        if calculated_at is None:
+            continue
+        local = _aware(calculated_at).astimezone(zone).date()
+        if not date_from <= local < date_to:
+            continue
+        try:
+            return local, float_rupees_to_paisa(zakat_due), bool(is_due)
+        except ValueError:
+            log.warning("a saved Zakat calculation has an unusable amount and was left out of the statement")
+            return None
+    return None
+
+
+def charity_statement(db, user_id: int, *, date_from: date, date_to: date,
+                      entry_limit: int = STATEMENT_ENTRY_LIMIT) -> CharityStatement:
+    """
+    Zakat, Sadaqah and Fitrana given in [date_from, date_to): start inclusive, end exclusive, in the user's local dates.
+    Soft-deleted expenses never appear. Totals and counts are summed by SQL over every matching row; the itemised
+    lines are capped at `entry_limit` (entries_truncated says so). `zakat_check` compares the latest calculator result
+    saved inside the same window with the Zakat recorded here, or is None when there is none.
+    """
+    _check_user_id(user_id)
+    _check_date("date_from", date_from)
+    _check_date("date_to", date_to)
+    if date_from > date_to:
+        raise _bad("date_from", "must not be after date_to")
+    if date_from < STATEMENT_MIN_DATE or date_to > STATEMENT_MAX_DATE:
+        raise _bad("date_from", "is out of range")
+    if isinstance(entry_limit, bool) or not isinstance(entry_limit, int) or not 1 <= entry_limit <= 10000:
+        raise _bad("entry_limit", "must be between 1 and 10000")
+
+    is_charity = or_(Category.is_charity.is_(True), Subcategory.charity_type.is_not(None))
+    conditions = [Expense.user_id == user_id, Expense.deleted_at.is_(None),
+                  Expense.occurred_on >= date_from, Expense.occurred_on < date_to, is_charity]
+    type_key = func.coalesce(Subcategory.charity_type, literal_column("'unspecified'"))
+    total = cast(func.coalesce(func.sum(Expense.amount_paisa), 0), BigInteger)
+    count = func.count(Expense.id)
+
+    def joined(query):
+        return (query.select_from(Expense).join(Category, Category.id == Expense.category_id)
+                .outerjoin(Subcategory, Subcategory.id == Expense.subcategory_id))
+
+    overall = db.execute(joined(select(total, count)).where(*conditions)).one()
+    by_type = {r[0]: (int(r[1]), r[2]) for r in db.execute(
+        joined(select(type_key, total, count)).where(*conditions).group_by(type_key))}
+
+    types = []
+    for key, name_en, name_ur in CHARITY_TYPES:
+        paisa, n = by_type.get(key, (0, 0))
+        if key == "unspecified" and n == 0:
+            continue
+        types.append(StatementType(key=key, name_en=name_en, name_ur=name_ur, total_paisa=paisa, count=n))
+
+    rows = db.execute(
+        joined(select(Expense, type_key.label("charity_type"))).where(*conditions)
+        .order_by(Expense.occurred_on, Expense.id).limit(entry_limit + 1)
+    ).all()
+    entries = []
+    for e, key in rows[:entry_limit]:
+        name_en, name_ur = _CHARITY_NAMES.get(key, _CHARITY_NAMES["other"])
+        entries.append(StatementEntry(id=e.id, occurred_on=e.occurred_on, type=key, name_en=name_en, name_ur=name_ur,
+                                      amount_paisa=int(e.amount_paisa), payment_method=e.payment_method, note=e.note))
+
+    check = None
+    latest = _latest_zakat_calculation(db, user_id, _user_zone(db, user_id), date_from, date_to)
+    if latest is not None:
+        calculated_on, due, is_due = latest
+        paid = by_type.get("zakat", (0, 0))[0]
+        check = ZakatCheck(calculated_on=calculated_on, is_zakat_due=is_due, zakat_due_paisa=due, zakat_paid_paisa=paid,
+                           remaining_paisa=max(0, due - paid), overpaid_paisa=max(0, paid - due))
+
+    return CharityStatement(date_from=date_from, date_to=date_to, total_paisa=int(overall[0]), count=overall[1],
+                            types=types, entries=entries, entries_truncated=len(rows) > entry_limit, zakat_check=check)
 
 
 # ── export (data rights) ─────────────────────────────────────────────────────────────────────────

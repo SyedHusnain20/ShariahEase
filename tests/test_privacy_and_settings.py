@@ -159,3 +159,19 @@ def test_settings_is_linked_from_both_the_sidebar_and_the_profile_menu(web):
     assert 'text-[18px]">settings</span>' in html                                           # profile menu
     assert html.count('href="/settings"') == 2
     assert '<span class="font-body-md text-body-md">Privacy</span>' in html
+
+
+def test_the_pages_describe_the_export_file_as_it_really_is(web):
+    """Privacy page and Settings text name the six fields and say what is left out; the file really has those fields."""
+    from app.services import export_format
+    page = text_of(web.get("/privacy").text).lower()
+    js = (STATIC / "js/settings.js").read_text(encoding="utf-8")
+    english = js[js.index("    en: {"):js.index("    ur: {")].lower()
+    assert len(export_format.JSON_KEYS) == 6
+    for words in ("id", "date", "amount in rupees", "category", "sub-category", "manual", "chatbot"):
+        assert words in page, words
+        assert words in english, words
+    for left_out in ("notes", "deleted entries"):
+        assert left_out in page and left_out in english, left_out
+    assert "payment method" in page
+    assert "notes included" not in page and "notes included" not in english

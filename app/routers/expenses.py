@@ -5,6 +5,8 @@ REST API for the expense tracker (Phase 1b).
     GET    /api/expenses            ?month=YYYY-MM | ?date_from&date_to  &category &limit &before_date &before_id
     GET    /api/expenses/summary    ?month=YYYY-MM | ?date_from&date_to  &group_by
     GET    /api/expenses/export     ?format=json|csv   every row the user still has (data export)
+    GET    /api/expenses/statement      ?year=YYYY | ?date_from&date_to   Zakat / Sadaqah / Fitrana statement (JSON)
+    GET    /api/expenses/statement.pdf  same window, plus ?lang=en|ur
     POST   /api/expenses
     PATCH  /api/expenses/{id}       body carries the `version` the client last saw
     DELETE /api/expenses/{id}       soft delete
@@ -21,12 +23,12 @@ Rules this file enforces (the service layer enforces the rest):
 """
 import re
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional, Union
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.responses import JSONResponse, Response
-from pydantic import BaseModel, ConfigDict, StrictInt, StrictStr
+from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt, StrictStr
 from sqlalchemy.orm import Session
 
 from app.database import models
@@ -34,6 +36,7 @@ from app.database.db import get_db
 from app.dependencies import get_current_user
 from app.services import expense_service as svc
 from app.services import export_format
+from app.services import statement_pdf
 from app.services.money import MoneyError, parse_rupees_to_paisa
 from app.services.rate_limit import SlidingWindowLimiter
 
@@ -45,6 +48,10 @@ write_limiter = SlidingWindowLimiter(WRITES_PER_MINUTE, 60)
 EXPORTS_PER_WINDOW = 10                      # an export reads the whole history: keep a loop from hammering the database
 EXPORT_WINDOW_SECONDS = 600
 export_limiter = SlidingWindowLimiter(EXPORTS_PER_WINDOW, EXPORT_WINDOW_SECONDS)
+
+STATEMENTS_PER_WINDOW = 20                   # the PDF is the costly one; the same limit covers both statement routes
+STATEMENT_WINDOW_SECONDS = 600
+statement_limiter = SlidingWindowLimiter(STATEMENTS_PER_WINDOW, STATEMENT_WINDOW_SECONDS)
 
 REQUIRED_HEADER_VALUE = "ShariahEase"
 _MONTH = re.compile(r"^(\d{4})-(0[1-9]|1[0-2])$", re.ASCII)
@@ -98,6 +105,7 @@ class ExpensePatch(BaseModel):
     subcategory_slug: Optional[str] = None
     note: Optional[str] = None           # null clears the note
     payment_method: Optional[str] = None
+    shariah_flag_dismissed: Optional[StrictBool] = None   # true = "I checked this"; false = show the reminder again
 
 
 # ── helpers ────────────────────────────────────────────────────────────────────
@@ -212,6 +220,76 @@ def export_expenses(
         "Cache-Control": "no-store",                            # personal data: no browser or proxy may keep a copy
     }
     return Response(content=body.encode("utf-8"), media_type=media, headers=headers)
+
+
+def _statement_window(db, user: models.User, year: Optional[int], date_from: Optional[date], date_to: Optional[date]):
+    """A calendar year (default: the user's current local year) or an explicit [date_from, date_to) window."""
+    if year is not None:
+        if date_from is not None or date_to is not None:
+            raise _fail(svc.InvalidInput([{"field": "year", "problem": "use either year or date_from/date_to"}]))
+        if not 2000 <= year <= 2100:
+            raise _fail(svc.InvalidInput([{"field": "year", "problem": "year out of range"}]))
+        return date(year, 1, 1), date(year + 1, 1, 1)
+    if (date_from is None) != (date_to is None):
+        raise _fail(svc.InvalidInput([{"field": "date_from" if date_from is None else "date_to",
+                                       "problem": "give both date_from and date_to, or neither"}]))
+    if date_from is not None:
+        return date_from, date_to
+    this_year = svc._local_today(db, user.id, svc._utcnow()).year
+    return date(this_year, 1, 1), date(this_year + 1, 1, 1)
+
+
+def _rate_limited_statement(user: models.User) -> None:
+    wait = statement_limiter.check(user.id)
+    if wait > 0:
+        raise HTTPException(status_code=429, detail={"code": "rate_limited", "retry_after": int(wait) + 1},
+                            headers={"Retry-After": str(int(wait) + 1)})
+
+
+@router.get("/statement")
+def charity_statement(
+    year: Optional[int] = Query(default=None),
+    date_from: Optional[date] = Query(default=None),
+    date_to: Optional[date] = Query(default=None),
+    user: models.User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    start, end = _statement_window(db, user, year, date_from, date_to)
+    _rate_limited_statement(user)
+    try:
+        statement = svc.charity_statement(db, user.id, date_from=start, date_to=end)
+    except svc.ExpenseError as exc:
+        raise _fail(exc)
+    return JSONResponse(statement.model_dump(mode="json"), headers={"Cache-Control": "no-store"})
+
+
+@router.get("/statement.pdf")
+def charity_statement_pdf(
+    year: Optional[int] = Query(default=None),
+    date_from: Optional[date] = Query(default=None),
+    date_to: Optional[date] = Query(default=None),
+    lang: str = Query(default="en"),
+    user: models.User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    if lang not in statement_pdf.LANGS:
+        raise _fail(svc.InvalidInput([{"field": "lang", "problem": "expected en or ur"}]))
+    start, end = _statement_window(db, user, year, date_from, date_to)
+    _rate_limited_statement(user)
+    try:
+        statement = svc.charity_statement(db, user.id, date_from=start, date_to=end)
+    except svc.ExpenseError as exc:
+        raise _fail(exc)
+    today = svc._local_today(db, user.id, svc._utcnow())
+    pdf = statement_pdf.build_statement_pdf(statement, lang=lang, issued_to=user.name or "", generated_on=today)
+    if start.month == 1 and start.day == 1 and end == date(start.year + 1, 1, 1):
+        label = str(start.year)
+    else:
+        label = f"{start.isoformat()}_to_{(end - timedelta(days=1)).isoformat()}"
+    return Response(content=pdf, media_type="application/pdf", headers={
+        "Content-Disposition": f'attachment; filename="shariahease-zakat-sadaqah-{label}-{lang}.pdf"',
+        "Cache-Control": "no-store",
+    })
 
 
 @router.post("")
