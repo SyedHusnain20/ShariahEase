@@ -241,6 +241,12 @@ def test_amount_rupees_unit():
             ef.amount_rupees(bad)
 
 
+def test_amount_rupees_is_exact_even_for_huge_values():
+    # A float cannot hold this many digits: the text must still be exact (integer arithmetic only).
+    assert ef.amount_rupees(1234567890123456789) == "12345678901234567.89"
+    assert ef.amount_rupees(9007199254740993) == "90071992547409.93"
+
+
 # ── CSV safety (defence in depth: no user text is in the file any more) ───────────
 
 @pytest.mark.parametrize("raw, safe", [

@@ -225,9 +225,12 @@ def test_the_flag_is_also_worked_out_for_ai_and_whatsapp_sources(db_session, uid
     assert r.expense.shariah_flag == "riba" and r.expense.source == "ai_chat"
 
 
-def test_the_export_carries_the_dismissed_state(db_session, uid):
+def test_the_export_does_not_carry_the_flag_or_the_note(db_session, uid):
+    # The export is six plain fields (see privacy page and test_export.py). The flag, its dismissed state and the
+    # note stay inside the app.
     e = add(db_session, uid, note="interest")
     edit(db_session, uid, e, shariah_flag_dismissed=True)
     [row] = list(es.export_expenses(db_session, uid))
-    got = row.model_dump() if hasattr(row, "model_dump") else dict(row)
-    assert got["shariah_flag"] == "riba" and got["shariah_flag_dismissed"] is True
+    got = row.model_dump()
+    assert set(got) == {"id", "occurred_on", "amount_paisa", "category", "sub_category", "source"}
+    assert "interest" not in repr(got)

@@ -8,7 +8,7 @@ REST routes, the chatbot, WhatsApp and any future app all call these seven funct
 
 Two more functions serve the data-rights and housekeeping needs (Path step 2):
 
-    export_expenses            every row the user still has in the database, for the data export
+    export_expenses            the user's current expenses as six plain fields, for the data export
     purge_deleted_expenses     (system) really deletes rows that were soft-deleted more than 30 days ago
     run_maintenance            (system) runs the purge at most once a day, started by normal traffic
 
@@ -255,25 +255,16 @@ class CategoryOut(BaseModel):
 
 
 class ExportRow(BaseModel):
-    """One row of the user's data export. Includes soft-deleted rows that are not purged yet (deleted_at is set)."""
+    """
+    One row of the user's data export: six plain fields, nothing else (no note, no payment method, no flags, no
+    internal ids). `category` and `sub_category` are the English names a person can read, not codes.
+    """
     id: int
-    client_id: uuid.UUID
     occurred_on: date
     amount_paisa: int
-    currency: str
-    category_slug: str
-    category_name_en: str
-    subcategory_slug: Optional[str]
-    subcategory_name_en: Optional[str]
-    note: Optional[str]
-    payment_method: str
+    category: str
+    sub_category: Optional[str]
     source: str
-    shariah_flag: Optional[str]
-    shariah_flag_dismissed: bool
-    version: int
-    created_at: datetime
-    updated_at: datetime
-    deleted_at: Optional[datetime]
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────────────────────────
@@ -903,39 +894,34 @@ def charity_statement(db, user_id: int, *, date_from: date, date_to: date,
 
 def export_expenses(db, user_id: int, *, batch_size: int = EXPORT_BATCH):
     """
-    Yield EVERY expense row this user still has in the database, oldest first: live rows and soft-deleted rows
-    that are not purged yet (those carry `deleted_at`). Notes are included. Rows of other users are never read:
-    the query filters on user_id. Read in keyset batches so a big history does not need one huge query.
+    Yield the expenses this user has NOW (deleted ones are left out), oldest first, as six plain fields: ID, date,
+    amount in paisa, category name, sub-category name and source. The query selects only those columns, so the note
+    and the payment method are never even read. Rows of other users are never read: the query filters on user_id.
+    Read in keyset batches so a big history does not need one huge query.
     """
     _check_user_id(user_id)
     if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
         raise _bad("batch_size", "must be a positive integer")
     last = None
     while True:
-        conditions = [Expense.user_id == user_id]
+        conditions = [Expense.user_id == user_id, Expense.deleted_at.is_(None)]
         if last is not None:
             conditions.append(or_(Expense.occurred_on > last[0],
                                   and_(Expense.occurred_on == last[0], Expense.id > last[1])))
         rows = db.execute(
-            select(Expense, Category.slug, Category.name_en, Subcategory.slug, Subcategory.name_en)
+            select(Expense.id, Expense.occurred_on, Expense.amount_paisa, Expense.source,
+                   Category.name_en, Subcategory.name_en)
             .join(Category, Category.id == Expense.category_id)
             .outerjoin(Subcategory, Subcategory.id == Expense.subcategory_id)
             .where(*conditions)
             .order_by(Expense.occurred_on, Expense.id).limit(batch_size)
         ).all()
-        for e, cat_slug, cat_name, sub_slug, sub_name in rows:
-            yield ExportRow(
-                id=e.id, client_id=e.client_id, occurred_on=e.occurred_on, amount_paisa=int(e.amount_paisa),
-                currency=e.currency, category_slug=cat_slug, category_name_en=cat_name,
-                subcategory_slug=sub_slug, subcategory_name_en=sub_name, note=e.note,
-                payment_method=e.payment_method, source=e.source, shariah_flag=e.shariah_flag,
-                shariah_flag_dismissed=bool(e.shariah_flag_dismissed), version=e.version,
-                created_at=_aware(e.created_at), updated_at=_aware(e.updated_at),
-                deleted_at=None if e.deleted_at is None else _aware(e.deleted_at),
-            )
+        for expense_id, occurred_on, amount_paisa, source, category_name, sub_category_name in rows:
+            yield ExportRow(id=expense_id, occurred_on=occurred_on, amount_paisa=int(amount_paisa),
+                            category=category_name, sub_category=sub_category_name, source=source)
         if len(rows) < batch_size:
             return
-        last = (rows[-1][0].occurred_on, rows[-1][0].id)
+        last = (rows[-1][1], rows[-1][0])
 
 
 # ── purge and maintenance (system functions: they act on all users, so they take no user_id) ──────

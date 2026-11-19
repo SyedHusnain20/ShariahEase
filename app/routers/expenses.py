@@ -4,7 +4,7 @@ REST API for the expense tracker (Phase 1b).
     GET    /api/expenses/categories
     GET    /api/expenses            ?month=YYYY-MM | ?date_from&date_to  &category &limit &before_date &before_id
     GET    /api/expenses/summary    ?month=YYYY-MM | ?date_from&date_to  &group_by
-    GET    /api/expenses/export     ?format=json|csv   every row the user still has (data export)
+    GET    /api/expenses/export     ?format=json|csv   the user's current expenses, six plain fields (data export)
     GET    /api/expenses/statement      ?year=YYYY | ?date_from&date_to   Zakat / Sadaqah / Fitrana statement (JSON)
     GET    /api/expenses/statement.pdf  same window, plus ?lang=en|ur
     POST   /api/expenses
