@@ -1,3 +1,4 @@
+import logging
 import os
 
 from fastapi import APIRouter, Depends, Request, Response
@@ -13,10 +14,12 @@ from app.services.llm_client import detect_language
 from app.services.tts_service import text_to_speech_bytes
 from app.dependencies import get_optional_user
 from app.services import guest_memory as gm
+from app.services import expense_ai
 
 router = APIRouter(prefix="/chat", tags=["Chatbot"])
 
 _IS_PRODUCTION = os.getenv("ENV", "development") == "production"
+log = logging.getLogger(__name__)
 
 
 def _guest_key(http_request: Request, response: Response, session_id: str) -> str:
@@ -39,6 +42,21 @@ async def chat_message(
 ):
     # None for guests, user id for logged-in users
     uid = current_user.id if current_user else None
+
+    # AI expense assistant (Path step 4b). It runs BEFORE the topic guard and the chatbot. A message it handles is private:
+    # it is not saved in the chat history, not read aloud (text-to-speech) and never goes through the traced chat graph.
+    if uid is not None:
+        try:
+            handled = await expense_ai.handle(db, current_user, request.message, request.client_msg_id)
+        except Exception as exc:                      # log the kind of problem only, never the message
+            log.error("expense AI failed (%s)", type(exc).__name__)
+            db.rollback()
+            handled = None
+            if expense_ai.looks_like_expense_talk(request.message):
+                handled = expense_ai.Handled(expense_ai.T["unavailable"][expense_ai._pre_lang(request.message)])
+        if handled is not None:
+            return ChatResponse(session_id=request.session_id, answer=handled.answer, language="auto",
+                                sources=[], audio_b64="", card=handled.card)
 
     if uid is None:
         # Guests: nothing is written to the database. Short in-memory context only.

@@ -106,7 +106,7 @@ def got(tmp_path_factory):
         pytest.skip("Node is not installed")
     h = tmp_path_factory.mktemp("js") / "h.js"
     h.write_text(HARNESS, encoding="utf-8")
-    res = subprocess.run(["node", str(h), str(JS)], capture_output=True, text=True, timeout=60)
+    res = subprocess.run(["node", str(h), str(JS)], capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert res.returncode == 0, res.stderr
     return json.loads(res.stdout)
 

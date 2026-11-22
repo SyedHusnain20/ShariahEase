@@ -154,7 +154,7 @@ async def startup_event():
     preload_model()
 
 # ── Routers ───────────────────────────────────────────────────────────────────
-from app.routers import pages, zakat, mudarabah, chatbot, screener, certificate, charities, auth, webhook, expenses
+from app.routers import pages, zakat, mudarabah, chatbot, screener, certificate, charities, auth, webhook, expenses, expense_ai
 app.include_router(auth.router)
 app.include_router(pages.router)
 app.include_router(zakat.router)
@@ -165,6 +165,7 @@ app.include_router(certificate.router)
 app.include_router(charities.router)
 app.include_router(webhook.router)
 app.include_router(expenses.router)
+app.include_router(expense_ai.router)
 
 # ── Health ────────────────────────────────────────────────────────────────────
 @app.get("/health")

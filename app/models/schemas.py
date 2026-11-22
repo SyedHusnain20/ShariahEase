@@ -113,6 +113,8 @@ class ChatRequest(BaseModel):
     session_id: str = Field(..., min_length=1, max_length=100)
     message:    str = Field(..., min_length=1, max_length=2000)
     language:   str = Field(default="en", max_length=10)
+    # Optional: lets the AI expense assistant recognise a retry of the same message (same id = same card, no second charge).
+    client_msg_id: Optional[str] = Field(default=None, max_length=64)
 
     @field_validator("message")
     @classmethod
@@ -133,6 +135,7 @@ class ChatResponse(BaseModel):
     language: str
     sources: list = []
     audio_b64: str = ""
+    card: Optional[dict] = None      # an AI expense confirmation card (Path step 4b), else null
 
     class Config:
         from_attributes = True

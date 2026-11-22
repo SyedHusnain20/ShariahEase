@@ -251,3 +251,50 @@ class AuditLog(Base):
     entity_id   = Column(String, nullable=True)
     detail      = Column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
     created_at  = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+# ── Step 4b: the AI expense assistant (see alembic/versions/0005_ai_expense.py) ───────────────────
+
+class PendingAction(Base):
+    """A confirmation card. payload holds only validated, normalised values (never raw model text)."""
+    __tablename__ = "pending_actions"
+    __table_args__ = (
+        UniqueConstraint("user_id", "client_msg_id", name="uq_pending_user_msg"),
+        CheckConstraint("kind IN ('create','update','delete')", name="ck_pending_kind"),
+        CheckConstraint("status IN ('pending','confirmed','cancelled','expired')", name="ck_pending_status"),
+        Index("ix_pending_user_live", "user_id", text("created_at DESC"),
+              postgresql_where=text("status = 'pending'"), sqlite_where=text("status = 'pending'")),
+    )
+
+    id            = Column(Uuid, primary_key=True)
+    user_id       = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    kind          = Column(String, nullable=False)
+    status        = Column(String, nullable=False, server_default="pending")
+    client_msg_id = Column(String(64), nullable=False)
+    payload       = Column(JSON().with_variant(JSONB, "postgresql"), nullable=False)
+    result        = Column(JSON().with_variant(JSONB, "postgresql"), nullable=True)   # ids written, for undo
+    rev           = Column(Integer, nullable=False, server_default="0")               # optimistic version of the payload
+    created_at    = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    expires_at    = Column(DateTime(timezone=True), nullable=False)
+    resolved_at   = Column(DateTime(timezone=True), nullable=True)
+    undone_at     = Column(DateTime(timezone=True), nullable=True)
+
+
+class UsageCounter(Base):
+    """AI messages used by one person in one month. Only ever changed by app/services/ai_limits.py."""
+    __tablename__ = "usage_counters"
+    __table_args__ = (CheckConstraint("used >= 0", name="ck_usage_used"),)
+
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    period  = Column(String(7), primary_key=True)
+    used    = Column(Integer, nullable=False, server_default="0")
+
+
+class LlmUsageDaily(Base):
+    """Tokens spent on the expense assistant per UTC day, for everybody together (the daily breaker). No user id."""
+    __tablename__ = "llm_usage_daily"
+    __table_args__ = (CheckConstraint("tokens >= 0", name="ck_llm_tokens"),)
+
+    day    = Column(Date, primary_key=True)
+    tokens = Column(BigInteger, nullable=False, server_default="0")
+    calls  = Column(Integer, nullable=False, server_default="0")

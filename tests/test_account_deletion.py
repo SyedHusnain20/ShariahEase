@@ -65,6 +65,17 @@ def _expense(db, uid):
     db.add(models.Expense(user_id=uid, client_id=uuid.uuid4(), amount_paisa=100, occurred_on=date(2026, 10, 30), category_id=1))
 
 
+def _pending(db, uid):
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    db.add(models.PendingAction(id=uuid.uuid4(), user_id=uid, kind="create", status="pending", client_msg_id="m1",
+                                payload={"v": 1}, expires_at=now + timedelta(minutes=15)))
+
+
+def _usage(db, uid):
+    db.add(models.UsageCounter(user_id=uid, period="2026-11", used=3))
+
+
 def _refresh(db, uid):
     from app.services import refresh_tokens
     refresh_tokens.issue_refresh_token(db, uid, None)
@@ -75,6 +86,7 @@ def _refresh(db, uid):
 SEEDERS = {
     "zakat_records": _zakat, "screener_history": _screener, "chat_messages": _chat,
     "audit_log": _audit, "expenses": _expense, "refresh_tokens": _refresh,
+    "pending_actions": _pending, "usage_counters": _usage,
 }
 
 

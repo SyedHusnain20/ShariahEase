@@ -49,6 +49,7 @@ def test_privacy_page_mentions_every_table_that_holds_user_data(web):
     keyword = {                     # table -> a phrase the "What we store" section must contain
         "zakat_records": "zakat", "screener_history": "screener", "chat_messages": "chat history",
         "refresh_tokens": "refresh token", "expenses": "expenses", "audit_log": "activity log",
+        "pending_actions": "confirmation card", "usage_counters": "monthly count",
     }
     assert set(keyword) == set(SEEDERS)                    # the same tables the deletion test covers
     for table, word in keyword.items():

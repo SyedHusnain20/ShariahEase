@@ -39,6 +39,21 @@ def no_real_price_requests(monkeypatch):
     reset()
 
 
+@pytest.fixture(autouse=True)
+def no_real_ai_requests(monkeypatch):
+    """No test may reach a real AI provider (Path step 4b). Tests that exercise the call install their own transport."""
+    from app.services import expense_understand
+
+    def offline(request):
+        raise httpx.ConnectError("offline (tests)", request=request)
+
+    monkeypatch.setattr(expense_understand, "_client",
+                        lambda: httpx.AsyncClient(transport=httpx.MockTransport(offline)))
+    for name in ("EXPENSE_AI_ENABLED", "AI_FREE_LIMIT", "LLM_DAILY_TOKEN_CAP", "EXPENSE_MODEL", "EXPENSE_FALLBACK_BASE_URL",
+                 "EXPENSE_FALLBACK_API_KEY", "EXPENSE_FALLBACK_MODEL"):
+        monkeypatch.delenv(name, raising=False)
+
+
 # ── Phase 0: database and HTTP fixtures (offline: in-memory SQLite) ────────────
 
 @pytest.fixture
