@@ -14,13 +14,21 @@ and only the person's "yes" writes it. A card is a row in `pending_actions`:
   * choose    before confirming, the person can switch an item to a nearby category the assistant offered (never any other).
   * undo      within an hour after confirming, the expenses it wrote are deleted again (soft delete: restorable for 30 days).
 
+Path step 5a adds two more kinds of card, for entries that already exist ("change that 3000 to 3500", "delete the last entry"):
+
+  * update / delete   the payload lists up to MAX_CANDIDATES entries the person may mean (id, version and what they looked like when
+              the card was made). With one candidate it is already chosen; with several the person must pick one by number
+              (`pick`): the assistant never guesses between entries. `confirm` acts only on the chosen entry and only if that entry
+              is still at the version the card showed (otherwise CardError "stale" and nothing changes). `undo` puts an updated entry
+              back to what the card showed (if nobody changed it since) or restores a deleted one.
+
 Everything else (validation of the expense itself, the audit log) is done by the one service layer, expense_service.
 """
 import uuid
 from datetime import date, datetime, timedelta
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, ValidationError, model_validator
 from sqlalchemy import delete, select, update
 
 from app.database.models import MAX_AMOUNT_PAISA, PendingAction
@@ -32,13 +40,15 @@ KEEP_DAYS = 7
 MAX_ITEMS = 10
 MAX_NOTE_CHARS = 200
 MAX_ALTERNATIVES = 5
+MAX_CANDIDATES = 5
 CARD_NAMESPACE = uuid.UUID("5d1a0b6e-8c43-4f0e-9a57-3b2f6f0c9d11")     # fixed: expense ids are derived from card ids
 
 Language = Literal["en", "ur", "roman_ur"]
 
 
 class CardError(Exception):
-    """`code` is stable: not_found, already_used, cancelled, expired, not_confirmed, undo_window_over, bad_choice, conflict."""
+    """`code` is stable: not_found, already_used, cancelled, expired, not_confirmed, undo_window_over, bad_choice, conflict,
+    not_chosen (an update/delete card with several candidates: pick one first), stale (the entry changed or is gone since the card)."""
 
     def __init__(self, code: str):
         self.code = code
@@ -64,6 +74,54 @@ class CardPayload(BaseModel):
     v: int = 1
     lang: Language = "en"
     items: list[CardItem] = Field(min_length=1, max_length=MAX_ITEMS)
+
+
+class EditTarget(BaseModel):
+    """One existing entry as it looked when the card was made. Never the model's words: values read from the database."""
+    model_config = ConfigDict(extra="forbid")
+
+    expense_id: StrictInt = Field(ge=1)
+    version: StrictInt = Field(ge=1)
+    amount_paisa: StrictInt = Field(ge=1, le=MAX_AMOUNT_PAISA)
+    category_slug: str                                    # the specific slug when there is one, else the group
+    occurred_on: date
+    note: Optional[str] = Field(default=None, max_length=MAX_NOTE_CHARS)
+    payment_method: es.PaymentMethod = "cash"
+
+
+class EditChanges(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    new_amount_paisa: Optional[StrictInt] = Field(default=None, ge=1, le=MAX_AMOUNT_PAISA)
+    new_category_slug: Optional[str] = None
+
+
+class EditPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    v: int = 1
+    lang: Language = "en"
+    action: Literal["update", "delete"]
+    candidates: list[EditTarget] = Field(min_length=1, max_length=MAX_CANDIDATES)
+    chosen: Optional[StrictInt] = None                    # index into candidates; None = the person still has to pick
+    changes: Optional[EditChanges] = None
+
+    @model_validator(mode="after")
+    def _consistent(self):
+        if self.chosen is not None and not 0 <= self.chosen < len(self.candidates):
+            raise ValueError("chosen is out of range")
+        has = self.changes is not None and (self.changes.new_amount_paisa is not None or self.changes.new_category_slug is not None)
+        if self.action == "update" and not has:
+            raise ValueError("an update needs a change")
+        if self.action == "delete" and self.changes is not None:
+            raise ValueError("a delete has no changes")
+        return self
+
+
+def payload_of(row: PendingAction):
+    """The validated payload of a card, whatever its kind."""
+    model = CardPayload if row.kind == "create" else EditPayload
+    return model.model_validate(row.payload)
 
 
 def format_rupees(paisa: int) -> str:
@@ -134,6 +192,8 @@ def latest_pending(db, user_id: int, now: Optional[datetime] = None) -> Optional
 def render(row: PendingAction, rows: list) -> dict:
     """The card as the app shows it. `rows` is the category list [(slug, name_en, name_ur)]."""
     names = {slug: (en, ur) for slug, en, ur in rows}
+    if row.kind != "create":
+        return _render_edit(row, rows)
     payload = CardPayload.model_validate(row.payload)
     items = []
     for index, item in enumerate(payload.items):
@@ -156,18 +216,51 @@ def render(row: PendingAction, rows: list) -> dict:
             "expires_at": _aware(row.expires_at).isoformat(), "items": items}
 
 
+def _render_edit(row: PendingAction, rows: list) -> dict:
+    """An update/delete card. `items` are the candidates (same shape as a create card's items); `chosen` is None until picked."""
+    names = {slug: (en, ur) for slug, en, ur in rows}
+    payload = EditPayload.model_validate(row.payload)
+
+    def named(slug):
+        return names.get(slug, (slug, slug))
+
+    items = []
+    for index, item in enumerate(payload.candidates):
+        en, ur = named(item.category_slug)
+        items.append({"index": index, "amount_paisa": item.amount_paisa, "amount_display": format_rupees(item.amount_paisa),
+                      "category_slug": item.category_slug, "category_name_en": en, "category_name_ur": ur,
+                      "occurred_on": item.occurred_on.isoformat(), "note": item.note, "payment_method": item.payment_method,
+                      "alternatives": []})
+    changes = None
+    if payload.changes is not None:
+        changes = {"amount_paisa": payload.changes.new_amount_paisa,
+                   "amount_display": None if payload.changes.new_amount_paisa is None else format_rupees(payload.changes.new_amount_paisa),
+                   "category_slug": payload.changes.new_category_slug,
+                   "category_name_en": None, "category_name_ur": None}
+        if payload.changes.new_category_slug is not None:
+            changes["category_name_en"], changes["category_name_ur"] = named(payload.changes.new_category_slug)
+    status = row.status
+    if status == "pending" and _aware(row.expires_at) <= es._utcnow():
+        status = "expired"
+    return {"id": str(row.id), "kind": row.kind, "status": status, "lang": payload.lang,
+            "expires_at": _aware(row.expires_at).isoformat(), "items": items,
+            "needs_choice": payload.chosen is None, "chosen": payload.chosen, "changes": changes}
+
+
 # ── creating ──────────────────────────────────────────────────────────────────────────────────────
 
-def create_card(db, user_id: int, *, client_msg_id: str, payload: CardPayload, now: Optional[datetime] = None):
-    """(row, created). The same client_msg_id twice gives back the first card and created=False. Commits."""
+def create_card(db, user_id: int, *, client_msg_id: str, payload, now: Optional[datetime] = None):
+    """(row, created). The same client_msg_id twice gives back the first card and created=False. Commits.
+    `payload` is a CardPayload (kind create) or an EditPayload (kind update or delete: the payload's own action)."""
     es._check_user_id(user_id)
     now = now or es._utcnow()
     try:
         db.execute(delete(PendingAction).where(PendingAction.user_id == user_id,
                                                PendingAction.created_at < now - timedelta(days=KEEP_DAYS))
                    .execution_options(synchronize_session=False))
+        kind = "create" if isinstance(payload, CardPayload) else payload.action
         statement = (_insert(db)(PendingAction.__table__)
-                     .values(id=uuid.uuid4(), user_id=user_id, kind="create", status="pending", client_msg_id=client_msg_id,
+                     .values(id=uuid.uuid4(), user_id=user_id, kind=kind, status="pending", client_msg_id=client_msg_id,
                              payload=payload.model_dump(mode="json"), rev=0, created_at=now, expires_at=now + PENDING_TTL)
                      .on_conflict_do_nothing(index_elements=["user_id", "client_msg_id"])
                      .returning(PendingAction.__table__.c.id))
@@ -205,6 +298,8 @@ def confirm(db, user_id: int, card_id) -> list:
     row = get_card(db, user_id, card_id)
     if row is None:
         raise CardError("not_found")
+    if row.kind != "create":
+        return _confirm_edit(db, user_id, row, now)
     try:
         claimed = db.execute(
             update(PendingAction)
@@ -230,6 +325,80 @@ def confirm(db, user_id: int, card_id) -> list:
         raise
     except Exception:
         db.rollback()               # the claim is rolled back too: the card can be confirmed again after a fix, or cancelled
+        raise
+    return saved
+
+
+def _current(db, user_id: int, expense_id: int):
+    page = es.get_expenses(db, user_id, expense_ids=[expense_id], limit=1)
+    return page.items[0] if page.items else None
+
+
+def _close_stale(db, user_id: int, card_id, now: datetime) -> None:
+    """The entry is not as the card showed it: the card can never be used again, so it is closed now (a later bare "yes" must not
+    land on it). The entry itself is not touched. Best effort: a failure here still leaves the refusal in place."""
+    try:
+        db.execute(update(PendingAction)
+                   .where(PendingAction.id == card_id, PendingAction.user_id == user_id, PendingAction.status == "pending")
+                   .values(status="cancelled", resolved_at=now).execution_options(synchronize_session=False))
+        db.commit()
+    except Exception:
+        db.rollback()
+
+
+def _confirm_edit(db, user_id: int, row: PendingAction, now: datetime) -> list:
+    """Change or delete the ONE entry the person chose, if it is still at the version the card showed. Single use."""
+    if EditPayload.model_validate(row.payload).chosen is None:
+        raise CardError("not_chosen")
+    try:
+        claimed = db.execute(
+            update(PendingAction)
+            .where(
+                PendingAction.id == row.id,
+                PendingAction.user_id == user_id,
+                PendingAction.status == "pending",
+                PendingAction.expires_at > now,
+            )
+            .values(status="confirmed", resolved_at=now)
+            .execution_options(synchronize_session=False)
+            .returning(PendingAction.payload)
+        ).first()
+        if claimed is None:
+            db.rollback()
+            raise _why_not(db, user_id, row.id, now)
+        payload = EditPayload.model_validate(claimed[0])
+        if payload.chosen is None:                      # never act without a target the person named
+            db.rollback()
+            raise CardError("not_chosen")
+        target = payload.candidates[payload.chosen]
+        current = _current(db, user_id, target.expense_id)
+        if current is None or current.version != target.version:
+            db.rollback()
+            _close_stale(db, user_id, row.id, now)
+            raise CardError("stale")
+        if payload.action == "delete":
+            es.delete_expenses(db, user_id, [target.expense_id], actor="ai", commit=False)
+            result, saved = {"action": "delete", "expense_ids": [target.expense_id]}, []
+        else:
+            changes = {}
+            if payload.changes.new_amount_paisa is not None:
+                changes["amount_paisa"] = payload.changes.new_amount_paisa
+            if payload.changes.new_category_slug is not None:
+                changes.update(_category_fields(payload.changes.new_category_slug))
+            try:
+                out = es.update_expense(db, user_id, target.expense_id, target.version, changes, actor="ai", commit=False)
+            except (es.VersionConflict, es.NotFound):
+                db.rollback()
+                _close_stale(db, user_id, row.id, now)
+                raise CardError("stale")
+            result, saved = {"action": "update", "expense_ids": [target.expense_id], "version_after": out.version}, [out]
+        db.execute(update(PendingAction).where(PendingAction.id == row.id, PendingAction.user_id == user_id)
+                   .values(result=result).execution_options(synchronize_session=False))
+        db.commit()
+    except CardError:
+        raise
+    except Exception:
+        db.rollback()
         raise
     return saved
 
@@ -261,6 +430,8 @@ def choose(db, user_id: int, card_id, item_index, category_slug) -> PendingActio
             raise CardError("not_found")
         if row.status != "pending" or _aware(row.expires_at) <= now:
             raise _why_not(db, user_id, row.id, now)
+        if row.kind != "create":
+            raise CardError("bad_choice")
         payload = CardPayload.model_validate(row.payload)
         if isinstance(item_index, bool) or not isinstance(item_index, int) or not 0 <= item_index < len(payload.items):
             raise CardError("bad_choice")
@@ -281,8 +452,44 @@ def choose(db, user_id: int, card_id, item_index, category_slug) -> PendingActio
     raise CardError("conflict")
 
 
+def pick(db, user_id: int, card_id, index) -> PendingAction:
+    """On an update/delete card: choose which candidate entry is meant (the person may change their mind until confirming)."""
+    es._check_user_id(user_id)
+    now = es._utcnow()
+    for _ in range(3):
+        row = get_card(db, user_id, card_id)
+        if row is None:
+            raise CardError("not_found")
+        if row.status != "pending" or _aware(row.expires_at) <= now:
+            raise _why_not(db, user_id, row.id, now)
+        if row.kind == "create":
+            raise CardError("bad_choice")
+        payload = EditPayload.model_validate(row.payload)
+        if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < len(payload.candidates):
+            raise CardError("bad_choice")
+        payload.chosen = index
+        updated = db.execute(update(PendingAction)
+                             .where(
+                                 PendingAction.id == row.id,
+                                 PendingAction.user_id == user_id,
+                                 PendingAction.status == "pending",
+                                 PendingAction.expires_at > now,
+                                 PendingAction.rev == row.rev,
+                             )
+                             .values(payload=payload.model_dump(mode="json"), rev=row.rev + 1)
+                             .execution_options(synchronize_session=False).returning(PendingAction.id)).first()
+        if updated is not None:
+            db.commit()
+            db.refresh(row)
+            return row
+        db.rollback()
+    raise CardError("conflict")
+
+
 def undo(db, user_id: int, card_id) -> int:
-    """Delete (softly) what a confirmed card wrote, once, within UNDO_WINDOW. Returns how many expenses were removed."""
+    """Take back what a confirmed card did, once, within UNDO_WINDOW: created entries are deleted (softly), a deleted entry is
+    restored, an updated entry goes back to what the card showed (refused as "stale" if somebody changed it since).
+    Returns how many entries were touched."""
     es._check_user_id(user_id)
     now = es._utcnow()
     row = get_card(db, user_id, card_id)
@@ -300,8 +507,26 @@ def undo(db, user_id: int, card_id) -> int:
             if row.status != "confirmed":
                 raise CardError("not_confirmed")
             raise CardError("already_used" if row.undone_at is not None else "undo_window_over")
-        ids = (claimed[0] or {}).get("expense_ids", [])
-        changed = es.delete_expenses(db, user_id, ids, actor="user", commit=False).changed if ids else []
+        result = claimed[0] or {}
+        ids = result.get("expense_ids", [])
+        if row.kind == "delete":
+            changed = es.restore_expenses(db, user_id, ids, actor="user", commit=False).changed if ids else []
+        elif row.kind == "update":
+            payload = EditPayload.model_validate(row.payload)
+            target = payload.candidates[payload.chosen]
+            back = {}
+            if payload.changes.new_amount_paisa is not None:
+                back["amount_paisa"] = target.amount_paisa
+            if payload.changes.new_category_slug is not None:
+                back.update(_category_fields(target.category_slug))
+            try:
+                es.update_expense(db, user_id, ids[0], result["version_after"], back, actor="user", commit=False)
+            except (es.VersionConflict, es.NotFound):
+                db.rollback()
+                raise CardError("stale")
+            changed = [ids[0]]
+        else:
+            changed = es.delete_expenses(db, user_id, ids, actor="user", commit=False).changed if ids else []
         db.commit()
     except CardError:
         raise

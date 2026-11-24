@@ -9,7 +9,8 @@ from app.services import pending_actions as pa
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPENSE_AI_FILES = ["app/services/expense_ai.py", "app/services/expense_understand.py", "app/services/pending_actions.py",
-                    "app/services/ai_limits.py", "app/services/expense_normalise.py", "app/routers/expense_ai.py"]
+                    "app/services/ai_limits.py", "app/services/expense_normalise.py", "app/routers/expense_ai.py",
+                    "app/services/expense_query.py", "app/services/expense_edit.py"]
 
 
 def source(rel):
@@ -109,7 +110,7 @@ def test_every_reply_key_the_code_uses_has_a_template():
 def test_the_unavailable_and_refusal_texts_promise_nothing_false_about_the_allowance():
     for lang, text in ai.T["unavailable"].items():
         assert text and ("allowance" in text.lower() or "الاؤنس" in text)
-    assert "not used" in ai.T["breaker"]["en"] and "not used" in ai.T["not_yet"]["en"]
+    assert "not used" in ai.T["breaker"]["en"] and "not used" in ai.T["no_match"]["en"]
 
 
 @pytest.mark.parametrize("message,expected", [

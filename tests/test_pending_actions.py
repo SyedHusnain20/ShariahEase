@@ -357,7 +357,7 @@ def test_choose_update_is_guarded_against_what_changed_since_it_was_read(db_sess
     from types import SimpleNamespace
     mine, theirs = make_user(), make_user()
     row = card(db_session, mine, 100, rows=rows)
-    stale = SimpleNamespace(id=row.id, user_id=mine, status="pending", expires_at=row.expires_at, payload=row.payload, rev=0)
+    stale = SimpleNamespace(id=row.id, user_id=mine, kind="create", status="pending", expires_at=row.expires_at, payload=row.payload, rev=0)
     before = dict(row.payload)
     caller = mine
     if what == "rev_moved":

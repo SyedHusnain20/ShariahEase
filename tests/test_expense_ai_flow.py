@@ -174,13 +174,17 @@ def test_other_topics_go_to_the_normal_chatbot_and_cost_no_allowance(web, monkey
     assert used(web) == [(used(web)[0][0], 0)]
 
 
-@pytest.mark.parametrize("intent", ["expense_query", "expense_edit_delete"])
-def test_questions_and_edits_are_honestly_not_available_yet_and_cost_no_allowance(web, monkeypatch, intent):
-    says(form(intent)).install(monkeypatch)
+def test_a_query_with_an_unreadable_period_and_an_edit_without_an_action_are_refused_and_cost_no_allowance(web, monkeypatch):
+    """Step 5a replaced the 4b "coming soon" answer: questions and edits are served (see test_expense_ai_query_edit.py);
+    what cannot be read is refused honestly, changes nothing, and gives the allowance back."""
     me = web.make()
-    r = say(me, "is mahine kitna kharcha hua 500?")
-    assert "coming soon" in r.json()["answer"] or "jald" in r.json()["answer"]
-    assert r.json()["card"] is None and web.chat_calls == [] and used(web)[0][1] == 0 and saved(web) == []
+    says(form("expense_query", query={"period_text": "kal ka", "category_slug": "none", "group_by": "none"})).install(monkeypatch)
+    r = say(me, "kal ka kharcha kitna hua 500?")
+    assert "could not read the period" in r.json()["answer"] and r.json()["card"] is None
+    says(form("expense_edit_delete")).install(monkeypatch)
+    r = say(me, "entry 500 ka kuch karo")
+    assert "Please say what to do" in r.json()["answer"] and r.json()["card"] is None
+    assert web.chat_calls == [] and used(web)[0][1] == 0 and saved(web) == []
 
 
 def test_plain_chat_with_no_digit_or_expense_word_never_calls_the_model(web, monkeypatch):

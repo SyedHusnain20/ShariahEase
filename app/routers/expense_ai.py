@@ -7,11 +7,12 @@ POST /chat/message (see app/routers/chatbot.py); these routes act on the card th
     POST /api/expense-ai/{id}/confirm     save what the card shows (once)
     POST /api/expense-ai/{id}/cancel      throw the card away
     POST /api/expense-ai/{id}/choose      body {"item": 0, "category_slug": "..."}: switch one item to an offered category
+    POST /api/expense-ai/{id}/pick        body {"index": 0}: on a change/delete card, choose which entry is meant (step 5a)
     POST /api/expense-ai/{id}/undo        take back what a confirmed card saved (within an hour; soft delete)
 
 Same rules as the expense routes: login required (401), writes need the X-Requested-With header and are rate limited,
 another person's card is 404 (never 403), user_id comes only from the session. 409 = already used / cancelled / expired,
-422 = a refused choice or a refused expense.
+422 = a refused choice or a refused expense. 409 "not_chosen" = pick an entry first; 409 "stale" = the entry changed since the card.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, StrictInt, StrictStr
@@ -26,13 +27,18 @@ from app.services.expense_understand import taxonomy
 router = APIRouter(prefix="/api/expense-ai", tags=["expense-ai"])
 
 _STATUS = {"not_found": 404, "already_used": 409, "cancelled": 409, "expired": 409, "not_confirmed": 409,
-           "undo_window_over": 409, "bad_choice": 422, "conflict": 409}
+           "undo_window_over": 409, "bad_choice": 422, "conflict": 409, "stale": 409, "not_chosen": 409}
 
 
 class ChooseBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     item: StrictInt
     category_slug: StrictStr
+
+
+class PickBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    index: StrictInt
 
 
 def _card_error(err: pa.CardError) -> HTTPException:
@@ -58,7 +64,8 @@ def confirm(card_id: str, db: Session = Depends(get_db), user: models.User = Dep
         raise _card_error(err)
     except es.InvalidInput as err:
         raise HTTPException(status_code=422, detail={"code": "invalid_input", "errors": err.errors})
-    return {"status": "confirmed", "expenses": [e.model_dump(mode="json") for e in saved]}
+    row = pa.get_card(db, user.id, card_id)
+    return {"status": "confirmed", "kind": row.kind if row is not None else "create", "expenses": [e.model_dump(mode="json") for e in saved]}
 
 
 @router.post("/{card_id}/cancel")
@@ -74,6 +81,15 @@ def cancel(card_id: str, db: Session = Depends(get_db), user: models.User = Depe
 def choose(card_id: str, body: ChooseBody, db: Session = Depends(get_db), user: models.User = Depends(write_user)):
     try:
         row = pa.choose(db, user.id, card_id, body.item, body.category_slug)
+    except pa.CardError as err:
+        raise _card_error(err)
+    return {"status": "pending", "card": pa.render(row, taxonomy(db))}
+
+
+@router.post("/{card_id}/pick")
+def pick(card_id: str, body: PickBody, db: Session = Depends(get_db), user: models.User = Depends(write_user)):
+    try:
+        row = pa.pick(db, user.id, card_id, body.index)
     except pa.CardError as err:
         raise _card_error(err)
     return {"status": "pending", "card": pa.render(row, taxonomy(db))}

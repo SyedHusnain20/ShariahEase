@@ -95,7 +95,6 @@ MUTATIONS = [
     (A, "        ai_limits.release(db, user_id, period)\n        return Handled(_say(\"unavailable\", _pre_lang(text)), kind=\"info\")\n    if result.tokens:", "        return Handled(_say(\"unavailable\", _pre_lang(text)), kind=\"info\")\n    if result.tokens:", "assistant: a crash costs the allowance"),
     (A, "    if result.tokens:\n        ai_limits.add_tokens(db, result.tokens, now)", "    if False:\n        ai_limits.add_tokens(db, result.tokens, now)", "assistant: tokens are not counted for the breaker"),
     (A, '    if understood.intent in ("islamic_finance_qa", "off_topic", "unclear"):\n        ai_limits.release(db, user_id, period)', '    if understood.intent in ("islamic_finance_qa", "off_topic", "unclear"):\n        pass', "assistant: other topics cost the allowance"),
-    (A, "        ai_limits.release(db, user_id, period)                   # Path step 5", "        pass                   # Path step 5", "assistant: not-yet intents cost the allowance"),
     (A, "    if payload is None:\n        ai_limits.release(db, user_id, period)", "    if payload is None:\n        pass", "assistant: a refused message costs the allowance"),
     (A, "    if not created:                                              # a parallel copy of this message won: it paid, we do not\n        ai_limits.release(db, user_id, period)", "    if not created:\n        pass", "assistant: a parallel duplicate is charged twice"),
     (A, "        if not amount_in_message(item.amount_text, text):", "        if False:", "assistant: the amount cross-check is skipped"),
@@ -172,7 +171,7 @@ def run_tests(repo: Path, pg: bool = False) -> bool:
     cmd = [sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider"]
     cmd += (["-m", "pg"] + PG_TESTS) if pg else TESTS
     try:
-        return subprocess.run(cmd, cwd=repo, capture_output=True, text=True, timeout=240).returncode == 0
+        return subprocess.run(cmd, cwd=repo, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=240).returncode == 0
     except subprocess.TimeoutExpired:          # a hang is a failure too: the broken code is noticed
         return False
 
