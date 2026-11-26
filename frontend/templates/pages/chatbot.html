@@ -4,6 +4,7 @@
 
 {% block content %}
 <style>
+  [x-cloak] { display: none !important; }
   /* ── WhatsApp-style audio player (Dark Theme) ─────────────────────── */
   .audio-bubble {
     display: flex;
@@ -152,6 +153,7 @@
             <li class="flex items-start gap-2"><span class="text-primary mt-0.5">•</span>Halal vs haram investment questions</li>
             <li class="flex items-start gap-2"><span class="text-primary mt-0.5">•</span>Islamic finance contracts (Mudarabah, Murabaha, Ijarah)</li>
           </ul>
+          <p x-show="xLoggedIn" class="mt-3 text-sm text-primary" dir="auto" style="text-align:start" data-testid="expense-welcome-hint" x-text="xt('w_hint')"></p>
         </div>
       </div>
     </div>
@@ -187,8 +189,78 @@
           <template x-if="msg.type !== 'audio'">
             <div :class="msg.role === 'user' ? 'bg-primary-container text-on-primary-container rounded-tr-none' : 'bg-[#1c1c1c] border border-[#262626] text-on-surface rounded-tl-none'"
                  class="p-3 sm:p-4 rounded-xl shadow-sm text-left">
-              <p class="text-body-md leading-relaxed whitespace-pre-wrap" x-text="msg.content"></p>
-              
+              <p class="text-body-md leading-relaxed whitespace-pre-wrap" dir="auto" style="text-align:start" x-text="msg.content"></p>
+
+              <!-- Expense confirmation card (Path step 5b). The person's own words (the note) are shown only with x-text. -->
+              <template x-if="msg.card">
+                <div class="mt-3 pt-3 border-t border-[#33343c] space-y-3 text-start" data-testid="expense-card" :data-card-kind="msg.card.kind" :data-card-id="msg.card.id">
+                  <p class="text-sm font-semibold text-on-surface" dir="auto" style="text-align:start" x-text="xTitle(msg.card)"></p>
+                  <p x-show="xActive(msg) && xNeedsPick(msg.card)" class="text-xs text-on-surface-variant" dir="auto" style="text-align:start" x-text="ct(msg.card, 'pick_hint')"></p>
+
+                  <div class="space-y-2">
+                    <template x-for="item in xVisibleItems(msg)" :key="item.index">
+                      <div class="rounded-lg border p-3"
+                           :class="[msg.card.chosen === item.index ? 'border-primary bg-primary/10' : 'border-[#33343c] bg-[#141414]', xPickMode(msg) ? 'cursor-pointer min-h-[44px]' : '']"
+                           :role="xPickMode(msg) ? 'button' : null" :tabindex="xPickMode(msg) ? 0 : null"
+                           :aria-pressed="xPickMode(msg) ? String(msg.card.chosen === item.index) : null"
+                           @click="xPickMode(msg) && xPick(msg, item.index)"
+                           @keydown.enter.prevent="xPickMode(msg) && xPick(msg, item.index)"
+                           @keydown.space.prevent="xPickMode(msg) && xPick(msg, item.index)">
+                        <div class="flex items-start gap-3">
+                          <span x-show="xShowCandidates(msg.card)" class="shrink-0 w-7 h-7 rounded-full bg-[#262626] text-xs flex items-center justify-center text-on-surface" x-text="item.index + 1"></span>
+                          <div class="min-w-0 flex-1 space-y-1">
+                            <div class="flex items-baseline justify-between gap-3">
+                              <span class="text-base font-semibold text-on-surface" x-text="item.amount_display"></span>
+                              <span class="text-xs text-on-surface-variant shrink-0" dir="auto" x-text="xDate(item.occurred_on, msg.card.lang)"></span>
+                            </div>
+                            <div class="text-sm text-on-surface-variant" dir="auto" style="text-align:start" x-text="xCatName(item, msg.card)"></div>
+                            <p x-show="item.note" class="text-sm text-on-surface whitespace-pre-wrap" dir="auto" style="overflow-wrap:anywhere;text-align:start" x-text="item.note"></p>
+                          </div>
+                        </div>
+                        <div x-show="xActive(msg) && msg.card.kind === 'create' && item.alternatives.length" class="mt-1">
+                          <button type="button" @click.stop="xToggleAlt(msg, item.index)" :disabled="msg.busy"
+                                  class="min-h-[44px] px-1 text-xs text-primary underline disabled:opacity-50" x-text="ct(msg.card, 'change_cat')"></button>
+                          <div x-show="msg.altOpen === item.index" class="flex flex-wrap gap-2 pb-1">
+                            <template x-for="alt in item.alternatives" :key="alt.slug">
+                              <button type="button" @click.stop="xChoose(msg, item.index, alt.slug)" :disabled="msg.busy" dir="auto"
+                                      class="min-h-[44px] px-3 rounded-full border border-[#303030] text-sm text-on-surface hover:border-primary/50 disabled:opacity-50" x-text="xAltName(alt, msg.card)"></button>
+                            </template>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+
+                  <div x-show="xChangeRows(msg.card).length" class="rounded-lg bg-[#141414] border border-[#33343c] p-3 space-y-1 text-sm">
+                    <p class="text-xs text-on-surface-variant" dir="auto" style="text-align:start" x-text="ct(msg.card, 'will_change')"></p>
+                    <template x-for="row in xChangeRows(msg.card)" :key="row.label">
+                      <div class="flex flex-wrap items-baseline gap-x-2" dir="auto">
+                        <span class="text-on-surface-variant" x-text="row.label + ':'"></span>
+                        <span class="line-through text-on-surface-variant" x-text="row.from"></span>
+                        <span aria-hidden="true">→</span>
+                        <span class="font-semibold text-primary" x-text="row.to"></span>
+                      </div>
+                    </template>
+                  </div>
+                  <p x-show="msg.card.kind === 'delete' && xActive(msg) && !xNeedsPick(msg.card)" class="text-xs text-on-surface-variant" dir="auto" style="text-align:start" x-text="ct(msg.card, 'delete_will')"></p>
+
+                  <div x-show="xActive(msg)" class="flex gap-2">
+                    <button type="button" data-testid="card-confirm" @click="xConfirm(msg)" :disabled="msg.busy || xNeedsPick(msg.card)" :aria-busy="msg.busy"
+                            class="flex-1 min-h-[44px] rounded-xl bg-primary text-on-primary font-semibold text-sm disabled:opacity-50 active:scale-95 transition-transform" x-text="ct(msg.card, 'confirm')"></button>
+                    <button type="button" data-testid="card-cancel" @click="xCancel(msg)" :disabled="msg.busy"
+                            class="flex-1 min-h-[44px] rounded-xl border border-outline-variant text-on-surface text-sm disabled:opacity-50 active:scale-95 transition-transform" x-text="ct(msg.card, 'cancel')"></button>
+                  </div>
+                  <p x-show="xActive(msg)" class="text-[11px] text-on-surface-variant" dir="auto" style="text-align:start" x-text="ct(msg.card, 'valid_until', { time: xTime(msg.card.expires_at) })"></p>
+
+                  <p x-show="xShowExpired(msg)" role="status" class="text-sm text-on-surface-variant" dir="auto" style="text-align:start" x-text="ct(msg.card, 'o_expired')"></p>
+                  <p x-show="msg.superseded && !msg.outcome" role="status" class="text-sm text-on-surface-variant" dir="auto" style="text-align:start" x-text="ct(msg.card, 'o_superseded')"></p>
+                  <p x-show="msg.outcome" data-testid="card-outcome" role="status" class="text-sm text-on-surface" dir="auto" style="text-align:start" x-text="msg.outcome ? ct(msg.card, msg.outcome) : ''"></p>
+                  <button type="button" data-testid="card-undo" x-show="xCanUndo(msg)" @click="xUndo(msg)" :disabled="msg.busy"
+                          class="min-h-[44px] px-4 rounded-xl border border-outline-variant text-sm text-on-surface disabled:opacity-50 active:scale-95 transition-transform" x-text="ct(msg.card, 'undo')"></button>
+                  <p x-show="msg.error" data-testid="card-error" role="alert" class="text-sm text-error" dir="auto" style="text-align:start" x-text="msg.error"></p>
+                </div>
+              </template>
+
               <!-- Sources -->
               <div x-show="msg.role === 'assistant' && msg.sources && msg.sources.length" class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-[#33343c]">
                 <template x-for="src in msg.sources" :key="src">
@@ -229,6 +301,45 @@
                 class="shrink-0 px-3 sm:px-4 py-2 rounded-full border border-[#303030] bg-[#141414] text-sm sm:text-body-md text-on-surface-variant hover:text-primary hover:border-primary/50 transition-all active:scale-95"
                 x-text="q"></button>
       </template>
+    </div>
+
+    <!-- Expense assistant: status line and help panel (Path step 5b) -->
+    <div class="max-w-5xl mx-auto w-full space-y-2 [@media(max-height:480px)]:hidden" data-testid="expense-strip">   <!-- hidden while the on-screen keyboard leaves almost no room -->
+      <div class="flex flex-wrap items-center justify-end gap-x-2">
+        <p x-show="xStatusText()" class="flex-1 basis-[65%] min-w-0 text-xs text-on-surface-variant leading-snug py-2" dir="auto" style="text-align:start" role="status" aria-live="polite" data-testid="expense-status" x-text="xStatusText()"></p>
+        <a x-show="xState() === 'guest'" href="/auth/login" class="shrink-0 min-h-[44px] inline-flex items-center px-3 text-xs text-primary underline" x-text="xt('login')"></a>
+        <a x-show="xShowManualLink()" href="/expenses" class="shrink-0 min-h-[44px] inline-flex items-center px-3 text-xs text-primary underline" x-text="xt('link_manual')"></a>
+        <button x-show="xState() === 'limit'" type="button" data-testid="pro-button-strip" @click="xPro()" :disabled="xProBusy || xProDone"
+                class="shrink-0 min-h-[44px] px-3 rounded-lg border border-primary/50 text-xs text-primary disabled:opacity-70"
+                x-text="xProDone ? xt('pro_thanks') : (xProBusy ? xt('pro_busy') : xt('pro_btn'))"></button>
+        <button x-show="xLoggedIn" type="button" @click="xOpen = !xOpen" :aria-expanded="String(xOpen)" data-testid="expense-help-toggle"
+                class="shrink-0 min-h-[44px] px-3 rounded-lg border border-outline-variant text-xs text-on-surface-variant hover:text-primary" x-text="xt('x_help')"></button>
+      </div>
+
+      <div x-cloak x-show="xLoggedIn && xOpen" class="rounded-xl border border-[#262626] bg-[#141414] p-3 space-y-3 max-h-[50dvh] overflow-y-auto" data-testid="expense-panel">
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Language">
+          <template x-for="l in xPanelLangs" :key="l">
+            <button type="button" @click="xSetLang(l)" :aria-pressed="String(xLang === l)"
+                    class="min-h-[44px] px-3 rounded-full border text-sm" :class="xLang === l ? 'border-primary text-primary' : 'border-[#303030] text-on-surface-variant'"
+                    x-text="l === 'en' ? 'English' : (l === 'ur' ? 'اردو' : 'Roman Urdu')"></button>
+          </template>
+        </div>
+        <p class="text-xs text-on-surface-variant" dir="auto" style="text-align:start" x-text="xt('p_examples')"></p>
+        <div class="flex flex-col gap-2">
+          <template x-for="ex in xExamples[xLang]" :key="ex.text">
+            <button type="button" @click="xUseExample(ex.text)" dir="auto" data-testid="expense-example"
+                    class="min-h-[44px] w-full px-3 py-2 rounded-xl border border-[#303030] bg-[#0f0f0f] text-sm text-on-surface hover:border-primary/50" style="text-align:start" x-text="ex.text"></button>
+          </template>
+        </div>
+        <p class="text-xs text-on-surface-variant" dir="auto" style="text-align:start" x-text="xt('p_voice')"></p>
+        <div class="space-y-1" data-testid="pro-box">
+          <button type="button" data-testid="pro-button" @click="xPro()" :disabled="xProBusy || xProDone"
+                  class="min-h-[44px] px-4 rounded-xl border border-primary/50 text-sm text-primary disabled:opacity-70"
+                  x-text="xProDone ? xt('pro_thanks') : (xProBusy ? xt('pro_busy') : xt('pro_btn'))"></button>
+          <p x-show="!xProDone" class="text-[11px] text-on-surface-variant" dir="auto" style="text-align:start" x-text="xt('pro_note')"></p>
+          <p x-show="xProError" role="alert" class="text-xs text-error" dir="auto" style="text-align:start" x-text="xProError"></p>
+        </div>
+      </div>
     </div>
 
     <!-- Input Controls -->
@@ -283,9 +394,16 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/js/expense_chat.js"></script>
 <script>
 function chatApp() {
-  return {
+  // The expense assistant (cards, status line, Pro button) lives in /static/js/expense_chat.js. If that file did not load,
+  // the chat still works as before (without expense cards).
+  const expense = (typeof window.expenseChat === 'function') ? window.expenseChat() : {
+    xLoggedIn: false, xInit() {}, xDestroy() {}, xClientId() { return undefined; },
+    xAfterReply(data, time) { this.messages.push({ role: 'assistant', type: 'text', content: data.answer, time, sources: data.sources || [] }); },
+  };
+  return Object.assign({}, expense, {
     messages:      [],
     inputText:     '',
     loading:       false,
@@ -310,7 +428,11 @@ function chatApp() {
     async init() {
       this.$watch('messages', () => this.$nextTick(() => this.scrollToBottom()));
       this.$watch('loading',  () => this.$nextTick(() => this.scrollToBottom()));
+      this.$watch('xStatus', () => this.$nextTick(() => this.scrollToBottom()));      // the status line can grow and cover the newest card
+      await this.xInit();
     },
+
+    destroy() { this.xDestroy(); },
 
     scrollToBottom() {
       const el = document.getElementById('messages-container');
@@ -353,33 +475,43 @@ function chatApp() {
       const ta = document.querySelector('textarea');
       if (ta) ta.style.height = 'auto';
 
+      // One id per send. If this send fails and the same text is sent again, the id is reused, so the server answers with
+      // the same expense card and does not count a second AI message.
+      const clientMsgId = this.xClientId(text);
+      const ctl   = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 70000);      // never wait for ever
+
       try {
         const res = await fetch('/chat/message', {
           method:  'POST',
           headers: authHeaders(),
+          signal:  ctl.signal,
           body: JSON.stringify({
-            session_id: this.sessionId,
-            message:    text,
-            language:   'auto',
+            session_id:    this.sessionId,
+            message:       text,
+            language:      'auto',
+            client_msg_id: clientMsgId,
           }),
         });
         if (!res.ok) throw new Error('Request failed');
         const data = await res.json();
 
-        this.messages.push({
-          role: 'assistant', type: 'text',
-          content: data.answer,
-          time: this.formatTime(),
-          sources: data.sources || [],
-        });
+        this.xFailedSend = null;
+        this.xAfterReply(data, this.formatTime());
 
       } catch(e) {
+        this.xFailedSend = { text, id: clientMsgId };
+        if (!this.inputText) {                                  // give the words back so the person can just press send again
+          this.inputText = text;
+          this.$nextTick(() => { const t = document.querySelector('textarea'); if (t) this.autoResize(t); });
+        }
         this.messages.push({
           role: 'assistant', type: 'text',
           content: 'Sorry, something went wrong. Please try again.',
           time: this.formatTime(), sources: [],
         });
       } finally {
+        clearTimeout(timer);
         this.loading = false;
       }
     },
@@ -560,7 +692,7 @@ function chatApp() {
       this.messages  = [];
       this.sessionId = 'session_' + Date.now();
     },
-  }
+  });
 }
 </script>
 {% endblock %}

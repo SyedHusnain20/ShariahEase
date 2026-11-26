@@ -8,7 +8,7 @@
  *                      so a fully offline page is the plain offline page, not the app).
  * To ship a change to a cached file, bump VERSION.
  */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = 'se-shell-' + VERSION;
 const OFFLINE_URL = '/static/offline.html';
 const PRECACHE = [
@@ -16,6 +16,7 @@ const PRECACHE = [
   '/static/css/main.css',
   '/static/js/main.js',
   '/static/js/expenses.js',
+  '/static/js/expense_chat.js',
   '/static/vendor/chartjs/chart.umd.js',
   '/static/icons/icon-192.png',
   '/static/icons/icon-512.png',

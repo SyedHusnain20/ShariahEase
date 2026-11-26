@@ -9,6 +9,7 @@ POST /chat/message (see app/routers/chatbot.py); these routes act on the card th
     POST /api/expense-ai/{id}/choose      body {"item": 0, "category_slug": "..."}: switch one item to an offered category
     POST /api/expense-ai/{id}/pick        body {"index": 0}: on a change/delete card, choose which entry is meant (step 5a)
     POST /api/expense-ai/{id}/undo        take back what a confirmed card saved (within an hour; soft delete)
+    POST /api/expense-ai/upgrade-interest the "Notify me about Pro" button: one audit_log row per person (step 5b)
 
 Same rules as the expense routes: login required (401), writes need the X-Requested-With header and are rate limited,
 another person's card is 404 (never 403), user_id comes only from the session. 409 = already used / cancelled / expired,
@@ -21,7 +22,7 @@ from sqlalchemy.orm import Session
 from app.database import models
 from app.database.db import get_db
 from app.routers.expenses import current_user, write_user
-from app.services import expense_ai, expense_service as es, pending_actions as pa
+from app.services import expense_ai, expense_service as es, pending_actions as pa, upgrade_interest
 from app.services.expense_understand import taxonomy
 
 router = APIRouter(prefix="/api/expense-ai", tags=["expense-ai"])
@@ -47,7 +48,14 @@ def _card_error(err: pa.CardError) -> HTTPException:
 
 @router.get("/status")
 def status(db: Session = Depends(get_db), user: models.User = Depends(current_user)):
-    return expense_ai.usage_status(db, user.id)
+    return {**expense_ai.usage_status(db, user.id), "upgrade_interest": upgrade_interest.has_recorded(db, user.id)}
+
+
+@router.post("/upgrade-interest")
+def upgrade_interest_tap(db: Session = Depends(get_db), user: models.User = Depends(write_user)):
+    """The same answer on every tap: the person is on the list. Only the first tap writes a row."""
+    first = upgrade_interest.record_upgrade_interest(db, user.id)
+    return {"status": "recorded" if first else "already_recorded"}
 
 
 @router.get("/pending")
