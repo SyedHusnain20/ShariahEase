@@ -1,204 +1,174 @@
 {% extends "base.html" %}
-{% block title %}Charities - ShariahEase{% endblock %}
+{% block title %}Charities — ShariahEase{% endblock %}
 {% block page_title %}Vetted Charities{% endblock %}
 
 {% block content %}
-<div class="max-w-[1400px] mx-auto space-y-gutter px-4 sm:px-6 lg:px-0" x-data="charitiesApp()">
+<div class="max-w-[1440px] mx-auto space-y-6" x-data="charitiesApp()">
 
-  <!-- Header Hero Card -->
-  <div class="grid grid-cols-12 gap-gutter mb-stack-lg">
-    <div class="col-span-12 lg:col-span-8 bg-[#141414] border border-[#262626] rounded-xl p-5 sm:p-8 relative overflow-hidden group">
-      <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-primary/10 transition-colors duration-500"></div>
-      <div class="relative z-10">
-        <span class="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary font-label-md text-[10px] uppercase font-bold tracking-widest mb-4 border border-primary/20">
-          Every Organization Shariah Verified
-        </span>
-        <h3 class="font-headline-xl text-xl sm:text-headline-xl text-on-surface mb-2 tracking-tight">
-          Give Where It Truly Counts
-        </h3>
-        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl hidden md:block">
-          Every charity here has been hand-picked and reviewed for Shariah compliance, financial transparency, and real impact on the ground in Pakistan. "Giving Zakat to relatives in need carries double reward."
-        </p>
-        <p class="font-body-md text-body-md text-on-surface-variant md:hidden">
-          Hand-picked Shariah compliant charities in Pakistan.
-        </p>
-      </div>
+  <!-- Header Card -->
+  <section class="bg-[#1c1a18] border border-[#2c2925] border-l-2 border-l-[#10b981] rounded-xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div class="max-w-2xl">
+      <h3 class="text-[20px] sm:text-[22px] font-medium text-[#efe9de] tracking-[-0.015em]">
+        Verified Zakat charities in Pakistan
+      </h3>
+      <p class="text-[14px] text-[#aaa398] mt-1.5 leading-relaxed">
+        Organizations reviewed for Zakat eligibility, financial transparency, and on-ground relief across Pakistan.
+      </p>
     </div>
-    <div class="col-span-12 lg:col-span-4 bg-[#1c1c1c] border border-[#262626] rounded-xl p-5 sm:p-8 flex flex-col justify-center items-center text-center">
-      <div class="w-16 h-16 rounded-full bg-surface-container-highest border border-outline-variant flex items-center justify-center mb-4">
-        <span class="material-symbols-outlined text-primary text-3xl">verified_user</span>
-      </div>
-      <p class="text-on-surface-variant font-label-md text-[10px] uppercase tracking-widest mb-1">Status</p>
-      <p class="font-headline-md text-headline-md text-on-surface font-bold">All Zakat Eligible</p>
+    <div class="flex items-center gap-2 text-[13px] text-[#4cc38a] shrink-0">
+      <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>
+      </svg>
+      <span>All organizations Zakat eligible</span>
     </div>
-  </div>
+  </section>
 
   <!-- Filters & Search -->
-  <div class="flex flex-col gap-3 sm:gap-gutter items-stretch sm:items-center mb-margin-desktop">
-    <div class="relative flex-1 w-full">
-      <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-      <input x-model="searchQuery" 
-             class="field-input pl-12 pr-4 py-2.5 w-full rounded-lg" 
-             placeholder="Search by name, cause, or location..." type="text"/>
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+    <div class="relative w-full lg:max-w-sm">
+      <svg class="w-4 h-4 text-[#8a847a] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+      <input x-model="searchQuery"
+             class="field-input pl-10 pr-4 min-h-[40px] w-full rounded-lg"
+             placeholder="Search charities" type="text"/>
     </div>
-    
-    <div class="flex gap-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar w-full">
+
+    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
       <template x-for="cat in categories" :key="cat.tag">
-        <button @click="activeCategory = cat.tag; loadCharities()"
-                :class="activeCategory === cat.tag 
-                  ? 'bg-primary-container text-on-primary-container border-transparent' 
-                  : 'bg-transparent border-[#303030] text-on-surface-variant hover:text-on-surface hover:border-primary'"
-                class="px-5 py-2 rounded-full border transition-colors font-label-md text-label-md whitespace-nowrap">
+        <button type="button" @click="activeCategory = cat.tag; loadCharities()"
+                :class="activeCategory === cat.tag
+                  ? 'bg-[#262421] text-[#efe9de] border-[#10b981]'
+                  : 'bg-[#1c1a18] border-[#2c2925] text-[#aaa398] hover:text-[#efe9de] hover:border-[#3e3a34]'"
+                class="px-3.5 min-h-[38px] rounded-lg border transition-colors text-[13px] whitespace-nowrap">
           <span x-text="cat.label"></span>
         </button>
       </template>
     </div>
   </div>
 
-  <div class="flex items-center justify-between mb-4">
-    <p class="text-sm text-on-surface-variant" x-text="filteredCharities.length + ' organizations found'"></p>
+  <div class="flex items-center justify-between">
+    <p class="font-mono text-[12px] text-[#8a847a]" x-text="filteredCharities.length + ' organizations'"></p>
   </div>
 
   <!-- Charity Grid -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
-    
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
     <template x-for="charity in filteredCharities" :key="charity.id">
-      <div class="group bg-[#141414] border border-[#262626] rounded-xl overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col h-full">
-        <div class="h-40 sm:h-48 overflow-hidden relative bg-[#1c1c1c] flex items-center justify-center">
-          <!-- Real org image — tries webp → png → jpg, then falls back to icon -->
-          <picture class="absolute inset-0 w-full h-full" x-ref="pic">
+      <article class="bg-[#1c1a18] border border-[#2c2925] hover:border-[#3e3a34] rounded-xl overflow-hidden transition-colors flex flex-col h-full">
+        <div class="h-44 overflow-hidden relative bg-[#12110f] border-b border-[#2c2925] flex items-center justify-center">
+          <picture class="absolute inset-0 w-full h-full">
             <source :srcset="`/static/images/charities/${charity.id}.webp`" type="image/webp">
-            <source :srcset="`/static/images/charities/${charity.id}.png`"  type="image/png">
-            <img
-              :src="`/static/images/charities/${charity.id}.jpg`"
-              :alt="charity.name"
-              class="w-full h-full object-cover object-center"
-              @error="$el.closest('picture').style.display='none'; $el.closest('picture').nextElementSibling.style.display='flex'"
-            />
+            <source :srcset="`/static/images/charities/${charity.id}.png`" type="image/png">
+            <img :src="`/static/images/charities/${charity.id}.jpg`"
+                 :alt="charity.name"
+                 class="w-full h-full object-cover object-center"
+                 @error="$el.closest('picture').style.display='none'; $el.closest('picture').nextElementSibling.style.display='flex'"/>
           </picture>
-          <!-- Fallback icon (hidden when image loads) -->
           <div class="absolute inset-0 items-center justify-center hidden" :id="`fallback-${charity.id}`">
-            <span class="material-symbols-outlined text-[64px] text-[#303030] group-hover:scale-110 transition-transform duration-500"
-                  x-text="charity.category_tag === 'health' ? 'local_hospital' : (charity.category_tag === 'education' ? 'school' : (charity.category_tag === 'food' ? 'restaurant' : (charity.category_tag === 'relief' ? 'emergency' : (charity.category_tag === 'microfinance' ? 'account_balance' : 'volunteer_activism'))))">
-            </span>
-          </div>
-          <div class="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent opacity-90 pointer-events-none"></div>
-          <div class="absolute top-4 right-4 bg-[#141414]/80 backdrop-blur-md border border-white/10 px-2 py-1 rounded text-[10px] font-bold text-primary uppercase tracking-tighter">
-            Shariah Compliant
+            <svg class="w-10 h-10 text-[#3e3a34]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            </svg>
           </div>
         </div>
-        
-        <div class="p-4 sm:p-6 flex flex-col flex-1 relative z-10 -mt-6 bg-[#141414] rounded-t-xl">
-          <div class="flex justify-between items-start mb-1">
-            <h4 class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors" x-text="charity.name"></h4>
-            <span class="text-xs px-2 py-0.5 rounded-full font-medium"
-                  :class="{
-                    'bg-blue-900/30 text-blue-400': charity.category_tag === 'health',
-                    'bg-purple-900/30 text-purple-400': charity.category_tag === 'education',
-                    'bg-amber-900/30 text-amber-400': charity.category_tag === 'food',
-                    'bg-red-900/30 text-red-400': charity.category_tag === 'relief',
-                    'bg-teal-900/30 text-teal-400': charity.category_tag === 'microfinance',
-                    'bg-primary/20 text-primary': charity.category_tag === 'welfare' || !['health', 'education', 'food', 'relief', 'microfinance'].includes(charity.category_tag)
-                  }" x-text="charity.category"></span>
-          </div>
-          
-          <p class="text-xs text-on-surface-variant/60 mb-3" style="font-family: 'Noto Nastaliq Urdu', serif; direction: rtl;" x-text="charity.urdu_name"></p>
-          
-          <p class="text-on-surface-variant font-label-md text-label-md mb-4 flex items-center gap-1">
-            <span class="material-symbols-outlined text-[16px]">location_on</span> <span x-text="charity.location"></span>
-          </p>
-          
-          <p class="text-body-md text-on-surface-variant line-clamp-2 mb-4" x-text="charity.description"></p>
-          
-          <div class="flex flex-wrap gap-1.5 mb-6 mt-auto">
-             <template x-for="area in charity.focus_areas" :key="area">
-               <span class="text-[10px] px-2 py-0.5 bg-[#1c1c1c] border border-[#303030] text-on-surface-variant rounded-full" x-text="area"></span>
-             </template>
-          </div>
-          
-          <div class="flex gap-2 sm:gap-3">
-            <a :href="charity.website" target="_blank" rel="noopener"
-               class="flex-1 bg-primary text-on-primary font-label-md text-label-md py-2.5 rounded-lg font-semibold hover:brightness-110 active:scale-95 transition-all text-center text-sm">
-               Donate Now
-            </a>
-            <a :href="charity.website" target="_blank" rel="noopener" class="w-10 sm:w-12 flex items-center justify-center border border-[#262626] rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">
-              <span class="material-symbols-outlined text-[18px] sm:text-[24px]">public</span>
-            </a>
-          </div>
-        </div>
-      </div>
-    </template>
-    
 
-    
+        <div class="p-5 flex flex-col flex-1">
+          <div class="flex justify-between items-start gap-3 mb-1">
+            <h4 class="text-[16px] font-medium text-[#efe9de] leading-snug" x-text="charity.name"></h4>
+            <span class="text-[12px] px-2 py-0.5 rounded-md bg-[#262421] border border-[#2c2925] text-[#aaa398] shrink-0" x-text="charity.category"></span>
+          </div>
+
+          <p class="font-urdu-body text-[14px] text-[#8a847a] mb-2" dir="rtl" lang="ur" style="letter-spacing:0; line-height:1.9" x-text="charity.urdu_name"></p>
+
+          <p class="text-[12px] text-[#8a847a] mb-3 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span x-text="charity.location"></span>
+          </p>
+
+          <p class="text-[14px] text-[#aaa398] leading-relaxed line-clamp-2 mb-4" x-text="charity.description"></p>
+
+          <div class="flex flex-wrap gap-1.5 mb-5 mt-auto">
+            <template x-for="area in charity.focus_areas" :key="area">
+              <span class="text-[12px] px-2 py-0.5 bg-[#12110f] border border-[#2c2925] text-[#8a847a] rounded-md" x-text="area"></span>
+            </template>
+          </div>
+
+          <div class="flex gap-2">
+            <a :href="charity.website" target="_blank" rel="noopener noreferrer"
+               class="flex-1 min-h-[40px] bg-[#10b981] hover:bg-[#34d399] text-[#042117] text-[14px] font-medium rounded-lg transition-colors flex items-center justify-center">
+              Donate
+            </a>
+            <a :href="charity.website" target="_blank" rel="noopener noreferrer"
+               :aria-label="'Visit ' + charity.name + ' website'"
+               class="w-10 min-h-[40px] flex items-center justify-center bg-[#262421] hover:bg-[#302d29] border border-[#2c2925] rounded-lg text-[#aaa398] hover:text-[#efe9de] transition-colors">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </article>
+    </template>
   </div>
 
-  <!-- Empty State: local not found → trigger web search -->
+  <!-- Empty State: trigger web search -->
   <div x-show="filteredCharities.length === 0 && !loading && searchQuery" style="display:none;">
-
-    <!-- Auto web search result -->
-    <div x-show="!webSearchLoading && webResults.length > 0" class="space-y-4 mb-6" style="display:none;">
-      <div class="flex items-center gap-2 mb-4">
-        <span class="material-symbols-outlined text-primary">travel_explore</span>
-        <p class="text-sm text-on-surface-variant">Live web results for <span class="text-primary font-semibold" x-text="'"' + searchQuery + '"'"></span></p>
-      </div>
+    <div x-show="!webSearchLoading && webResults.length > 0" class="space-y-3 mb-6" style="display:none;">
+      <p class="text-[13px] text-[#aaa398]">Web results for <span class="text-[#34d399] font-medium" x-text="'“' + searchQuery + '”'"></span></p>
       <template x-for="r in webResults" :key="r.url">
         <a :href="r.url" target="_blank" rel="noopener noreferrer"
-           class="flex gap-4 bg-[#141414] border border-[#262626] hover:border-primary/50 rounded-xl p-5 transition-all duration-200 group block">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-            <span class="material-symbols-outlined text-primary text-xl">open_in_new</span>
+           class="flex gap-4 bg-[#1c1a18] border border-[#2c2925] hover:border-[#3e3a34] rounded-xl p-4 transition-colors">
+          <div class="w-9 h-9 rounded-lg bg-[#262421] border border-[#2c2925] flex items-center justify-center shrink-0 text-[#34d399]">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            </svg>
           </div>
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-on-surface group-hover:text-primary transition-colors truncate" x-text="r.title"></p>
-            <p class="text-xs text-on-surface-variant mt-1 line-clamp-2" x-text="r.snippet"></p>
-            <p class="text-[10px] text-primary/60 mt-1.5 truncate" x-text="r.url"></p>
+            <p class="text-[14px] font-medium text-[#efe9de] truncate" x-text="r.title"></p>
+            <p class="text-[13px] text-[#aaa398] mt-1 line-clamp-2" x-text="r.snippet"></p>
+            <p class="font-mono text-[12px] text-[#8a847a] mt-1 truncate" x-text="r.url"></p>
           </div>
         </a>
       </template>
-      <p class="text-[11px] text-on-surface-variant/60 pt-2">
-        ⚠ These are external web results. Always verify SECP registration and Shariah compliance before donating.
+      <p class="text-[12px] text-[#8a847a] pt-1">
+        External web results are not pre-vetted. Verify SECP registration and Zakat eligibility before donating.
       </p>
     </div>
 
-    <!-- Web search loading -->
-    <div x-show="webSearchLoading" class="bg-[#141414] border border-[#262626] rounded-xl p-10 text-center" style="display:none;">
-      <svg class="w-6 h-6 animate-spin text-primary mx-auto mb-2" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+    <div x-show="webSearchLoading" class="bg-[#1c1a18] border border-[#2c2925] rounded-xl p-10 text-center" style="display:none;">
+      <svg class="w-5 h-5 animate-spin text-[#34d399] mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
       </svg>
-      <p class="text-sm text-on-surface-variant">Searching the web for <span class="text-primary" x-text="searchQuery"></span>...</p>
+      <p class="text-[14px] text-[#aaa398]">Searching for <span class="text-[#efe9de]" x-text="searchQuery"></span></p>
     </div>
 
-    <!-- Web search found nothing -->
-    <div x-show="!webSearchLoading && webResults.length === 0 && webSearchDone" class="bg-[#141414] border border-[#262626] rounded-xl p-10 text-center" style="display:none;">
-      <span class="material-symbols-outlined text-on-surface-variant text-4xl mb-3 block">search_off</span>
-      <p class="text-sm text-on-surface-variant">No results found for <span class="text-primary font-semibold" x-text="'"' + searchQuery + '"'"></span>.</p>
-      <button @click="searchQuery = ''; activeCategory = 'all'; loadCharities(); clearWebResults()" class="mt-3 text-xs text-primary hover:underline">
+    <div x-show="!webSearchLoading && webResults.length === 0 && webSearchDone" class="bg-[#1c1a18] border border-[#2c2925] rounded-xl p-10 text-center" style="display:none;">
+      <p class="text-[14px] text-[#aaa398]">No results found for <span class="text-[#efe9de] font-medium" x-text="'“' + searchQuery + '”'"></span>.</p>
+      <button type="button" @click="searchQuery = ''; activeCategory = 'all'; loadCharities(); clearWebResults()" class="mt-3 text-[13px] text-[#34d399] hover:underline">
         Clear search
       </button>
     </div>
-
   </div>
 
   <!-- Loading State -->
-  <div x-show="loading" class="bg-[#141414] border border-[#262626] rounded-xl p-10 text-center" style="display:none;">
-    <svg class="w-6 h-6 animate-spin text-primary mx-auto mb-2" fill="none" viewBox="0 0 24 24">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+  <div x-show="loading" class="bg-[#1c1a18] border border-[#2c2925] rounded-xl p-10 text-center" style="display:none;">
+    <svg class="w-5 h-5 animate-spin text-[#34d399] mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
     </svg>
-    <p class="text-sm text-on-surface-variant">Loading charities...</p>
+    <p class="text-[14px] text-[#aaa398]">Loading charities</p>
   </div>
 
-  <!-- Bottom note -->
-  <div class="mt-8 bg-[#2d1b0a] border border-amber-900/50 rounded-xl px-4 sm:px-6 py-4 flex gap-3 sm:gap-4">
-    <span class="material-symbols-outlined text-amber-500">warning</span>
-    <p class="text-sm text-amber-200/90 leading-relaxed hidden md:block">
-      <span class="font-bold text-amber-500">Important:</span>
-      Always verify an organization's legitimacy before donating. Look for SECP registration and transparent annual reports. Zakat given to a non-eligible recipient does not count as fulfilled.
-    </p>
-    <p class="text-xs text-amber-200/90 leading-relaxed md:hidden">
-      <span class="font-bold text-amber-500">Important:</span>
-      Verify SECP registration. Zakat given to a non-eligible recipient is invalid.
+  <!-- Verification Notice -->
+  <div class="bg-[#1c1a18] border border-[#2c2925] border-l-2 border-l-[#e0a23b] rounded-xl p-4 sm:p-5 flex items-start gap-3">
+    <svg class="w-4 h-4 text-[#e0a23b] shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>
+    </svg>
+    <p class="text-[13px] text-[#aaa398] leading-relaxed">
+      <span class="font-medium text-[#efe9de]">Verify before donating:</span>
+      check SECP registration and published annual audits. Zakat given to a non-eligible recipient does not fulfill the obligation.
     </p>
   </div>
 
@@ -233,14 +203,12 @@ function charitiesApp() {
     async init() {
       await this.loadCategories();
       await this.loadCharities();
-      // Watch searchQuery — auto web-search after 600ms debounce when local returns nothing
       this.$watch('searchQuery', (val) => {
         clearTimeout(this._webSearchTimer);
         this.webResults     = [];
         this.webSearchDone  = false;
         if (!val || val.length < 2) return;
         this._webSearchTimer = setTimeout(async () => {
-          // Only fire web search if local filter is empty
           if (this.filteredCharities.length === 0) {
             await this.searchWeb(val);
           }
@@ -253,7 +221,7 @@ function charitiesApp() {
         const res = await fetch('/charities/categories');
         this.categories = await res.json();
       } catch(e) {
-        this.categories = [{ tag: 'all', label: 'All Causes' }];
+        this.categories = [{ tag: 'all', label: 'All causes' }];
       }
     },
 

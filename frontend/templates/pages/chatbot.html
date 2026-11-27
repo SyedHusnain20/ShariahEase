@@ -1,60 +1,52 @@
 {% extends "base.html" %}
-{% block title %}AI Chatbot - ShariahEase{% endblock %}
-{% block page_title %}AI Chatbot{% endblock %}
+{% block title %}AI Chatbot — ShariahEase{% endblock %}
+{% block page_title %}Chatbot{% endblock %}
+{% block main_class %}flex-1 min-h-0 overflow-hidden bg-[#161513] flex flex-col{% endblock %}
 
 {% block content %}
 <style>
   [x-cloak] { display: none !important; }
-  /* ── WhatsApp-style audio player (Dark Theme) ─────────────────────── */
+
+  /* Audio message bubble */
   .audio-bubble {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 14px;
-    border-radius: 12px;
-    min-width: 200px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    min-width: 210px;
     max-width: 280px;
   }
   @media (max-width: 640px) {
     .audio-bubble {
-      min-width: min(210px, 72vw);
+      min-width: min(200px, 72vw);
       max-width: 72vw;
-      padding: 9px 11px;
-    }
-    .play-btn {
-      width: 34px;
-      height: 34px;
-    }
-  }
-  @media (min-width: 640px) {
-    .audio-bubble {
-      min-width: 240px;
     }
   }
   .audio-bubble.user-audio {
-    background: #00422b;   /* on-primary-container */
-    border: 1px solid #10b981; /* primary */
+    background: #192b23;
+    border: 1px solid rgba(16, 185, 129, 0.35);
   }
   .audio-bubble.ai-audio {
-    background: #1c1c1c;
-    border: 1px solid #262626;
+    background: #1c1a18;
+    border: 1px solid #2c2925;
   }
-
-  /* Play/Pause button */
   .play-btn {
-    width: 36px; height: 36px;
-    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
     border: none;
     cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    transition: opacity .15s;
+    transition: background-color 0.15s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .user-audio .play-btn { background: rgba(255,255,255,0.15); color: #4edea3; }
-  .ai-audio   .play-btn { background: #262626; color: #10b981; }
-  .play-btn:hover { opacity: .8; }
+  .user-audio .play-btn { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+  .ai-audio   .play-btn { background: #262421; color: #34d399; }
+  .play-btn:hover { opacity: 0.85; }
 
-  /* Progress bar */
   .audio-progress-wrap {
     flex: 1;
     display: flex;
@@ -70,324 +62,308 @@
     outline: none;
   }
   .user-audio .audio-bar {
-    accent-color: #4edea3;
-    background: rgba(255,255,255,0.2);
+    accent-color: #34d399;
+    background: rgba(239, 233, 222, 0.2);
   }
   .ai-audio .audio-bar {
     accent-color: #10b981;
-    background: #33343c;
+    background: #2c2925;
   }
   .audio-time {
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: .3px;
-    font-family: monospace;
+    font-size: 11px;
+    font-weight: 400;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
   }
-  .user-audio .audio-time { color: rgba(255,255,255,0.8); }
-  .ai-audio   .audio-time { color: #bbcabf; }
-
-  /* Mic recording pulse */
-  @keyframes mic-pulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.4); }
-    50%      { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
-  }
-  .mic-recording { animation: mic-pulse 1.2s ease infinite; }
-
-  /* Typing dots */
-  .typing-dot {
-    width: 6px; height: 6px;
-    background: #10b981;
-    border-radius: 50%;
-    animation: bounce .9s ease infinite;
-  }
-  .typing-dot:nth-child(2) { animation-delay: .15s; }
-  .typing-dot:nth-child(3) { animation-delay: .3s; }
-  @keyframes bounce {
-    0%,60%,100% { transform: translateY(0); }
-    30%         { transform: translateY(-5px); }
-  }
+  .user-audio .audio-time { color: #aaa398; }
+  .ai-audio   .audio-time { color: #8a847a; }
 </style>
 
-<div class="flex flex-col h-[calc(100dvh-56px)] sm:h-[calc(100dvh-64px)] relative -m-3 sm:-m-4 lg:-m-margin-desktop bg-[#0a0a0a]" x-data="chatApp()">
-  
-  <!-- Chat Header -->
-  <div class="px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-[#141414] border-b border-[#262626] flex items-center justify-between z-10 shrink-0">
-    <div class="flex items-center gap-2.5 md:gap-4 min-w-0">
-      <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container shadow-sm shrink-0">
-        <span class="material-symbols-outlined">smart_toy</span>
+<div class="flex flex-col flex-1 min-h-0 bg-[#161513]" x-data="chatApp()">
+
+  <!-- Chat Subheader -->
+  <div class="px-4 sm:px-6 lg:px-8 py-3 bg-[#161513] border-b border-[#2c2925] flex items-center justify-between gap-3 shrink-0">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-8 h-8 rounded-lg bg-[#1c1a18] border border-[#2c2925] flex items-center justify-center text-[#34d399] shrink-0">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+        </svg>
       </div>
       <div class="min-w-0">
-        <h2 class="font-headline-md text-base md:text-headline-md text-on-surface">ShariahEase AI</h2>
-        <div class="flex items-center gap-2 mt-0.5">
-          <span class="text-xs md:text-label-md text-on-surface-variant hidden md:inline">Expertise: Ethical Finance</span>
-          <span class="px-1.5 py-0.5 rounded bg-surface-container-highest text-primary text-[9px] md:text-[10px] font-bold uppercase tracking-widest border border-outline-variant">English & Urdu</span>
-        </div>
+        <h2 class="text-[15px] font-medium text-[#efe9de] truncate">ShariahEase Assistant</h2>
+        <p class="text-[12px] text-[#8a847a]">English and Urdu · Zakat, screening, and expenses</p>
       </div>
     </div>
-    <div class="flex items-center gap-2">
-      <button @click="clearChat" class="flex items-center justify-center w-10 h-10 md:w-auto md:px-3 md:py-1.5 rounded-lg border border-outline-variant text-label-md hover:bg-surface-container-high hover:text-error transition-colors text-on-surface-variant shrink-0" title="Clear Chat">
-        <span class="material-symbols-outlined text-[18px]">delete</span>
-        <span class="hidden md:inline ml-2">Clear Chat</span>
-      </button>
-    </div>
+    <button type="button" @click="clearChat"
+            class="inline-flex items-center justify-center gap-2 min-h-[36px] px-3 rounded-lg border border-[#2c2925] bg-[#1c1a18] hover:bg-[#262421] text-[13px] text-[#aaa398] hover:text-[#e5484d] transition-colors shrink-0"
+            title="Clear chat">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+      </svg>
+      <span class="hidden sm:inline">Clear chat</span>
+    </button>
   </div>
 
   <!-- Message Area -->
-  <div class="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6" id="messages-container">
-    
-    <!-- Welcome Message -->
-    <div x-show="messages.length === 0" class="flex gap-3 sm:gap-4 max-w-3xl">
-      <div class="w-8 h-8 rounded-lg bg-surface-container-highest hidden sm:flex items-center justify-center shrink-0">
-        <span class="material-symbols-outlined text-primary text-[20px]">smart_toy</span>
+  <div class="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-5" id="messages-container">
+    <div class="max-w-3xl mx-auto space-y-5">
+
+      <!-- Welcome Message -->
+      <div x-show="messages.length === 0" class="bg-[#1c1a18] border border-[#2c2925] border-l-2 border-l-[#10b981] rounded-xl p-5 space-y-3">
+        <p class="text-[15px] font-medium text-[#efe9de]">Islamic finance and expense assistant</p>
+        <p class="text-[14px] text-[#aaa398] leading-relaxed">
+          Ask questions in English, Urdu, or Roman Urdu about Zakat thresholds, halal investments, Mudarabah contracts, or daily expense tracking.
+        </p>
+        <p x-show="xLoggedIn" class="text-[13px] text-[#34d399]" dir="auto" style="text-align:start" data-testid="expense-welcome-hint" x-text="xt('w_hint')"></p>
       </div>
-      <div class="space-y-3 w-full">
-        <div class="bg-[#1c1c1c] border border-[#262626] p-3 sm:p-4 rounded-xl sm:rounded-tl-none shadow-sm">
-          <p class="text-body-md text-on-surface leading-relaxed hidden md:block">
-            Assalamu Alaikum! I am your Islamic finance assistant. Ask me anything about:
-          </p>
-          <p class="text-body-md text-on-surface leading-relaxed md:hidden">
-            Assalamu Alaikum! Ask me about:
-          </p>
-          <ul class="mt-2 space-y-1 text-on-surface-variant text-sm list-none hidden md:block">
-            <li class="flex items-start gap-2"><span class="text-primary mt-0.5">•</span>Zakat rules, calculation, and eligible recipients</li>
-            <li class="flex items-start gap-2"><span class="text-primary mt-0.5">•</span>Halal vs haram investment questions</li>
-            <li class="flex items-start gap-2"><span class="text-primary mt-0.5">•</span>Islamic finance contracts (Mudarabah, Murabaha, Ijarah)</li>
-          </ul>
-          <p x-show="xLoggedIn" class="mt-3 text-sm text-primary" dir="auto" style="text-align:start" data-testid="expense-welcome-hint" x-text="xt('w_hint')"></p>
-        </div>
-      </div>
-    </div>
 
-    <!-- Messages Loop -->
-    <template x-for="(msg, index) in messages" :key="index">
-      <div :class="msg.role === 'user' ? 'flex-row-reverse ml-auto' : 'flex-row'" class="flex gap-2.5 sm:gap-4 max-w-3xl">
-        
-        <!-- Avatar -->
-        <div :class="msg.role === 'user' ? 'bg-primary text-on-primary' : 'bg-surface-container-highest text-primary'"
-             class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0">
-          <span class="material-symbols-outlined text-[20px]" x-text="msg.role === 'user' ? 'person' : 'smart_toy'"></span>
-        </div>
+      <!-- Messages Loop -->
+      <template x-for="(msg, index) in messages" :key="index">
+        <div :class="msg.role === 'user' ? 'flex-row-reverse ml-auto' : 'flex-row'" class="flex gap-3 max-w-2xl">
 
-        <div class="space-y-1.5 sm:space-y-2 max-w-[82%] sm:max-w-[85%] min-w-0" :class="msg.role === 'user' ? 'text-right' : ''">
-          
-          <!-- AUDIO BUBBLE -->
-          <template x-if="msg.type === 'audio' && msg.audio_b64">
-            <div :class="msg.role === 'user' ? 'user-audio rounded-tr-none' : 'ai-audio rounded-tl-none'"
-                 class="audio-bubble shadow-sm inline-flex">
-              <button class="play-btn" @click="togglePlay(msg, index)">
-                <svg x-show="!msg.playing" class="w-5 h-5 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                <svg x-show="msg.playing" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-              </button>
-              <div class="audio-progress-wrap">
-                <input type="range" class="audio-bar" :value="msg.progress || 0" min="0" max="100" step="0.1" @input="seekAudio(msg, index, $event.target.value)">
-                <span class="audio-time text-left" x-text="msg.playing ? (msg.currentTime || '0:00') : (msg.duration || '0:00')"></span>
-              </div>
-            </div>
-          </template>
+          <!-- Avatar -->
+          <div :class="msg.role === 'user' ? 'bg-[#262421] text-[#efe9de]' : 'bg-[#1c1a18] text-[#34d399]'"
+               class="w-7 h-7 rounded-lg border border-[#2c2925] flex items-center justify-center shrink-0 mt-0.5">
+            <svg x-show="msg.role === 'user'" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <svg x-show="msg.role !== 'user'" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+            </svg>
+          </div>
 
-          <!-- TEXT BUBBLE -->
-          <template x-if="msg.type !== 'audio'">
-            <div :class="msg.role === 'user' ? 'bg-primary-container text-on-primary-container rounded-tr-none' : 'bg-[#1c1c1c] border border-[#262626] text-on-surface rounded-tl-none'"
-                 class="p-3 sm:p-4 rounded-xl shadow-sm text-left">
-              <p class="text-body-md leading-relaxed whitespace-pre-wrap" dir="auto" style="text-align:start" x-text="msg.content"></p>
+          <div class="space-y-1.5 max-w-[85%] min-w-0" :class="msg.role === 'user' ? 'text-right' : ''">
 
-              <!-- Expense confirmation card (Path step 5b). The person's own words (the note) are shown only with x-text. -->
-              <template x-if="msg.card">
-                <div class="mt-3 pt-3 border-t border-[#33343c] space-y-3 text-start" data-testid="expense-card" :data-card-kind="msg.card.kind" :data-card-id="msg.card.id">
-                  <p class="text-sm font-semibold text-on-surface" dir="auto" style="text-align:start" x-text="xTitle(msg.card)"></p>
-                  <p x-show="xActive(msg) && xNeedsPick(msg.card)" class="text-xs text-on-surface-variant" dir="auto" style="text-align:start" x-text="ct(msg.card, 'pick_hint')"></p>
-
-                  <div class="space-y-2">
-                    <template x-for="item in xVisibleItems(msg)" :key="item.index">
-                      <div class="rounded-lg border p-3"
-                           :class="[msg.card.chosen === item.index ? 'border-primary bg-primary/10' : 'border-[#33343c] bg-[#141414]', xPickMode(msg) ? 'cursor-pointer min-h-[44px]' : '']"
-                           :role="xPickMode(msg) ? 'button' : null" :tabindex="xPickMode(msg) ? 0 : null"
-                           :aria-pressed="xPickMode(msg) ? String(msg.card.chosen === item.index) : null"
-                           @click="xPickMode(msg) && xPick(msg, item.index)"
-                           @keydown.enter.prevent="xPickMode(msg) && xPick(msg, item.index)"
-                           @keydown.space.prevent="xPickMode(msg) && xPick(msg, item.index)">
-                        <div class="flex items-start gap-3">
-                          <span x-show="xShowCandidates(msg.card)" class="shrink-0 w-7 h-7 rounded-full bg-[#262626] text-xs flex items-center justify-center text-on-surface" x-text="item.index + 1"></span>
-                          <div class="min-w-0 flex-1 space-y-1">
-                            <div class="flex items-baseline justify-between gap-3">
-                              <span class="text-base font-semibold text-on-surface" x-text="item.amount_display"></span>
-                              <span class="text-xs text-on-surface-variant shrink-0" dir="auto" x-text="xDate(item.occurred_on, msg.card.lang)"></span>
-                            </div>
-                            <div class="text-sm text-on-surface-variant" dir="auto" style="text-align:start" x-text="xCatName(item, msg.card)"></div>
-                            <p x-show="item.note" class="text-sm text-on-surface whitespace-pre-wrap" dir="auto" style="overflow-wrap:anywhere;text-align:start" x-text="item.note"></p>
-                          </div>
-                        </div>
-                        <div x-show="xActive(msg) && msg.card.kind === 'create' && item.alternatives.length" class="mt-1">
-                          <button type="button" @click.stop="xToggleAlt(msg, item.index)" :disabled="msg.busy"
-                                  class="min-h-[44px] px-1 text-xs text-primary underline disabled:opacity-50" x-text="ct(msg.card, 'change_cat')"></button>
-                          <div x-show="msg.altOpen === item.index" class="flex flex-wrap gap-2 pb-1">
-                            <template x-for="alt in item.alternatives" :key="alt.slug">
-                              <button type="button" @click.stop="xChoose(msg, item.index, alt.slug)" :disabled="msg.busy" dir="auto"
-                                      class="min-h-[44px] px-3 rounded-full border border-[#303030] text-sm text-on-surface hover:border-primary/50 disabled:opacity-50" x-text="xAltName(alt, msg.card)"></button>
-                            </template>
-                          </div>
-                        </div>
-                      </div>
-                    </template>
-                  </div>
-
-                  <div x-show="xChangeRows(msg.card).length" class="rounded-lg bg-[#141414] border border-[#33343c] p-3 space-y-1 text-sm">
-                    <p class="text-xs text-on-surface-variant" dir="auto" style="text-align:start" x-text="ct(msg.card, 'will_change')"></p>
-                    <template x-for="row in xChangeRows(msg.card)" :key="row.label">
-                      <div class="flex flex-wrap items-baseline gap-x-2" dir="auto">
-                        <span class="text-on-surface-variant" x-text="row.label + ':'"></span>
-                        <span class="line-through text-on-surface-variant" x-text="row.from"></span>
-                        <span aria-hidden="true">→</span>
-                        <span class="font-semibold text-primary" x-text="row.to"></span>
-                      </div>
-                    </template>
-                  </div>
-                  <p x-show="msg.card.kind === 'delete' && xActive(msg) && !xNeedsPick(msg.card)" class="text-xs text-on-surface-variant" dir="auto" style="text-align:start" x-text="ct(msg.card, 'delete_will')"></p>
-
-                  <div x-show="xActive(msg)" class="flex gap-2">
-                    <button type="button" data-testid="card-confirm" @click="xConfirm(msg)" :disabled="msg.busy || xNeedsPick(msg.card)" :aria-busy="msg.busy"
-                            class="flex-1 min-h-[44px] rounded-xl bg-primary text-on-primary font-semibold text-sm disabled:opacity-50 active:scale-95 transition-transform" x-text="ct(msg.card, 'confirm')"></button>
-                    <button type="button" data-testid="card-cancel" @click="xCancel(msg)" :disabled="msg.busy"
-                            class="flex-1 min-h-[44px] rounded-xl border border-outline-variant text-on-surface text-sm disabled:opacity-50 active:scale-95 transition-transform" x-text="ct(msg.card, 'cancel')"></button>
-                  </div>
-                  <p x-show="xActive(msg)" class="text-[11px] text-on-surface-variant" dir="auto" style="text-align:start" x-text="ct(msg.card, 'valid_until', { time: xTime(msg.card.expires_at) })"></p>
-
-                  <p x-show="xShowExpired(msg)" role="status" class="text-sm text-on-surface-variant" dir="auto" style="text-align:start" x-text="ct(msg.card, 'o_expired')"></p>
-                  <p x-show="msg.superseded && !msg.outcome" role="status" class="text-sm text-on-surface-variant" dir="auto" style="text-align:start" x-text="ct(msg.card, 'o_superseded')"></p>
-                  <p x-show="msg.outcome" data-testid="card-outcome" role="status" class="text-sm text-on-surface" dir="auto" style="text-align:start" x-text="msg.outcome ? ct(msg.card, msg.outcome) : ''"></p>
-                  <button type="button" data-testid="card-undo" x-show="xCanUndo(msg)" @click="xUndo(msg)" :disabled="msg.busy"
-                          class="min-h-[44px] px-4 rounded-xl border border-outline-variant text-sm text-on-surface disabled:opacity-50 active:scale-95 transition-transform" x-text="ct(msg.card, 'undo')"></button>
-                  <p x-show="msg.error" data-testid="card-error" role="alert" class="text-sm text-error" dir="auto" style="text-align:start" x-text="msg.error"></p>
+            <!-- AUDIO BUBBLE -->
+            <template x-if="msg.type === 'audio' && msg.audio_b64">
+              <div :class="msg.role === 'user' ? 'user-audio' : 'ai-audio'"
+                   class="audio-bubble inline-flex">
+                <button type="button" class="play-btn" @click="togglePlay(msg, index)" :aria-label="msg.playing ? 'Pause' : 'Play'">
+                  <svg x-show="!msg.playing" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  <svg x-show="msg.playing" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                </button>
+                <div class="audio-progress-wrap">
+                  <input type="range" class="audio-bar" :value="msg.progress || 0" min="0" max="100" step="0.1" @input="seekAudio(msg, index, $event.target.value)">
+                  <span class="audio-time text-left" x-text="msg.playing ? (msg.currentTime || '0:00') : (msg.duration || '0:00')"></span>
                 </div>
-              </template>
-
-              <!-- Sources -->
-              <div x-show="msg.role === 'assistant' && msg.sources && msg.sources.length" class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-[#33343c]">
-                <template x-for="src in msg.sources" :key="src">
-                  <span class="text-[10px] px-2 py-1 bg-surface-container-lowest border border-outline-variant rounded text-on-surface-variant font-mono" x-text="src"></span>
-                </template>
               </div>
-            </div>
-          </template>
+            </template>
 
-          <div class="text-[10px] sm:text-label-md text-on-surface-variant px-1" x-text="msg.time"></div>
+            <!-- TEXT BUBBLE -->
+            <template x-if="msg.type !== 'audio'">
+              <div :class="msg.role === 'user' ? 'bg-[#262421] border border-[#35322d] text-[#efe9de]' : 'bg-[#1c1a18] border border-[#2c2925] text-[#efe9de]'"
+                   class="px-4 py-3 rounded-xl text-left">
+                <p class="text-[14px] leading-relaxed whitespace-pre-wrap" dir="auto" style="text-align:start" x-text="msg.content"></p>
+
+                <!-- Expense confirmation card (Path step 5b). The person's own words (the note) are shown only with x-text. -->
+                <template x-if="msg.card">
+                  <div class="mt-3 pt-3 border-t border-[#2c2925] space-y-3 text-start" data-testid="expense-card" :data-card-kind="msg.card.kind" :data-card-id="msg.card.id">
+                    <p class="text-[14px] font-medium text-[#efe9de]" dir="auto" style="text-align:start" x-text="xTitle(msg.card)"></p>
+                    <p x-show="xActive(msg) && xNeedsPick(msg.card)" class="text-[12px] text-[#aaa398]" dir="auto" style="text-align:start" x-text="ct(msg.card, 'pick_hint')"></p>
+
+                    <div class="space-y-2">
+                      <template x-for="item in xVisibleItems(msg)" :key="item.index">
+                        <div class="rounded-lg border p-3"
+                             :class="[msg.card.chosen === item.index ? 'border-[#10b981] bg-[#192b23]' : 'border-[#2c2925] bg-[#12110f]', xPickMode(msg) ? 'cursor-pointer min-h-[44px]' : '']"
+                             :role="xPickMode(msg) ? 'button' : null" :tabindex="xPickMode(msg) ? 0 : null"
+                             :aria-pressed="xPickMode(msg) ? String(msg.card.chosen === item.index) : null"
+                             @click="xPickMode(msg) && xPick(msg, item.index)"
+                             @keydown.enter.prevent="xPickMode(msg) && xPick(msg, item.index)"
+                             @keydown.space.prevent="xPickMode(msg) && xPick(msg, item.index)">
+                          <div class="flex items-start gap-3">
+                            <span x-show="xShowCandidates(msg.card)" class="shrink-0 w-7 h-7 rounded-md bg-[#262421] font-mono text-[12px] flex items-center justify-center text-[#efe9de]" x-text="item.index + 1"></span>
+                            <div class="min-w-0 flex-1 space-y-1">
+                              <div class="flex items-baseline justify-between gap-3">
+                                <span class="font-mono tabular-nums text-[15px] font-medium text-[#efe9de]" x-text="item.amount_display"></span>
+                                <span class="font-mono text-[12px] text-[#8a847a] shrink-0" dir="auto" x-text="xDate(item.occurred_on, msg.card.lang)"></span>
+                              </div>
+                              <div class="text-[13px] text-[#aaa398]" dir="auto" style="text-align:start" x-text="xCatName(item, msg.card)"></div>
+                              <p x-show="item.note" class="text-[13px] text-[#efe9de] whitespace-pre-wrap" dir="auto" style="overflow-wrap:anywhere;text-align:start" x-text="item.note"></p>
+                            </div>
+                          </div>
+                          <div x-show="xActive(msg) && msg.card.kind === 'create' && item.alternatives.length" class="mt-1">
+                            <button type="button" @click.stop="xToggleAlt(msg, item.index)" :disabled="msg.busy"
+                                    class="min-h-[44px] px-1 text-[12px] text-[#34d399] underline disabled:opacity-50" x-text="ct(msg.card, 'change_cat')"></button>
+                            <div x-show="msg.altOpen === item.index" class="flex flex-wrap gap-2 pb-1">
+                              <template x-for="alt in item.alternatives" :key="alt.slug">
+                                <button type="button" @click.stop="xChoose(msg, item.index, alt.slug)" :disabled="msg.busy" dir="auto"
+                                        class="min-h-[44px] px-3 rounded-lg border border-[#2c2925] bg-[#1c1a18] text-[13px] text-[#efe9de] hover:border-[#10b981] disabled:opacity-50" x-text="xAltName(alt, msg.card)"></button>
+                              </template>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+
+                    <div x-show="xChangeRows(msg.card).length" class="rounded-lg bg-[#12110f] border border-[#2c2925] p-3 space-y-1 text-[13px]">
+                      <p class="text-[12px] text-[#aaa398]" dir="auto" style="text-align:start" x-text="ct(msg.card, 'will_change')"></p>
+                      <template x-for="row in xChangeRows(msg.card)" :key="row.label">
+                        <div class="flex flex-wrap items-baseline gap-x-2" dir="auto">
+                          <span class="text-[#aaa398]" x-text="row.label + ':'"></span>
+                          <span class="line-through text-[#8a847a]" x-text="row.from"></span>
+                          <span aria-hidden="true">→</span>
+                          <span class="font-medium text-[#34d399]" x-text="row.to"></span>
+                        </div>
+                      </template>
+                    </div>
+                    <p x-show="msg.card.kind === 'delete' && xActive(msg) && !xNeedsPick(msg.card)" class="text-[12px] text-[#aaa398]" dir="auto" style="text-align:start" x-text="ct(msg.card, 'delete_will')"></p>
+
+                    <div x-show="xActive(msg)" class="flex gap-2">
+                      <button type="button" data-testid="card-confirm" @click="xConfirm(msg)" :disabled="msg.busy || xNeedsPick(msg.card)" :aria-busy="msg.busy"
+                              class="flex-1 min-h-[44px] rounded-lg bg-[#10b981] hover:bg-[#34d399] text-[#042117] font-medium text-[14px] disabled:opacity-40 active:scale-[0.98] transition-colors" x-text="ct(msg.card, 'confirm')"></button>
+                      <button type="button" data-testid="card-cancel" @click="xCancel(msg)" :disabled="msg.busy"
+                              class="flex-1 min-h-[44px] rounded-lg border border-[#2c2925] bg-[#262421] hover:bg-[#302d29] text-[#efe9de] text-[14px] disabled:opacity-40 active:scale-[0.98] transition-colors" x-text="ct(msg.card, 'cancel')"></button>
+                    </div>
+                    <p x-show="xActive(msg)" class="font-mono text-[12px] text-[#8a847a]" dir="auto" style="text-align:start" x-text="ct(msg.card, 'valid_until', { time: xTime(msg.card.expires_at) })"></p>
+
+                    <p x-show="xShowExpired(msg)" role="status" class="text-[13px] text-[#aaa398]" dir="auto" style="text-align:start" x-text="ct(msg.card, 'o_expired')"></p>
+                    <p x-show="msg.superseded && !msg.outcome" role="status" class="text-[13px] text-[#aaa398]" dir="auto" style="text-align:start" x-text="ct(msg.card, 'o_superseded')"></p>
+                    <p x-show="msg.outcome" data-testid="card-outcome" role="status" class="text-[13px] text-[#efe9de]" dir="auto" style="text-align:start" x-text="msg.outcome ? ct(msg.card, msg.outcome) : ''"></p>
+                    <button type="button" data-testid="card-undo" x-show="xCanUndo(msg)" @click="xUndo(msg)" :disabled="msg.busy"
+                            class="min-h-[44px] px-4 rounded-lg border border-[#2c2925] bg-[#262421] text-[13px] text-[#efe9de] disabled:opacity-50 active:scale-[0.98] transition-colors" x-text="ct(msg.card, 'undo')"></button>
+                    <p x-show="msg.error" data-testid="card-error" role="alert" class="text-[13px] text-[#e5484d]" dir="auto" style="text-align:start" x-text="msg.error"></p>
+                  </div>
+                </template>
+
+                <!-- Sources -->
+                <div x-show="msg.role === 'assistant' && msg.sources && msg.sources.length" class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-[#2c2925]">
+                  <template x-for="src in msg.sources" :key="src">
+                    <span class="font-mono text-[12px] px-2 py-0.5 bg-[#12110f] border border-[#2c2925] rounded-md text-[#8a847a]" x-text="src"></span>
+                  </template>
+                </div>
+              </div>
+            </template>
+
+            <div class="font-mono text-[12px] text-[#8a847a] px-1" x-text="msg.time"></div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Typing Indicator -->
+      <div x-show="loading" class="flex gap-3 max-w-2xl">
+        <div class="w-7 h-7 rounded-lg bg-[#1c1a18] border border-[#2c2925] flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 text-[#34d399]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+          </svg>
+        </div>
+        <div class="bg-[#1c1a18] border border-[#2c2925] px-4 py-3 rounded-xl flex items-center h-10">
+          <div class="flex gap-1.5 items-center">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
         </div>
       </div>
-    </template>
 
-    <!-- Typing Indicator -->
-    <div x-show="loading" class="flex gap-2.5 sm:gap-4 max-w-3xl">
-      <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0">
-        <span class="material-symbols-outlined text-primary text-[20px]">smart_toy</span>
-      </div>
-      <div class="bg-[#1c1c1c] border border-[#262626] p-3 sm:p-4 rounded-xl rounded-tl-none shadow-sm flex items-center h-11 sm:h-[52px]">
-        <div class="flex gap-1.5 items-center">
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
-          <div class="typing-dot"></div>
-        </div>
-      </div>
     </div>
-
   </div>
 
-  <!-- Suggestion Chips & Input Area -->
-  <div class="bg-[#0f0f0f] border-t border-[#262626] px-3 sm:px-4 md:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4 shrink-0">
-    
-    <!-- Question Chips (Only show if empty) -->
-    <div class="flex gap-2 sm:gap-3 overflow-x-auto no-scrollbar pb-1" x-show="messages.length === 0">
-      <template x-for="q in suggestedQuestions" :key="q">
-        <button @click="sendSuggested(q)"
-                class="shrink-0 px-3 sm:px-4 py-2 rounded-full border border-[#303030] bg-[#141414] text-sm sm:text-body-md text-on-surface-variant hover:text-primary hover:border-primary/50 transition-all active:scale-95"
-                x-text="q"></button>
-      </template>
-    </div>
+  <!-- Composer & Expense Strip -->
+  <div class="bg-[#12110f] border-t border-[#2c2925] px-4 sm:px-6 lg:px-8 py-3 sm:py-4 shrink-0">
+    <div class="max-w-3xl mx-auto space-y-3">
 
-    <!-- Expense assistant: status line and help panel (Path step 5b) -->
-    <div class="max-w-5xl mx-auto w-full space-y-2 [@media(max-height:480px)]:hidden" data-testid="expense-strip">   <!-- hidden while the on-screen keyboard leaves almost no room -->
-      <div class="flex flex-wrap items-center justify-end gap-x-2">
-        <p x-show="xStatusText()" class="flex-1 basis-[65%] min-w-0 text-xs text-on-surface-variant leading-snug py-2" dir="auto" style="text-align:start" role="status" aria-live="polite" data-testid="expense-status" x-text="xStatusText()"></p>
-        <a x-show="xState() === 'guest'" href="/auth/login" class="shrink-0 min-h-[44px] inline-flex items-center px-3 text-xs text-primary underline" x-text="xt('login')"></a>
-        <a x-show="xShowManualLink()" href="/expenses" class="shrink-0 min-h-[44px] inline-flex items-center px-3 text-xs text-primary underline" x-text="xt('link_manual')"></a>
-        <button x-show="xState() === 'limit'" type="button" data-testid="pro-button-strip" @click="xPro()" :disabled="xProBusy || xProDone"
-                class="shrink-0 min-h-[44px] px-3 rounded-lg border border-primary/50 text-xs text-primary disabled:opacity-70"
-                x-text="xProDone ? xt('pro_thanks') : (xProBusy ? xt('pro_busy') : xt('pro_btn'))"></button>
-        <button x-show="xLoggedIn" type="button" @click="xOpen = !xOpen" :aria-expanded="String(xOpen)" data-testid="expense-help-toggle"
-                class="shrink-0 min-h-[44px] px-3 rounded-lg border border-outline-variant text-xs text-on-surface-variant hover:text-primary" x-text="xt('x_help')"></button>
+      <!-- Suggested Questions (Only when chat is empty) -->
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-0.5" x-show="messages.length === 0">
+        <template x-for="q in suggestedQuestions" :key="q">
+          <button type="button" @click="sendSuggested(q)"
+                  class="shrink-0 px-3 py-2 rounded-lg border border-[#2c2925] bg-[#1c1a18] text-[13px] text-[#aaa398] hover:text-[#efe9de] hover:border-[#3e3a34] transition-colors">
+            <span x-text="q"></span>
+          </button>
+        </template>
       </div>
 
-      <div x-cloak x-show="xLoggedIn && xOpen" class="rounded-xl border border-[#262626] bg-[#141414] p-3 space-y-3 max-h-[50dvh] overflow-y-auto" data-testid="expense-panel">
-        <div class="flex flex-wrap gap-2" role="group" aria-label="Language">
-          <template x-for="l in xPanelLangs" :key="l">
-            <button type="button" @click="xSetLang(l)" :aria-pressed="String(xLang === l)"
-                    class="min-h-[44px] px-3 rounded-full border text-sm" :class="xLang === l ? 'border-primary text-primary' : 'border-[#303030] text-on-surface-variant'"
-                    x-text="l === 'en' ? 'English' : (l === 'ur' ? 'اردو' : 'Roman Urdu')"></button>
-          </template>
-        </div>
-        <p class="text-xs text-on-surface-variant" dir="auto" style="text-align:start" x-text="xt('p_examples')"></p>
-        <div class="flex flex-col gap-2">
-          <template x-for="ex in xExamples[xLang]" :key="ex.text">
-            <button type="button" @click="xUseExample(ex.text)" dir="auto" data-testid="expense-example"
-                    class="min-h-[44px] w-full px-3 py-2 rounded-xl border border-[#303030] bg-[#0f0f0f] text-sm text-on-surface hover:border-primary/50" style="text-align:start" x-text="ex.text"></button>
-          </template>
-        </div>
-        <p class="text-xs text-on-surface-variant" dir="auto" style="text-align:start" x-text="xt('p_voice')"></p>
-        <div class="space-y-1" data-testid="pro-box">
-          <button type="button" data-testid="pro-button" @click="xPro()" :disabled="xProBusy || xProDone"
-                  class="min-h-[44px] px-4 rounded-xl border border-primary/50 text-sm text-primary disabled:opacity-70"
+      <!-- Expense assistant: status line and help panel (Path step 5b) -->
+      <div class="w-full space-y-2 [@media(max-height:480px)]:hidden" data-testid="expense-strip">
+        <div class="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+          <p x-show="xStatusText()" class="flex-1 basis-[65%] min-w-0 text-[12px] text-[#8a847a] leading-snug py-1" dir="auto" style="text-align:start" role="status" aria-live="polite" data-testid="expense-status" x-text="xStatusText()"></p>
+          <a x-show="xState() === 'guest'" href="/auth/login" class="shrink-0 min-h-[44px] inline-flex items-center px-2 text-[12px] text-[#34d399] underline" x-text="xt('login')"></a>
+          <a x-show="xShowManualLink()" href="/expenses" class="shrink-0 min-h-[44px] inline-flex items-center px-2 text-[12px] text-[#34d399] underline" x-text="xt('link_manual')"></a>
+          <button x-show="xState() === 'limit'" type="button" data-testid="pro-button-strip" @click="xPro()" :disabled="xProBusy || xProDone"
+                  class="shrink-0 min-h-[44px] px-3 rounded-lg border border-[#10b981]/50 text-[12px] text-[#34d399] disabled:opacity-60"
                   x-text="xProDone ? xt('pro_thanks') : (xProBusy ? xt('pro_busy') : xt('pro_btn'))"></button>
-          <p x-show="!xProDone" class="text-[11px] text-on-surface-variant" dir="auto" style="text-align:start" x-text="xt('pro_note')"></p>
-          <p x-show="xProError" role="alert" class="text-xs text-error" dir="auto" style="text-align:start" x-text="xProError"></p>
+          <button x-show="xLoggedIn" type="button" @click="xOpen = !xOpen" :aria-expanded="String(xOpen)" data-testid="expense-help-toggle"
+                  class="shrink-0 min-h-[44px] px-3 rounded-lg border border-[#2c2925] bg-[#1c1a18] text-[12px] text-[#aaa398] hover:text-[#efe9de]" x-text="xt('x_help')"></button>
+        </div>
+
+        <div x-cloak x-show="xLoggedIn && xOpen" class="rounded-xl border border-[#2c2925] bg-[#1c1a18] p-4 space-y-3 max-h-[50dvh] overflow-y-auto" data-testid="expense-panel">
+          <div class="flex flex-wrap gap-2" role="group" aria-label="Language">
+            <template x-for="l in xPanelLangs" :key="l">
+              <button type="button" @click="xSetLang(l)" :aria-pressed="String(xLang === l)"
+                      class="min-h-[44px] px-3 rounded-lg border text-[13px] transition-colors"
+                      :class="xLang === l ? 'border-[#10b981] bg-[#192b23] text-[#34d399]' : 'border-[#2c2925] bg-[#12110f] text-[#aaa398]'"
+                      x-text="l === 'en' ? 'English' : (l === 'ur' ? 'اردو' : 'Roman Urdu')"></button>
+            </template>
+          </div>
+          <p class="text-[12px] text-[#aaa398]" dir="auto" style="text-align:start" x-text="xt('p_examples')"></p>
+          <div class="flex flex-col gap-2">
+            <template x-for="ex in xExamples[xLang]" :key="ex.text">
+              <button type="button" @click="xUseExample(ex.text)" dir="auto" data-testid="expense-example"
+                      class="min-h-[44px] w-full px-3 py-2 rounded-lg border border-[#2c2925] bg-[#12110f] text-[13px] text-[#efe9de] hover:border-[#3e3a34]" style="text-align:start" x-text="ex.text"></button>
+            </template>
+          </div>
+          <p class="text-[12px] text-[#8a847a]" dir="auto" style="text-align:start" x-text="xt('p_voice')"></p>
+          <div class="space-y-1" data-testid="pro-box">
+            <button type="button" data-testid="pro-button" @click="xPro()" :disabled="xProBusy || xProDone"
+                    class="min-h-[44px] px-4 rounded-lg border border-[#10b981]/50 text-[13px] text-[#34d399] disabled:opacity-60"
+                    x-text="xProDone ? xt('pro_thanks') : (xProBusy ? xt('pro_busy') : xt('pro_btn'))"></button>
+            <p x-show="!xProDone" class="text-[12px] text-[#8a847a]" dir="auto" style="text-align:start" x-text="xt('pro_note')"></p>
+            <p x-show="xProError" role="alert" class="text-[12px] text-[#e5484d]" dir="auto" style="text-align:start" x-text="xProError"></p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Input Controls -->
-    <div class="flex items-end max-w-5xl mx-auto w-full">
-      <div class="flex-1 bg-[#141414] border border-[#262626] rounded-2xl p-1 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all flex items-end relative"
-           :class="recording ? 'border-error/50 ring-1 ring-error/20 bg-error/5' : ''">
-        
-        <!-- Recording Overlay -->
-        <div x-show="recording" class="absolute inset-0 flex items-center gap-3 px-4 rounded-2xl bg-error/10 pointer-events-none z-10">
-          <span class="w-2.5 h-2.5 rounded-full bg-error animate-pulse"></span>
-          <span class="text-sm text-error font-medium truncate">Recording audio...</span>
-        </div>
-        
-        <!-- Transcribing Overlay -->
-        <div x-show="transcribing && !recording" class="absolute inset-0 flex items-center gap-3 px-4 rounded-2xl bg-[#1c1c1c] pointer-events-none z-10">
-          <span class="material-symbols-outlined text-on-surface-variant animate-spin">sync</span>
-          <span class="text-sm text-on-surface-variant italic truncate">Processing...</span>
-        </div>
+      <!-- Input Controls -->
+      <div class="flex items-end w-full">
+        <div class="flex-1 bg-[#1c1a18] border border-[#2c2925] rounded-xl p-1.5 focus-within:border-[#10b981] transition-colors flex items-end relative"
+             :class="recording ? 'border-[#e5484d] bg-[#2a1415]' : ''">
 
-        <textarea x-model="inputText" @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()" @input="autoResize($event.target)"
-                  class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant/50 pl-3 sm:pl-4 pr-2 py-3 resize-none text-base leading-snug no-scrollbar" 
-                  placeholder="Ask ShariahEase..." rows="1" style="max-height: 120px; min-height: 48px;"></textarea>
-        
-        <div class="flex items-center gap-1 pb-0.5 pr-0.5 shrink-0">
-          <!-- Mic Button -->
-          <button @click="toggleRecording" :disabled="loading || transcribing"
-                  class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
-                  :class="recording ? 'text-error' : 'text-on-surface-variant hover:text-primary hover:bg-surface-container'">
-            <div x-show="recording" class="absolute inset-0 bg-error/10 animate-pulse"></div>
-            <span class="material-symbols-outlined relative z-10 text-[22px]" style="font-variation-settings: 'FILL' 1;" x-show="!recording">mic</span>
-            <span class="material-symbols-outlined relative z-10 text-[22px]" style="font-variation-settings: 'FILL' 1;" x-show="recording">stop</span>
-          </button>
+          <!-- Recording Overlay (live state only) -->
+          <div x-show="recording" class="absolute inset-0 flex items-center gap-2.5 px-4 rounded-xl bg-[#2a1415] pointer-events-none z-10">
+            <span class="w-2 h-2 rounded-full bg-[#e5484d]"></span>
+            <span class="text-[14px] text-[#e5484d] font-medium truncate">Recording audio</span>
+          </div>
 
-          <!-- Send Button -->
-          <button @click="sendMessage" :disabled="loading || !inputText.trim() || transcribing || recording"
-                  class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-lg shadow-primary/10 hover:brightness-110 active:scale-95 transition-all shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
-            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">send</span>
-          </button>
+          <!-- Transcribing Overlay -->
+          <div x-show="transcribing && !recording" class="absolute inset-0 flex items-center gap-2.5 px-4 rounded-xl bg-[#1c1a18] pointer-events-none z-10">
+            <svg class="w-4 h-4 text-[#aaa398] animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span class="text-[14px] text-[#aaa398] truncate">Transcribing audio</span>
+          </div>
+
+          <textarea x-model="inputText" @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()" @input="autoResize($event.target)"
+                    class="flex-1 !bg-transparent !border-none !shadow-none focus:ring-0 text-[#efe9de] placeholder:text-[#6b655c] pl-3 pr-2 py-2.5 resize-none text-[14px] sm:text-[15px] leading-snug no-scrollbar"
+                    placeholder="Ask ShariahEase" rows="1" style="max-height: 120px; min-height: 40px;"></textarea>
+
+          <div class="flex items-center gap-1 shrink-0">
+            <button type="button" @click="toggleRecording" :disabled="loading || transcribing"
+                    :aria-label="recording ? 'Stop recording' : 'Record voice message'"
+                    class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    :class="recording ? 'text-[#e5484d] bg-[#2a1415]' : 'text-[#8a847a] hover:text-[#efe9de] hover:bg-[#262421]'">
+              <svg x-show="!recording" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
+              </svg>
+              <svg x-show="recording" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <rect x="6" y="6" width="12" height="12" rx="2"/>
+              </svg>
+            </button>
+
+            <button type="button" @click="sendMessage" :disabled="loading || !inputText.trim() || transcribing || recording"
+                    aria-label="Send message"
+                    class="w-10 h-10 rounded-lg bg-[#10b981] hover:bg-[#34d399] flex items-center justify-center text-[#042117] active:scale-[0.98] transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
+
+      <p class="text-center text-[12px] text-[#8a847a] hidden sm:block">
+        Verify major financial decisions with a qualified Shariah scholar.
+      </p>
     </div>
-    
-    <p class="text-center text-[10px] text-on-surface-variant/40 pb-1 hidden sm:block">
-      ShariahEase AI may produce financial information that should be cross-verified with a certified Shariah advisor.
-    </p>
-    <p class="text-center text-[10px] text-on-surface-variant/30 pb-2 hidden md:block">
-      Made with ❤️ for the Muslims
-    </p>
   </div>
 
 </div>
@@ -397,8 +373,6 @@
 <script src="/static/js/expense_chat.js"></script>
 <script>
 function chatApp() {
-  // The expense assistant (cards, status line, Pro button) lives in /static/js/expense_chat.js. If that file did not load,
-  // the chat still works as before (without expense cards).
   const expense = (typeof window.expenseChat === 'function') ? window.expenseChat() : {
     xLoggedIn: false, xInit() {}, xDestroy() {}, xClientId() { return undefined; },
     xAfterReply(data, time) { this.messages.push({ role: 'assistant', type: 'text', content: data.answer, time, sources: data.sources || [] }); },
@@ -409,13 +383,11 @@ function chatApp() {
     loading:       false,
     sessionId:     'session_' + Date.now(),
 
-    // voice state
     recording:     false,
     transcribing:  false,
     mediaRecorder: null,
     audioChunks:   [],
 
-    // audio player state
     _players: {},
 
     suggestedQuestions: [
@@ -428,7 +400,7 @@ function chatApp() {
     async init() {
       this.$watch('messages', () => this.$nextTick(() => this.scrollToBottom()));
       this.$watch('loading',  () => this.$nextTick(() => this.scrollToBottom()));
-      this.$watch('xStatus', () => this.$nextTick(() => this.scrollToBottom()));      // the status line can grow and cover the newest card
+      this.$watch('xStatus', () => this.$nextTick(() => this.scrollToBottom()));
       await this.xInit();
     },
 
@@ -475,11 +447,9 @@ function chatApp() {
       const ta = document.querySelector('textarea');
       if (ta) ta.style.height = 'auto';
 
-      // One id per send. If this send fails and the same text is sent again, the id is reused, so the server answers with
-      // the same expense card and does not count a second AI message.
       const clientMsgId = this.xClientId(text);
       const ctl   = new AbortController();
-      const timer = setTimeout(() => ctl.abort(), 70000);      // never wait for ever
+      const timer = setTimeout(() => ctl.abort(), 70000);
 
       try {
         const res = await fetch('/chat/message', {
@@ -501,13 +471,13 @@ function chatApp() {
 
       } catch(e) {
         this.xFailedSend = { text, id: clientMsgId };
-        if (!this.inputText) {                                  // give the words back so the person can just press send again
+        if (!this.inputText) {
           this.inputText = text;
           this.$nextTick(() => { const t = document.querySelector('textarea'); if (t) this.autoResize(t); });
         }
         this.messages.push({
           role: 'assistant', type: 'text',
-          content: 'Sorry, something went wrong. Please try again.',
+          content: 'Could not send message. Please try again.',
           time: this.formatTime(), sources: [],
         });
       } finally {
@@ -543,7 +513,7 @@ function chatApp() {
       } catch(err) {
         this.messages.push({
           role: 'assistant', type: 'text',
-          content: '⚠️ Microphone access denied. Please allow microphone permission in your browser.',
+          content: 'Microphone access was denied. Allow microphone permission in your browser to send voice messages.',
           time: this.formatTime(), sources: [],
         });
       }
@@ -582,7 +552,7 @@ function chatApp() {
         if (!data.success || !data.audio_b64) {
           this.messages.push({
             role: 'assistant', type: 'text',
-            content: data.answer_text || '⚠️ Could not process audio. Please try again.',
+            content: data.answer_text || 'Could not process audio. Please try again.',
             time: this.formatTime(), sources: [],
           });
           return;
@@ -599,7 +569,7 @@ function chatApp() {
       } catch(e) {
         this.messages.push({
           role: 'assistant', type: 'text',
-          content: '⚠️ Voice processing failed. Please try again.',
+          content: 'Voice processing failed. Please try again.',
           time: this.formatTime(), sources: [],
         });
       } finally {

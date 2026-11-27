@@ -24,9 +24,9 @@ function hide(id) {
 // ── ASYNC FETCH HELPERS ────────────────────────────────────
 async function postJSON(url, data) {
   const res = await fetch(url, {
-    method:  "POST",
+    method: "POST",
     headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify(data),
+    body: JSON.stringify(data),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -44,9 +44,9 @@ async function getJSON(url) {
 // ── TOAST NOTIFICATION ─────────────────────────────────────
 function showToast(message, type = "info") {
   const colors = {
-    success: "background:#00422b;border:1px solid #10b981;color:#4edea3",
-    error:   "background:#2d0a0a;border:1px solid rgba(255,180,171,0.4);color:#ffb4ab",
-    info:    "background:#1e1f26;border:1px solid #3c4a42;color:#bbcabf",
+    success: "background:#192b23;border:1px solid rgba(16,185,129,0.4);color:#34d399",
+    error: "background:#2a1415;border:1px solid rgba(229,72,77,0.4);color:#e5484d",
+    info: "background:#1c1a18;border:1px solid #2c2925;color:#efe9de",
   };
   const toast = document.createElement("div");
   toast.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;

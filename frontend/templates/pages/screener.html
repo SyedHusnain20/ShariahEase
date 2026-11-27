@@ -1,170 +1,135 @@
 {% extends "base.html" %}
-{% block title %}Halal Screener - ShariahEase{% endblock %}
+{% block title %}Halal Screener — ShariahEase{% endblock %}
 {% block page_title %}Halal Screener{% endblock %}
 
 {% block content %}
-<div class="max-w-[1400px] mx-auto space-y-5 sm:space-y-6" x-data="screenerApp()">
+<div class="max-w-[1440px] mx-auto space-y-6" x-data="screenerApp()">
 
-  <!-- Explainer Card -->
-  <section>
-    <div class="bg-[#141414] border border-[#262626] p-4 sm:p-6 lg:p-8 rounded-xl flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-8 relative overflow-hidden">
-      <div class="flex-1 z-10">
-        <span class="text-primary font-label-md tracking-widest uppercase">Methodology</span>
-        <h3 class="font-headline-lg text-xl sm:text-headline-lg text-on-surface mt-2 mb-3 sm:mb-4">Precision Shariah Screening</h3>
-        <p class="text-on-surface-variant max-w-2xl hidden md:block">
-          Our screener evaluates assets based on Islamic finance standards. We analyze business activities, debt-to-asset ratios, and interest income to ensure your portfolio remains purely halal.
-        </p>
-        <p class="text-on-surface-variant max-w-2xl md:hidden">
-          Check whether an asset aligns with core Islamic finance screens.
-        </p>
-      </div>
-      <div class="hidden lg:block absolute right-[-50px] top-[-50px] opacity-10">
-        <span class="material-symbols-outlined !text-[240px] text-primary" style="font-variation-settings: 'FILL' 1;">verified_user</span>
-      </div>
-    </div>
+  <!-- Methodology Summary -->
+  <section class="bg-[#1c1a18] border border-[#2c2925] rounded-xl p-5 sm:p-6">
+    <h3 class="text-[18px] font-medium text-[#efe9de]">Shariah investment screening</h3>
+    <p class="text-[14px] text-[#aaa398] max-w-2xl mt-1.5 leading-relaxed">
+      Evaluates business activities, debt-to-asset ratios, and interest income against Islamic finance screening criteria.
+    </p>
   </section>
 
   <!-- Search Area -->
   <section>
-    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
-      <div class="relative flex-1 group">
-        <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
-        <input x-model="query" @keydown.enter="checkInvestment" 
-          class="field-input pl-12 pr-4 py-2.5 w-full rounded-lg" 
-          placeholder="Ticker, fund, or asset name" type="text"/>
+    <div class="flex flex-col sm:flex-row gap-3">
+      <div class="relative flex-1">
+        <svg class="w-4 h-4 text-[#8a847a] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input x-model="query" @keydown.enter="checkInvestment"
+               class="field-input pl-10 pr-4 min-h-[44px] w-full rounded-lg"
+               placeholder="Ticker, fund, or asset name" type="text"/>
       </div>
-      <button @click="checkInvestment" :disabled="loading || !query.trim()" 
-        class="bg-primary-container text-on-primary-container px-5 sm:px-8 py-3 sm:py-4 rounded-lg font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 sm:w-auto w-full">
-        <span x-show="!loading" class="hidden md:inline">Check Verdict</span>
-        <span x-show="!loading" class="md:hidden">Check</span>
-        <span class="material-symbols-outlined" x-show="!loading">analytics</span>
-        <svg x-show="loading" class="w-5 h-5 animate-spin text-on-primary-container" fill="none" viewBox="0 0 24 24" style="display:none;">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <button type="button" @click="checkInvestment" :disabled="loading || !query.trim()"
+              class="min-h-[44px] px-6 bg-[#10b981] hover:bg-[#34d399] text-[#042117] font-medium text-[14px] rounded-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-colors disabled:opacity-40 disabled:cursor-not-allowed sm:w-auto w-full shrink-0">
+        <svg x-show="!loading" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>
+        </svg>
+        <svg x-show="loading" class="w-4 h-4 animate-spin text-[#042117]" fill="none" viewBox="0 0 24 24" style="display:none;">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
+        <span x-text="loading ? 'Checking' : 'Check asset'"></span>
       </button>
     </div>
 
-    <!-- Error Message -->
-    <div x-show="errorMsg" style="display:none" class="mt-4 bg-[#2d0a0a] border border-error/20 rounded-lg px-4 py-3 text-sm text-error">
+    <div x-show="errorMsg" style="display:none" class="mt-3 bg-[#2a1415] border border-[#e5484d]/30 rounded-lg px-4 py-3 text-[13px] text-[#e5484d]" role="alert">
       <span x-text="errorMsg"></span>
     </div>
   </section>
 
   <!-- Result Card -->
   <section x-show="result" style="display:none" x-transition>
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-      <!-- Current Analysis Display -->
-      <div class="lg:col-span-2 border rounded-xl p-4 sm:p-6 lg:p-8 flex flex-col md:flex-row gap-5 md:gap-8 items-center transition-colors"
-           :class="result && result.verdict === 'HALAL' ? 'bg-emerald-950/30 border-emerald-800/50' : (result && result.verdict === 'HARAM' ? 'bg-red-950/30 border-red-800/50' : (result && result.verdict === 'INVALID' ? 'bg-blue-950/30 border-blue-800/50' : 'bg-amber-950/30 border-amber-800/50'))">
-        
-        <div class="w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full border-4 flex items-center justify-center shrink-0"
-             :class="result && result.verdict === 'HALAL' ? 'border-primary bg-emerald-900/40' : (result && result.verdict === 'HARAM' ? 'border-red-500 bg-red-900/40' : (result && result.verdict === 'INVALID' ? 'border-blue-400 bg-blue-900/40' : 'border-amber-500 bg-amber-900/40'))">
-          <span class="material-symbols-outlined !text-4xl sm:!text-5xl lg:!text-6xl" style="font-variation-settings: 'FILL' 1;"
-                :class="result && result.verdict === 'HALAL' ? 'text-primary' : (result && result.verdict === 'HARAM' ? 'text-red-500' : (result && result.verdict === 'INVALID' ? 'text-blue-400' : 'text-amber-500'))"
-                x-text="result && result.verdict === 'HALAL' ? 'check_circle' : (result && result.verdict === 'HARAM' ? 'cancel' : (result && result.verdict === 'INVALID' ? 'info' : 'warning'))"></span>
-        </div>
-        
-        <div class="flex-1 text-center md:text-left min-w-0">
-          <div class="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-2 sm:gap-3 mb-2">
-            <h4 class="font-headline-lg text-xl sm:text-headline-lg text-white max-w-full break-words" x-text="result && result.query"></h4>
-            <span class="px-3 py-1 rounded-full text-label-md border uppercase font-bold"
-                  :class="result && result.verdict === 'HALAL' ? 'bg-primary/20 text-primary border-primary/30' : (result && result.verdict === 'HARAM' ? 'bg-red-500/20 text-red-500 border-red-500/30' : (result && result.verdict === 'INVALID' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : 'bg-amber-500/20 text-amber-500 border-amber-500/30'))"
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+
+      <div class="lg:col-span-8 bg-[#1c1a18] border border-[#2c2925] border-l-2 rounded-xl p-5 sm:p-6 flex flex-col justify-between gap-4"
+           :class="result && result.verdict === 'HALAL' ? 'border-l-[#4cc38a]' : (result && result.verdict === 'HARAM' ? 'border-l-[#e5484d]' : (result && result.verdict === 'INVALID' ? 'border-l-[#8a847a]' : 'border-l-[#e0a23b]'))">
+        <div class="space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="min-w-0">
+              <h4 class="text-[20px] font-medium text-[#efe9de] break-words" x-text="result && result.query"></h4>
+              <p class="font-mono text-[12px] text-[#8a847a] mt-0.5" x-text="'Confidence: ' + (result && result.confidence)"></p>
+            </div>
+            <span class="px-2.5 py-1 rounded-md text-[12px] font-medium border shrink-0"
+                  :class="result && result.verdict === 'HALAL' ? 'bg-[#4cc38a]/10 text-[#4cc38a] border-[#4cc38a]/25' : (result && result.verdict === 'HARAM' ? 'bg-[#e5484d]/10 text-[#e5484d] border-[#e5484d]/25' : (result && result.verdict === 'INVALID' ? 'bg-[#262421] text-[#aaa398] border-[#2c2925]' : 'bg-[#e0a23b]/10 text-[#e0a23b] border-[#e0a23b]/25'))"
                   x-text="result && result.verdict"></span>
           </div>
-          <p class="text-on-surface-variant mb-4 sm:mb-6" x-text="'Confidence: ' + (result && result.confidence)"></p>
-          
-          <div class="bg-black/40 p-3 sm:p-4 rounded-lg border border-[#262626] text-left">
-            <p class="text-sm text-on-surface leading-relaxed" x-text="result && result.explanation"></p>
+
+          <div class="bg-[#12110f] p-4 rounded-lg border border-[#2c2925]">
+            <p class="text-[14px] text-[#efe9de] leading-relaxed" x-text="result && result.explanation"></p>
           </div>
         </div>
       </div>
-      
-      <!-- AI Assistant Context -->
-      <div class="bg-surface-container-high border border-outline-variant rounded-xl p-4 sm:p-6 flex flex-col justify-between">
+
+      <div class="lg:col-span-4 bg-[#1c1a18] border border-[#2c2925] rounded-xl p-5 sm:p-6 flex flex-col justify-between gap-5">
         <div>
-          <div class="flex items-center gap-2 mb-4">
-            <span class="material-symbols-outlined text-primary">auto_awesome</span>
-            <h5 class="font-headline-md text-on-surface">AI Shariah Note</h5>
-          </div>
-          <p class="text-body-md text-on-surface-variant italic hidden sm:block">
-            "This AI-generated guidance is based on general Shariah principles. Always verify with a qualified scholar before making final decisions."
-          </p>
-          <p class="text-body-md text-on-surface-variant italic sm:hidden">
-            AI guidance is general. Verify major decisions with a qualified scholar.
+          <h5 class="text-[16px] font-medium text-[#efe9de] mb-2">Verify before investing</h5>
+          <p class="text-[14px] text-[#aaa398] leading-relaxed">
+            Automated screening relies on general Shariah criteria. Confirm edge cases or purification ratios with a qualified scholar.
           </p>
         </div>
-        <a href="/chatbot" class="mt-6 w-full text-center py-3 border border-outline text-on-surface rounded-lg hover:bg-surface transition-colors font-medium">
-          Ask Chatbot for Details
+        <a href="/chatbot" class="w-full min-h-[44px] px-4 bg-[#262421] hover:bg-[#302d29] border border-[#2c2925] text-[#efe9de] text-[14px] font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
+          Ask in chat
+          <svg class="w-4 h-4 text-[#aaa398]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+          </svg>
         </a>
       </div>
+
     </div>
   </section>
 
-  <!-- Preloaded Grid: Pre-screened Funds -->
-  <section>
-    <div class="flex items-center justify-between mb-4 sm:mb-6">
-      <h3 class="font-headline-lg text-xl sm:text-headline-lg text-on-surface">Pre-screened Investments</h3>
+  <!-- Pre-screened Assets -->
+  <section class="space-y-4">
+    <div class="flex items-baseline justify-between gap-3">
+      <h3 class="text-[18px] font-medium text-[#efe9de]">Pre-screened investments</h3>
+      <span class="font-mono text-[12px] text-[#8a847a]" x-show="preloaded.length" x-text="preloaded.length + ' listed'"></span>
     </div>
-    
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       <template x-for="fund in preloaded" :key="fund.name">
-        <div @click="query = fund.name; checkInvestment()"
-             class="bg-surface border rounded-xl p-4 sm:p-5 lg:p-6 transition-all group cursor-pointer min-w-0"
-             :class="fund.verdict === 'HALAL' ? 'border-outline-variant hover:border-primary' : (fund.verdict === 'HARAM' ? 'border-red-900/30 hover:border-red-700 bg-red-950/10' : 'border-amber-900/30 hover:border-amber-700 bg-amber-950/10')">
-          
-          <div class="flex justify-between items-start gap-3 mb-4">
+        <button type="button" @click="query = fund.name; checkInvestment()"
+                class="text-left bg-[#1c1a18] border border-[#2c2925] hover:border-[#3e3a34] hover:bg-[#211f1c] rounded-xl p-5 transition-colors flex flex-col justify-between gap-4 min-w-0">
+          <div class="flex items-start justify-between gap-3 w-full">
             <div class="min-w-0">
-              <h4 class="font-headline-md text-on-surface break-words" x-text="fund.name"></h4>
-              <p class="text-label-md text-on-surface-variant" x-text="fund.type"></p>
+              <h4 class="text-[15px] font-medium text-[#efe9de] break-words" x-text="fund.name"></h4>
+              <p class="text-[12px] text-[#8a847a] mt-0.5" x-text="fund.type"></p>
             </div>
-            <span class="px-2.5 sm:px-3 py-1 rounded-full text-[10px] border font-bold uppercase tracking-tighter shrink-0"
-                  :class="fund.verdict === 'HALAL' ? 'bg-emerald-950/50 text-primary border-emerald-800' : (fund.verdict === 'HARAM' ? 'bg-red-900/30 text-red-500 border-red-800' : 'bg-amber-900/30 text-amber-500 border-amber-800')"
+            <span class="px-2 py-0.5 rounded-md text-[12px] font-medium border shrink-0"
+                  :class="fund.verdict === 'HALAL' ? 'bg-[#4cc38a]/10 text-[#4cc38a] border-[#4cc38a]/25' : (fund.verdict === 'HARAM' ? 'bg-[#e5484d]/10 text-[#e5484d] border-[#e5484d]/25' : 'bg-[#e0a23b]/10 text-[#e0a23b] border-[#e0a23b]/25')"
                   x-text="fund.verdict"></span>
           </div>
-          
-          <div class="h-12 w-full mb-4 flex items-center justify-center opacity-80"
-               :class="fund.verdict === 'HARAM' ? 'text-red-900' : ''">
-             <span x-show="fund.verdict === 'HARAM'" class="material-symbols-outlined !text-4xl">block</span>
-             <div x-show="fund.verdict !== 'HARAM'" class="w-full h-full">
-               <svg class="w-full h-full" viewBox="0 0 100 40">
-                  <path d="M0 25 L 20 15 L 40 20 L 60 5 L 80 12 L 100 0" fill="none" :stroke="fund.verdict === 'HALAL' ? '#4edea3' : '#f59e0b'" stroke-width="2"></path>
-               </svg>
-             </div>
+
+          <div class="flex items-end justify-between gap-3 border-t border-[#2c2925] pt-3 w-full">
+            <p class="text-[13px] text-[#aaa398] leading-snug min-w-0" x-text="fund.reason"></p>
+            <svg class="w-4 h-4 text-[#8a847a] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m9 18 6-6-6-6"/>
+            </svg>
           </div>
-          
-          <div class="flex justify-between items-end gap-3 border-t border-[#262626] pt-3">
-            <div class="w-full min-w-0">
-               <p class="text-[11px] text-on-surface-variant leading-tight" x-text="fund.reason"></p>
-            </div>
-            <button class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center transition-colors flex-shrink-0"
-                    :class="fund.verdict === 'HALAL' ? 'group-hover:bg-primary group-hover:text-on-primary' : (fund.verdict === 'HARAM' ? 'group-hover:bg-red-500 group-hover:text-white' : 'group-hover:bg-amber-500 group-hover:text-black')">
-              <span class="material-symbols-outlined text-sm" x-text="fund.verdict === 'HALAL' ? 'chevron_right' : (fund.verdict === 'HARAM' ? 'warning' : 'info')"></span>
-            </button>
-          </div>
-        </div>
+        </button>
       </template>
     </div>
   </section>
 
   <!-- History List -->
-  <section>
-    <div class="flex items-center gap-3 mb-4 sm:mb-6">
-      <span class="material-symbols-outlined text-on-surface-variant">history</span>
-      <h3 class="font-headline-md text-on-surface">Recent Screening History</h3>
-    </div>
-    <div class="bg-[#141414] border border-[#262626] rounded-xl overflow-hidden sm:overflow-x-auto">
+  <section class="space-y-4">
+    <h3 class="text-[18px] font-medium text-[#efe9de]">Recent screening history</h3>
+    <div class="bg-[#1c1a18] border border-[#2c2925] rounded-xl overflow-hidden sm:overflow-x-auto">
       <table class="w-full text-left whitespace-nowrap mobile-history-table">
-        <thead class="bg-[#1a1b22] text-label-md text-on-surface-variant uppercase tracking-wider">
+        <thead class="bg-[#12110f] border-b border-[#2c2925] text-[12px] text-[#8a847a]">
           <tr>
-            <th class="px-6 py-4 font-semibold">Asset/Query</th>
-            <th class="px-6 py-4 font-semibold">Verdict</th>
-            <th class="px-6 py-4 font-semibold">Date</th>
-            <th class="px-6 py-4 font-semibold text-right">Action</th>
+            <th class="px-5 py-3 font-medium">Asset</th>
+            <th class="px-5 py-3 font-medium">Verdict</th>
+            <th class="px-5 py-3 font-medium">Date</th>
+            <th class="px-5 py-3 font-medium text-right">Action</th>
           </tr>
         </thead>
-        <tbody id="history-list" class="divide-y divide-[#262626]">
-          <tr><td colspan="4" class="px-4 sm:px-6 py-4 text-center text-on-surface-variant italic text-sm">Loading history...</td></tr>
+        <tbody id="history-list" class="divide-y divide-[#2c2925]">
+          <tr><td colspan="4" class="px-5 py-5 text-center text-[#8a847a] text-[13px]">Loading history</td></tr>
         </tbody>
       </table>
     </div>
@@ -205,7 +170,7 @@ function screenerApp() {
         });
 
         if (res.status === 401) {
-          el.innerHTML = '<tr class="mobile-history-empty"><td colspan="4" class="px-4 sm:px-6 py-8 text-center"><div class="flex flex-col items-center gap-2 text-on-surface-variant"><span class="material-symbols-outlined text-[36px] opacity-40">lock</span><p class="text-sm font-medium">Sign in to see history</p></div></td></tr>';
+          el.innerHTML = '<tr class="mobile-history-empty"><td colspan="4" class="px-5 py-8 text-center text-[#aaa398] text-[13px]">Sign in to see your screening history</td></tr>';
           return;
         }
 
@@ -213,32 +178,28 @@ function screenerApp() {
         const records = await res.json();
 
         if (!records.length) {
-          el.innerHTML = '<tr class="mobile-history-empty"><td colspan="4" class="px-4 sm:px-6 py-10 text-center"><div class="flex flex-col items-center gap-2 text-on-surface-variant"><span class="material-symbols-outlined text-[36px] opacity-40">manage_search</span><p class="text-sm font-medium">Nothing searched yet!</p><p class="text-xs opacity-60 hidden sm:block">Your screening history will appear here after your first search.</p></div></td></tr>';
+          el.innerHTML = '<tr class="mobile-history-empty"><td colspan="4" class="px-5 py-8 text-center text-[#8a847a] text-[13px]">No searches yet. Results will appear here after your first check.</td></tr>';
           return;
         }
 
         el.innerHTML = records.map(r => {
           const safeQ = r.query.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-          const icon  = r.verdict === 'HALAL' ? 'check_circle' : (r.verdict === 'HARAM' ? 'cancel' : 'warning');
-          const color = r.verdict === 'HALAL' ? 'text-primary' : (r.verdict === 'HARAM' ? 'text-red-500' : 'text-amber-500');
+          const color = r.verdict === 'HALAL' ? 'text-[#4cc38a]' : (r.verdict === 'HARAM' ? 'text-[#e5484d]' : 'text-[#e0a23b]');
           const letter = r.query.charAt(0).toUpperCase();
-          return `<tr class="hover:bg-[#1c1c1c] transition-colors">
-            <td data-label="Asset" class="px-4 sm:px-6 py-4"><div class="flex items-center gap-3 min-w-0">
-              <div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center text-xs font-bold text-on-surface-variant">${letter}</div>
-              <p class="font-medium text-on-surface truncate">${r.query}</p>
+          return `<tr class="hover:bg-[#262421]/50 transition-colors">
+            <td data-label="Asset" class="px-5 py-3.5"><div class="flex items-center gap-3 min-w-0">
+              <div class="w-7 h-7 rounded-md bg-[#262421] border border-[#2c2925] flex items-center justify-center text-[12px] font-medium text-[#aaa398] shrink-0">${letter}</div>
+              <p class="text-[14px] font-medium text-[#efe9de] truncate">${r.query}</p>
             </div></td>
-            <td data-label="Verdict" class="px-4 sm:px-6 py-4"><span class="flex items-center gap-1.5 text-sm font-bold ${color}">
-              <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">${icon}</span>
-              ${r.verdict}
-            </span></td>
-            <td data-label="Date" class="px-4 sm:px-6 py-4 text-sm text-on-surface-variant">${r.screened_at}</td>
-            <td data-label="Action" class="px-4 sm:px-6 py-4 text-right">
-              <button onclick="recheckQuery('${safeQ}')" class="text-primary hover:underline text-sm font-medium">Re-check</button>
+            <td data-label="Verdict" class="px-5 py-3.5"><span class="text-[13px] font-medium ${color}">${r.verdict}</span></td>
+            <td data-label="Date" class="px-5 py-3.5 font-mono text-[12px] text-[#8a847a]">${r.screened_at}</td>
+            <td data-label="Action" class="px-5 py-3.5 text-right">
+              <button type="button" onclick="recheckQuery('${safeQ}')" class="text-[#34d399] hover:underline text-[13px] font-medium">Re-check</button>
             </td></tr>`;
         }).join('');
 
       } catch(e) {
-        el.innerHTML = '<tr class="mobile-history-empty"><td colspan="4" class="px-4 sm:px-6 py-6 text-center text-error italic text-sm">Could not load history. Please refresh.</td></tr>';
+        el.innerHTML = '<tr class="mobile-history-empty"><td colspan="4" class="px-5 py-6 text-center text-[#e5484d] text-[13px]">Could not load history. Please refresh.</td></tr>';
       }
     },
 
@@ -275,7 +236,6 @@ function screenerApp() {
   }
 }
 
-// ── RECHECK BRIDGE — Alpine v3 safe global helper ──────────
 function recheckQuery(query) {
   const root = document.querySelector('[x-data]');
   if (!root) return;

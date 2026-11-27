@@ -258,13 +258,13 @@
         const self = this;
         chartRef = new Chart(canvas, {
           type: 'bar',
-          data: { labels: rows.map((r) => r.label), datasets: [{ data: rows.map((r) => r.value), backgroundColor: '#4edea3', borderRadius: 4, barThickness: 14 }] },
+          data: { labels: rows.map((r) => r.label), datasets: [{ data: rows.map((r) => r.value), backgroundColor: '#10b981', borderRadius: 4, barThickness: 14 }] },
           options: {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: calm ? false : { duration: 300 },
             plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => self.fmt(c.raw) } } },
             scales: {
               x: { display: false, beginAtZero: true },
-              y: { grid: { display: false }, border: { display: false }, ticks: { color: '#c3c2b7', font: { size: 12 } } },
+              y: { grid: { display: false }, border: { display: false }, ticks: { color: '#aaa398', font: { size: 12 } } },
             },
           },
         });

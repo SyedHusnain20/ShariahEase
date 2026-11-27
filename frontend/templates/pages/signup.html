@@ -1,66 +1,76 @@
 {% extends "auth_base.html" %}
+{% block title %}Create account — ShariahEase{% endblock %}
 {% block content %}
-<div class="w-full max-w-sm mx-auto px-4 sm:px-0">
-  <!-- Signup Card -->
-  <div class="bg-[#141414] border border-[#262626] rounded-xl overflow-hidden flex flex-col shadow-2xl" id="signup-card">
-    
+<div class="w-full max-w-sm">
+  <div class="bg-[#1c1a18] border border-[#2c2925] rounded-xl overflow-hidden flex flex-col" id="signup-card">
+
     <!-- Error / Success banners -->
-    <div id="error-banner" class="hidden bg-[#2d0a0a] border-b border-error/20 px-stack-lg py-3 flex items-center gap-3">
-      <span class="material-symbols-outlined text-error text-[20px]" data-icon="error">error</span>
-      <span class="text-error font-label-md text-label-md"></span>
+    <div id="error-banner" class="hidden bg-[#2a1415] border-b border-[#e5484d]/30 px-5 py-3 flex items-center gap-2.5">
+      <svg class="w-4 h-4 text-[#e5484d] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+      </svg>
+      <span class="text-[#e5484d] text-[13px]"></span>
     </div>
-    <div id="success-banner" class="hidden bg-[#00422b] border-b border-primary/20 px-stack-lg py-3 flex items-center gap-3">
-      <span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span>
-      <span class="text-primary font-label-md text-label-md"></span>
+    <div id="success-banner" class="hidden bg-[#192b23] border-b border-[#10b981]/30 px-5 py-3 flex items-center gap-2.5">
+      <svg class="w-4 h-4 text-[#34d399] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <span class="text-[#34d399] text-[13px]"></span>
     </div>
 
-    <div class="px-4 sm:px-stack-lg pt-stack-lg pb-stack-md flex flex-col items-center text-center">
-      <div class="w-12 h-12 bg-primary-container rounded-lg flex items-center justify-center mb-stack-lg">
-        <span class="material-symbols-outlined text-on-primary-container text-[28px]" data-icon="person_add">person_add</span>
-      </div>
-      <h1 class="font-headline-lg text-headline-lg text-on-surface mb-stack-sm">Create Account</h1>
-      <p class="font-body-md text-body-md text-on-surface-variant">Your history stays private & secure</p>
+    <div class="px-6 pt-6 pb-4 flex flex-col items-start">
+      <a href="/" class="flex items-center gap-2 mb-5 text-[#efe9de]">
+        <svg class="w-5 h-5 text-[#10b981] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+          <rect x="4.5" y="4.5" width="15" height="15" rx="2"/>
+          <rect x="4.5" y="4.5" width="15" height="15" rx="2" transform="rotate(45 12 12)"/>
+          <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="text-[16px] font-medium tracking-[-0.01em]">ShariahEase</span>
+      </a>
+      <h1 class="text-[20px] font-medium text-[#efe9de]">Create account</h1>
+      <p class="text-[13px] text-[#aaa398] mt-1">Save your Zakat, expenses, and screening history</p>
     </div>
-    
-    <div class="px-4 sm:px-stack-lg pb-stack-lg space-y-stack-lg">
-      <div class="space-y-stack-sm">
-        <label class="font-label-md text-label-md text-on-surface-variant px-1">Full Name</label>
-        <input id="name" class="field-input" placeholder="e.g. Ahmed Khan" required type="text"/>
+
+    <div class="px-6 pb-6 space-y-4">
+      <div class="space-y-1.5">
+        <label for="name" class="block text-[12px] font-medium text-[#aaa398]">Full name</label>
+        <input id="name" class="field-input min-h-[42px]" placeholder="Ahmed Khan" required type="text" autocomplete="name"/>
       </div>
 
-      <div class="space-y-stack-sm">
-        <label class="font-label-md text-label-md text-on-surface-variant px-1">Email Address</label>
-        <input id="email" class="field-input" placeholder="investor@shariahease.com" required type="email"/>
+      <div class="space-y-1.5">
+        <label for="email" class="block text-[12px] font-medium text-[#aaa398]">Email address</label>
+        <input id="email" class="field-input min-h-[42px]" placeholder="name@example.com" required type="email" autocomplete="email"/>
       </div>
-      
-      <div class="space-y-stack-sm">
-        <label class="font-label-md text-label-md text-on-surface-variant px-1">Password <span class="text-surface-variant ml-1 font-normal">(min 6 char)</span></label>
-        <input id="password" class="field-input" placeholder="••••••••" required type="password"/>
+
+      <div class="space-y-1.5">
+        <div class="flex items-baseline justify-between gap-2">
+          <label for="password" class="block text-[12px] font-medium text-[#aaa398]">Password</label>
+          <span class="text-[12px] text-[#8a847a]">Min 6 characters</span>
+        </div>
+        <input id="password" class="field-input min-h-[42px]" placeholder="••••••••" required type="password" autocomplete="new-password"/>
       </div>
-      
-      <button id="signup-btn" onclick="signup()" class="w-full bg-primary-container hover:bg-primary-container/90 text-on-primary-container font-headline-md text-body-md py-3.5 rounded-lg transition-all active:scale-95 font-semibold flex items-center justify-center gap-2" type="button">
-        <span id="btn-text">Create Account</span>
+
+      <button id="signup-btn" onclick="signup()" class="w-full min-h-[44px] bg-[#10b981] hover:bg-[#34d399] text-[#042117] text-[14px] font-medium rounded-lg transition-colors active:scale-[0.98] flex items-center justify-center gap-2" type="button">
+        <span id="btn-text">Create account</span>
         <svg id="btn-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"/>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
         </svg>
       </button>
-      
     </div>
-    
-    <div class="bg-surface-container-low px-4 sm:px-stack-lg py-stack-lg border-t border-[#262626] text-center">
-      <p class="font-body-md text-body-md text-on-surface-variant">
-        Already have an account? 
-        <a class="text-primary font-semibold hover:underline" href="/auth/login">Sign in</a>
+
+    <div class="bg-[#12110f] px-6 py-4 border-t border-[#2c2925] text-center">
+      <p class="text-[13px] text-[#aaa398]">
+        Already have an account?
+        <a class="text-[#34d399] font-medium hover:underline" href="/auth/login">Sign in</a>
       </p>
     </div>
   </div>
-  
+
   <!-- Footer Links -->
-  <div class="mt-stack-lg flex flex-wrap justify-center gap-x-6 gap-y-2">
-    <a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy</a>
-    <a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Support</a>
-    <a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Compliance</a>
+  <div class="mt-4 flex justify-center gap-5">
+    <a class="text-[12px] text-[#8a847a] hover:text-[#efe9de] transition-colors" href="/privacy">Privacy</a>
+    <a class="text-[12px] text-[#8a847a] hover:text-[#efe9de] transition-colors" href="/about">About</a>
   </div>
 </div>
 {% endblock %}
@@ -118,8 +128,8 @@
       localStorage.setItem('se_token', data.access_token);
       localStorage.setItem('se_user',  JSON.stringify({ id: data.user_id, name: data.name, email: data.email }));
 
-      const okText = okBanner.querySelector('.text-primary.font-label-md');
-      okText.textContent = `Welcome, ${data.name}! Redirecting…`;
+      const okText = okBanner.querySelector('span');
+      okText.textContent = `Account created for ${data.name}. Redirecting…`;
       okBanner.classList.remove('hidden');
 
       setTimeout(() => window.location.href = '/', 1200);
@@ -128,13 +138,13 @@
     } finally {
       btn.disabled = false;
       spinner.classList.add('hidden');
-      btnText.textContent = 'Create Account';
+      btnText.textContent = 'Create account';
     }
   }
 
   function showError(msg) {
     const banner = document.getElementById('error-banner');
-    const bannerText = banner.querySelector('.text-error.font-label-md');
+    const bannerText = banner.querySelector('span');
     bannerText.textContent = msg;
     banner.classList.remove('hidden');
   }
